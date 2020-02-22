@@ -1,3 +1,13 @@
+curl (7.64.0-4+deb10u1) buster-security; urgency=high
+
+  * Fix FTP-KRB double-free as per CVE-2019-5481 (Closes: #940009)
+    https://curl.haxx.se/docs/CVE-2019-5481.html
+  * Fix TFTP small blocksize heap buffer overflow as per CVE-2019-5482
+    (Closes: #940010)
+    https://curl.haxx.se/docs/CVE-2019-5482.html
+
+ -- Alessandro Ghedini <ghedo@debian.org>  Sat, 22 Feb 2020 15:01:46 +0000
+
 curl (7.64.0-4) unstable; urgency=medium
 
   * Fix TFTP receive buffer overflow as per CVE-2019-5436 (Closes: #929351)
