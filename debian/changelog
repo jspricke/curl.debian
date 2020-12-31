@@ -1,4 +1,4 @@
-curl (7.74.0-1) UNRELEASED; urgency=medium
+curl (7.74.0-1) unstable; urgency=medium
 
   * New upstream release
     + Fix inferior OCSP verification as per CVE-2020-8286 (Closes: #977161)
@@ -8,8 +8,18 @@ curl (7.74.0-1) UNRELEASED; urgency=medium
     + Fix trusting FTP PASV responses as per CVE-2020-8284 (Closes: #977163)
       https://curl.se/docs/CVE-2020-8284.html
   * Update debian/watch to new upstream download page layout
+  * Update 12_use-python3-in-tests.patch due to renamed file
+  * Refresh patches
+  * Fix cross-build due to python build dependencies.
+    Thanks to Helmut Grohne for the patch (Closes: #969004)
+  * Fix formatting in some man pages.
+    Thanks to Bjarni Ingi Gislason for the patch (Closes: #963559)
+  * Update list of documentation files to install
+  * Update symbols
+  * Bump Standards-Version to 4.5.1 (no changes needed)
+  * Drop removed file from d/copyright
 
- -- Alessandro Ghedini <ghedo@debian.org>  Thu, 31 Dec 2020 11:44:09 +0100
+ -- Alessandro Ghedini <ghedo@debian.org>  Thu, 31 Dec 2020 15:22:05 +0100
 
 curl (7.72.0-1) unstable; urgency=medium
 
