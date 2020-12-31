@@ -1,3 +1,16 @@
+curl (7.74.0-1) UNRELEASED; urgency=medium
+
+  * New upstream release
+    + Fix inferior OCSP verification as per CVE-2020-8286 (Closes: #977161)
+      https://curl.se/docs/CVE-2020-8286.html
+    + Fix FTP wildcard stack overflow as per CVE-2020-8285 (Closes: #977162)
+      https://curl.se/docs/CVE-2020-8285.html
+    + Fix trusting FTP PASV responses as per CVE-2020-8284 (Closes: #977163)
+      https://curl.se/docs/CVE-2020-8284.html
+  * Update debian/watch to new upstream download page layout
+
+ -- Alessandro Ghedini <ghedo@debian.org>  Thu, 31 Dec 2020 11:44:09 +0100
+
 curl (7.72.0-1) unstable; urgency=medium
 
   * New upstream release
