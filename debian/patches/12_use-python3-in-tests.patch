@@ -5,8 +5,8 @@ Author: Alessandro Ghedini <ghedo@debian.org>
 Reviewed-by: Alessandro Ghedini <ghedo@debian.org>
 Last-Update: 2020-08-24
 
---- a/tests/curl_test_data.py
-+++ b/tests/curl_test_data.py
+--- a/tests/util.py
++++ b/tests/util.py
 @@ -1,4 +1,4 @@
 -#!/usr/bin/env python
 +#!/usr/bin/env python3
