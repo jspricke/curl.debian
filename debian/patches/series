@@ -11,6 +11,14 @@
 17_CURL_MAX_INPUT_LENGTH-largest-acceptable-string-inpu.patch
 18_CVE-2019-5481.patch
 19_CVE-2019-5482.patch
+20_CVE-2020-8169.patch
+21_CVE-2020-8177.patch
+22_CVE-2020-8231.patch
+23_CVE-2020-8284.patch
+24_CVE-2020-8285.patch
+25_CVE-2020-8286.patch
+26_CVE-2021-22876.patch
+27_CVE-2021-22890.patch
 
 # do not add patches below
 90_gnutls.patch
