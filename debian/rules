@@ -1,7 +1,6 @@
 #! /usr/bin/make -f
 
 # this will avoid unneded dependencies
-export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
 # this will catch miss-linking. (e.g. undefined symbols)
 #export DEB_LDFLAGS_MAINT_APPEND = -Wl,-z,defs
