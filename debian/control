@@ -3,7 +3,7 @@ Section: web
 Priority: optional
 Maintainer: Alessandro Ghedini <ghedo@debian.org>
 Uploaders: Samuel Henrique <samueloph@debian.org>
-Build-Depends: debhelper (>= 12),
+Build-Depends: debhelper-compat (= 12),
  autoconf,
  automake,
  ca-certificates,
