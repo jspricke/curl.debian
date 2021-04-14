@@ -32,7 +32,7 @@ Build-Conflicts: autoconf2.13, automake1.4
 Standards-Version: 4.5.1
 Vcs-Git: https://salsa.debian.org/debian/curl.git
 Vcs-Browser: https://salsa.debian.org/debian/curl
-Homepage: http://curl.haxx.se
+Homepage: https://curl.haxx.se
 
 Package: curl
 Architecture: any
