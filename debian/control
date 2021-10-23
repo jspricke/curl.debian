@@ -2,6 +2,7 @@ Source: curl
 Section: web
 Priority: optional
 Maintainer: Alessandro Ghedini <ghedo@debian.org>
+Uploaders: Samuel Henrique <samueloph@debian.org>
 Build-Depends: debhelper (>= 12),
  autoconf,
  automake,
