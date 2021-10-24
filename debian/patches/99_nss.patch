@@ -5,9 +5,11 @@ Author: Ramakrishnan Muthukrishnan <vu3rdd@gmail.com>
 Reviewed-by: Alessandro Ghedini <ghedo@debian.org>
 Last-Update: 2015-08-12
 
---- a/docs/examples/Makefile.am
-+++ b/docs/examples/Makefile.am
-@@ -48,9 +48,9 @@
+Index: curl/docs/examples/Makefile.am
+===================================================================
+--- curl.orig/docs/examples/Makefile.am
++++ curl/docs/examples/Makefile.am
+@@ -48,9 +48,9 @@ LIBS = $(BLANK_AT_MAKETIME)
  
  # Dependencies
  if USE_EXPLICIT_LIB_DEPS
@@ -19,18 +21,20 @@ Last-Update: 2015-08-12
  endif
  
  # This might hold -Werror
---- a/lib/Makefile.am
-+++ b/lib/Makefile.am
-@@ -32,7 +32,7 @@
+Index: curl/lib/Makefile.am
+===================================================================
+--- curl.orig/lib/Makefile.am
++++ curl/lib/Makefile.am
+@@ -32,7 +32,7 @@ EXTRA_DIST = Makefile.m32 config-win32.h
   firefox-db2pem.sh config-vxworks.h Makefile.vxworks checksrc.pl    \
-  setup-win32.h
+  setup-win32.h .checksrc
  
 -lib_LTLIBRARIES = libcurl-gnutls.la
 +lib_LTLIBRARIES = libcurl-nss.la
  
  if BUILD_UNITTESTS
  noinst_LTLIBRARIES = libcurlu.la
-@@ -84,43 +84,43 @@
+@@ -84,43 +84,43 @@ AM_CPPFLAGS += -DBUILDING_LIBCURL
  AM_LDFLAGS =
  AM_CFLAGS =
  
@@ -88,7 +92,7 @@ Last-Update: 2015-08-12
  
  libcurlu_la_CPPFLAGS = $(AM_CPPFLAGS) -DCURL_STATICLIB -DUNITTESTS
  libcurlu_la_LDFLAGS = $(AM_LDFLAGS) -static $(LIBCURL_LIBS)
-@@ -129,7 +129,7 @@
+@@ -129,7 +129,7 @@ libcurlu_la_CFLAGS = $(AM_CFLAGS)
  # Makefile.inc provides the CSOURCES and HHEADERS defines
  include Makefile.inc
  
@@ -97,23 +101,27 @@ Last-Update: 2015-08-12
  libcurlu_la_SOURCES = $(CSOURCES) $(HHEADERS)
  
  CHECKSRC = $(CS_$(V))
---- a/src/Makefile.am
-+++ b/src/Makefile.am
-@@ -61,9 +61,9 @@
+Index: curl/src/Makefile.am
+===================================================================
+--- curl.orig/src/Makefile.am
++++ curl/src/Makefile.am
+@@ -61,9 +61,9 @@ CFLAGS += @CURL_CFLAG_EXTRAS@
  LIBS = $(BLANK_AT_MAKETIME)
  
  if USE_EXPLICIT_LIB_DEPS
--curl_LDADD = $(top_builddir)/lib/libcurl-gnutls.la @LIBMETALINK_LIBS@ @LIBCURL_LIBS@
-+curl_LDADD = $(top_builddir)/lib/libcurl-nss.la @LIBMETALINK_LIBS@ @LIBCURL_LIBS@
+-curl_LDADD = $(top_builddir)/lib/libcurl-gnutls.la @LIBCURL_LIBS@
++curl_LDADD = $(top_builddir)/lib/libcurl-nss.la @LIBCURL_LIBS@
  else
--curl_LDADD = $(top_builddir)/lib/libcurl-gnutls.la @LIBMETALINK_LIBS@ @NSS_LIBS@ @SSL_LIBS@ @ZLIB_LIBS@ @CURL_NETWORK_AND_TIME_LIBS@
-+curl_LDADD = $(top_builddir)/lib/libcurl-nss.la @LIBMETALINK_LIBS@ @NSS_LIBS@ @SSL_LIBS@ @ZLIB_LIBS@ @CURL_NETWORK_AND_TIME_LIBS@
+-curl_LDADD = $(top_builddir)/lib/libcurl-gnutls.la @NSS_LIBS@ @SSL_LIBS@ @ZLIB_LIBS@ @CURL_NETWORK_AND_TIME_LIBS@
++curl_LDADD = $(top_builddir)/lib/libcurl-nss.la @NSS_LIBS@ @SSL_LIBS@ @ZLIB_LIBS@ @CURL_NETWORK_AND_TIME_LIBS@
  endif
  
- curl_LDFLAGS = @LIBMETALINK_LDFLAGS@
---- a/tests/libtest/Makefile.am
-+++ b/tests/libtest/Makefile.am
-@@ -57,11 +57,11 @@
+ # if unit tests are enabled, build a static library to link them with
+Index: curl/tests/libtest/Makefile.am
+===================================================================
+--- curl.orig/tests/libtest/Makefile.am
++++ curl/tests/libtest/Makefile.am
+@@ -57,11 +57,11 @@ CLEANFILES = lib1521.c
  LIBS = $(BLANK_AT_MAKETIME)
  
  if USE_EXPLICIT_LIB_DEPS

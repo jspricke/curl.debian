@@ -1,22 +1,16 @@
 Description: Use python3 executable in tests
 Origin: vendor
-Forwarded: not-needed
+Forwarded: https://github.com/curl/curl/pull/7899
 Author: Alessandro Ghedini <ghedo@debian.org>
 Reviewed-by: Alessandro Ghedini <ghedo@debian.org>
 Last-Update: 2020-08-24
 
---- a/tests/util.py
-+++ b/tests/util.py
-@@ -1,4 +1,4 @@
--#!/usr/bin/env python
-+#!/usr/bin/env python3
- # -*- coding: utf-8 -*-
- #
- #  Project                     ___| | | |  _ \| |
---- a/tests/data/test1451
-+++ b/tests/data/test1451
-@@ -29,7 +29,7 @@
- -u 'curltest:curltest' smb://%HOSTIP:%SMBPORT/TESTS/1451
+Index: curl/tests/data/test1451
+===================================================================
+--- curl.orig/tests/data/test1451
++++ curl/tests/data/test1451
+@@ -29,7 +29,7 @@ Basic SMB request
+ -u 'curltest:curltest' smb://%HOSTIP:%SMBPORT/TESTS/%TESTNUMBER
  </command>
  <precheck>
 -python -c "__import__('pkgutil').find_loader('impacket') or (__import__('sys').stdout.write('Test only works if Python package impacket is installed\n'), __import__('sys').exit(1))"
@@ -24,27 +18,3 @@ Last-Update: 2020-08-24
  </precheck>
  </client>
  
---- a/tests/dictserver.py
-+++ b/tests/dictserver.py
-@@ -1,4 +1,4 @@
--#!/usr/bin/env python
-+#!/usr/bin/env python3
- # -*- coding: utf-8 -*-
- #***************************************************************************
- #                                  _   _ ____  _
---- a/tests/negtelnetserver.py
-+++ b/tests/negtelnetserver.py
-@@ -1,4 +1,4 @@
--#!/usr/bin/env python
-+#!/usr/bin/env python3
- # -*- coding: utf-8 -*-
- #
- #  Project                     ___| | | |  _ \| |
---- a/tests/smbserver.py
-+++ b/tests/smbserver.py
-@@ -1,4 +1,4 @@
--#!/usr/bin/env python
-+#!/usr/bin/env python3
- # -*- coding: utf-8 -*-
- #
- #  Project                     ___| | | |  _ \| |
