@@ -15,7 +15,7 @@ CONFIGURE_ARGS = -- --disable-dependency-tracking		\
 	--disable-symbol-hiding --enable-versioned-symbols	\
 	--enable-threaded-resolver --with-lber-lib=lber		\
 	--with-gssapi=/usr --with-libssh2 --with-nghttp2	\
-	--without-zstd						\
+	--without-zstd               						\
 	--includedir=/usr/include/$(DEB_HOST_MULTIARCH)		\
 	--with-zsh-functions-dir=/usr/share/zsh/vendor-completions
 
@@ -50,13 +50,13 @@ override_dh_auto_configure:
 	for flavour in build build-gnutls build-nss; do \
 		(cd debian/$$flavour && ./buildconf && cp ../../ltmain.sh .) \
 	done
-	cd debian/build && dh_auto_configure ${CONFIGURE_ARGS}		\
+	cd debian/build && dh_auto_configure ${CONFIGURE_ARGS} --with-openssl \
 		--with-ca-path=/etc/ssl/certs \
 		--with-ca-bundle=/etc/ssl/certs/ca-certificates.crt
-	cd debian/build-gnutls &&  dh_auto_configure ${CONFIGURE_ARGS}	\
+	cd debian/build-gnutls &&  dh_auto_configure ${CONFIGURE_ARGS} --with-gnutls	\
 		--with-ca-path=/etc/ssl/certs				\
 		--without-ssl --with-gnutls
-	cd debian/build-nss && dh_auto_configure ${CONFIGURE_ARGS}	\
+	cd debian/build-nss && dh_auto_configure ${CONFIGURE_ARGS} --with-nss	\
 		--without-ssl --with-nss
 
 override_dh_auto_build:
