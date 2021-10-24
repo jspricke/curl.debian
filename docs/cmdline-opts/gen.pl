@@ -6,7 +6,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -63,6 +63,12 @@ sub manpageify {
 sub printdesc {
     my @desc = @_;
     for my $d (@desc) {
+        if($d !~ /^.\\"/) {
+            # **bold**
+            $d =~ s/\*\*([^ ]*)\*\*/\\fB$1\\fP/g;
+            # *italics*
+            $d =~ s/\*([^ ]*)\*/\\fI$1\\fP/g;
+        }
         # skip lines starting with space (examples)
         if($d =~ /^[^ ]/) {
             for my $k (keys %optlong) {
@@ -70,6 +76,9 @@ sub printdesc {
                 $d =~ s/--$k([^a-z0-9_-])/$l$1/;
             }
         }
+        # quote "bare" minuses in the output
+        $d =~ s/( |\\fI|^)--/$1\\-\\-/g;
+        $d =~ s/([ -]|\\fI|^)-/$1\\-/g;
         print $d;
     }
 }
@@ -129,8 +138,11 @@ sub single {
     my $requires;
     my $category;
     my $seealso;
+    my @examples; # there can be more than one
     my $magic; # cmdline special option
+    my $line;
     while(<F>) {
+        $line++;
         if(/^Short: *(.)/i) {
             $short=$1;
         }
@@ -164,15 +176,24 @@ sub single {
         elsif(/^Category: *(.*)/i) {
             $category=$1;
         }
+        elsif(/^Example: *(.*)/i) {
+            push @examples, $1;
+        }
         elsif(/^Help: *(.*)/i) {
             ;
         }
         elsif(/^---/) {
             if(!$long) {
-                print STDERR "WARN: no 'Long:' in $f\n";
+                print STDERR "ERROR: no 'Long:' in $f\n";
+                exit 1;
             }
             if(!$category) {
-                print STDERR "WARN: no 'Category:' in $f\n";
+                print STDERR "ERROR: no 'Category:' in $f\n";
+                exit 2;
+            }
+            if(!$examples[0]) {
+                print STDERR "$f:$line:1:ERROR: no 'Example:' present\n";
+                exit 2;
             }
             last;
         }
@@ -201,6 +222,9 @@ sub single {
         $opt .= " $arg";
     }
 
+    # quote "bare" minuses in opt
+    $opt =~ s/( |^)--/$1\\-\\-/g;
+    $opt =~ s/( |^)-/$1\\-/g;
     if($standalone) {
         print ".TH curl 1 \"30 Nov 2016\" \"curl 7.52.0\" \"curl manual\"\n";
         print ".SH OPTION\n";
@@ -261,6 +285,16 @@ sub single {
             $mstr .= sprintf "%s$l", $mstr?" and ":"";
         }
         push @foot, overrides($standalone, "This option overrides $mstr. ");
+    }
+    if($examples[0]) {
+        my $s ="";
+        $s="s" if($examples[1]);
+        print "\nExample$s:\n.nf\n";
+        foreach my $e (@examples) {
+            $e =~ s!\$URL!https://example.com!g;
+            print " curl $e\n";
+        }
+        print ".fi\n";
     }
     if($added) {
         push @foot, added($standalone, $added);
@@ -367,8 +401,11 @@ sub listhelp {
 
         my $line = sprintf "  {\"%s\",\n   \"%s\",\n   %s},\n", $opt, $desc, $bitmask;
 
-        if(length($opt) + length($desc) > 78) {
-            print STDERR "WARN: the --$long line is too long\n";
+        if(length($opt) > 78) {
+            print STDERR "WARN: the --$long name is too long\n";
+        }
+        elsif(length($desc) > 78) {
+            print STDERR "WARN: the --$long description is too long\n";
         }
         print $line;
     }

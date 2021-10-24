@@ -47,7 +47,7 @@
 
  Sometimes even `--verbose` is not enough. Then
  [`--trace`](https://curl.se/docs/manpage.html#-trace) and
- [`--trace-ascii`]((https://curl.se/docs/manpage.html#--trace-ascii)
+ [`--trace-ascii`](https://curl.se/docs/manpage.html#--trace-ascii)
  offer even more details as they show **everything** curl sends and
  receives. Use it like this:
 
@@ -58,7 +58,7 @@
  Many times you may wonder what exactly is taking all the time, or you just
  want to know the amount of milliseconds between two points in a transfer. For
  those, and other similar situations, the
- [`--trace-time`]((https://curl.se/docs/manpage.html#--trace-time) option
+ [`--trace-time`](https://curl.se/docs/manpage.html#--trace-time) option
  is what you need. It'll prepend the time to each trace output line:
 
     curl --trace-ascii d.txt --trace-time http://example.com/
@@ -101,9 +101,9 @@
     curl http://www.example.org:1234/
 
  The port number you specify in the URL is the number that the server uses to
- offer its services. Sometimes you may use a local proxy, and then you may
- need to specify that proxy's port number separately for what curl needs to
- connect to locally. Like when using a HTTP proxy on port 4321:
+ offer its services. Sometimes you may use a proxy, and then you may
+ need to specify that proxy's port number separately from what curl needs to
+ connect to the server. Like when using a HTTP proxy on port 4321:
 
     curl --proxy http://proxy.example.org:4321 http://remote.example.org/
 
@@ -222,10 +222,12 @@
 
  A GET-form uses the method GET, as specified in HTML like:
 
-    <form method="GET" action="junk.cgi">
-      <input type=text name="birthyear">
-      <input type=submit name=press value="OK">
-    </form>
+```html
+<form method="GET" action="junk.cgi">
+  <input type=text name="birthyear">
+  <input type=submit name=press value="OK">
+</form>
+```
 
  In your favorite browser, this form will appear with a text box to fill in
  and a press-button labeled "OK". If you fill in '1905' and press the OK
@@ -258,10 +260,12 @@
 
  The form would look very similar to the previous one:
 
-    <form method="POST" action="junk.cgi">
-      <input type=text name="birthyear">
-      <input type=submit name=press value=" OK ">
-    </form>
+```html
+<form method="POST" action="junk.cgi">
+  <input type=text name="birthyear">
+  <input type=submit name=press value=" OK ">
+</form>
+```
 
  And to use curl to post this form with the same data filled in as before, we
  could do it like:
@@ -269,11 +273,11 @@
     curl --data "birthyear=1905&press=%20OK%20" http://www.example.com/when.cgi
 
  This kind of POST will use the Content-Type
- `application/x-www-form-urlencoded' and is the most widely used POST kind.
+ `application/x-www-form-urlencoded` and is the most widely used POST kind.
 
  The data you send to the server MUST already be properly encoded, curl will
  not do that for you. For example, if you want the data to contain a space,
- you need to replace that space with %20 etc. Failing to comply with this will
+ you need to replace that space with `%20`, etc. Failing to comply with this will
  most likely cause your data to be received wrongly and messed up.
 
  Recent curl versions can in fact url-encode POST data for you, like this:
@@ -293,10 +297,12 @@
  This method is mainly designed to better support file uploads. A form that
  allows a user to upload a file could be written like this in HTML:
 
-    <form method="POST" enctype='multipart/form-data' action="upload.cgi">
-      <input type=file name=upload>
-      <input type=submit name=press value="OK">
-    </form>
+```html
+<form method="POST" enctype='multipart/form-data' action="upload.cgi">
+  <input type=file name=upload>
+  <input type=submit name=press value="OK">
+</form>
+```
 
  This clearly shows that the Content-Type about to be sent is
  `multipart/form-data`.
@@ -315,11 +321,13 @@
  A similar example form with one visible field, one hidden field and one
  submit button could look like:
 
-    <form method="POST" action="foobar.cgi">
-      <input type=text name="birthyear">
-      <input type=hidden name="person" value="daniel">
-      <input type=submit name="press" value="OK">
-    </form>
+```html
+<form method="POST" action="foobar.cgi">
+  <input type=text name="birthyear">
+  <input type=hidden name="person" value="daniel">
+  <input type=submit name="press" value="OK">
+</form>
+```
 
  To POST this with curl, you won't have to think about if the fields are
  hidden or not. To curl they're all the same:
@@ -383,7 +391,7 @@
  may require its own user and password to allow the client to get through to
  the Internet. To specify those with curl, run something like:
 
-        curl --proxy-user proxyuser:proxypassword curl.se
+    curl --proxy-user proxyuser:proxypassword curl.se
 
  If your proxy requires the authentication to be done using the NTLM method,
  use [`--proxy-ntlm`](https://curl.se/docs/manpage.html#--proxy-ntlm), if

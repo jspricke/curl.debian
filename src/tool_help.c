@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -23,6 +23,9 @@
 #if defined(HAVE_STRCASECMP) && defined(HAVE_STRINGS_H)
 #include <strings.h>
 #endif
+#define ENABLE_CURLX_PRINTF
+/* use our own printf() functions */
+#include "curlx.h"
 
 #include "tool_panykey.h"
 #include "tool_help.h"
@@ -133,6 +136,9 @@ static const struct helptxt helptext[] = {
   {"-a, --append",
    "Append to target file when uploading",
    CURLHELP_FTP | CURLHELP_SFTP},
+  {"    --aws-sigv4 <provider1[:provider2[:region[:service]]]>",
+   "Use AWS V4 signature authentication",
+   CURLHELP_AUTH | CURLHELP_HTTP},
   {"    --basic",
    "Use HTTP Basic Authentication",
    CURLHELP_AUTH},
@@ -146,7 +152,7 @@ static const struct helptxt helptext[] = {
    "Client certificate file and password",
    CURLHELP_TLS},
   {"    --cert-status",
-   "Verify the status of the server certificate",
+   "Verify the status of the server cert via OCSP-staple",
    CURLHELP_TLS},
   {"    --cert-type <type>",
    "Certificate type (DER/PEM/ENG)",
@@ -163,7 +169,7 @@ static const struct helptxt helptext[] = {
   {"-K, --config <file>",
    "Read config from a file",
    CURLHELP_CURL},
-  {"    --connect-timeout <seconds>",
+  {"    --connect-timeout <fractional seconds>",
    "Maximum time allowed for connection",
    CURLHELP_CONNECTION},
   {"    --connect-to <HOST1:PORT1:HOST2:PORT2>",
@@ -181,11 +187,14 @@ static const struct helptxt helptext[] = {
   {"    --create-dirs",
    "Create necessary local directory hierarchy",
    CURLHELP_CURL},
+  {"    --create-file-mode <mode>",
+   "File mode (octal) for created files",
+   CURLHELP_SFTP | CURLHELP_SCP | CURLHELP_FILE | CURLHELP_UPLOAD},
   {"    --crlf",
    "Convert LF to CRLF in upload",
    CURLHELP_FTP | CURLHELP_SMTP},
   {"    --crlfile <file>",
-   "Get a CRL list in PEM format from the given file",
+   "Use this CRL list",
    CURLHELP_TLS},
   {"    --curves <algorithm list>",
    "(EC) TLS key exchange algorithm(s) to request",
@@ -235,8 +244,14 @@ static const struct helptxt helptext[] = {
   {"    --dns-servers <addresses>",
    "DNS server addrs to use",
    CURLHELP_DNS},
+  {"    --doh-cert-status",
+   "Verify the status of the DoH server cert via OCSP-staple",
+   CURLHELP_DNS | CURLHELP_TLS},
+  {"    --doh-insecure",
+   "Allow insecure DoH server connections",
+   CURLHELP_DNS | CURLHELP_TLS},
   {"    --doh-url <URL>",
-   "Resolve host names over DOH",
+   "Resolve host names over DoH",
    CURLHELP_DNS},
   {"-D, --dump-header <filename>",
    "Write the received headers to <filename>",
@@ -262,6 +277,9 @@ static const struct helptxt helptext[] = {
   {"    --fail-early",
    "Fail on first transfer error, do not continue",
    CURLHELP_CURL},
+  {"    --fail-with-body",
+   "Fail on HTTP errors but save the body",
+   CURLHELP_HTTP | CURLHELP_OUTPUT},
   {"    --false-start",
    "Enable TLS False Start",
    CURLHELP_TLS},
@@ -424,7 +442,7 @@ static const struct helptxt helptext[] = {
   {"    --max-redirs <num>",
    "Maximum number of redirects allowed",
    CURLHELP_HTTP},
-  {"-m, --max-time <seconds>",
+  {"-m, --max-time <fractional seconds>",
    "Maximum time allowed for the transfer",
    CURLHELP_CONNECTION},
   {"    --metalink",
@@ -487,7 +505,7 @@ static const struct helptxt helptext[] = {
   {"    --parallel-immediate",
    "Do not wait for multiplexing (with --parallel)",
    CURLHELP_CONNECTION | CURLHELP_CURL},
-  {"    --parallel-max",
+  {"    --parallel-max <num>",
    "Maximum concurrency for parallel transfers",
    CURLHELP_CONNECTION | CURLHELP_CURL},
   {"    --pass <phrase>",
@@ -583,6 +601,9 @@ static const struct helptxt helptext[] = {
   {"    --proxy-ssl-allow-beast",
    "Allow security flaw for interop for HTTPS proxy",
    CURLHELP_PROXY | CURLHELP_TLS},
+  {"    --proxy-ssl-auto-client-cert",
+   "Use auto client certificate for proxy (Schannel)",
+   CURLHELP_PROXY | CURLHELP_TLS},
   {"    --proxy-tls13-ciphers <ciphersuite list>",
    "TLS 1.3 proxy cipher suites",
    CURLHELP_PROXY | CURLHELP_TLS},
@@ -610,7 +631,7 @@ static const struct helptxt helptext[] = {
   {"    --pubkey <key>",
    "SSH Public key file name",
    CURLHELP_SFTP | CURLHELP_SCP | CURLHELP_AUTH},
-  {"-Q, --quote",
+  {"-Q, --quote <command>",
    "Send command(s) to server before transfer",
    CURLHELP_FTP | CURLHELP_SFTP},
   {"    --random-file <file>",
@@ -640,10 +661,10 @@ static const struct helptxt helptext[] = {
   {"-X, --request <command>",
    "Specify request command to use",
    CURLHELP_CONNECTION},
-  {"    --request-target",
+  {"    --request-target <path>",
    "Specify the target for this request",
    CURLHELP_HTTP},
-  {"    --resolve <host:port:addr[,addr]...>",
+  {"    --resolve <[+]host:port:addr[,addr]...>",
    "Resolve the host+port to this address",
    CURLHELP_CONNECTION},
   {"    --retry <num>",
@@ -712,6 +733,9 @@ static const struct helptxt helptext[] = {
   {"    --ssl-allow-beast",
    "Allow security flaw to improve interop",
    CURLHELP_TLS},
+  {"    --ssl-auto-client-cert",
+   "Use auto client certificate (Schannel)",
+   CURLHELP_TLS},
   {"    --ssl-no-revoke",
    "Disable cert revocation checks (Schannel)",
    CURLHELP_TLS},
@@ -727,7 +751,7 @@ static const struct helptxt helptext[] = {
   {"-3, --sslv3",
    "Use SSLv3",
    CURLHELP_TLS},
-  {"    --stderr",
+  {"    --stderr <file>",
    "Where to redirect stderr",
    CURLHELP_VERBOSE},
   {"    --styled-output",
@@ -763,7 +787,7 @@ static const struct helptxt helptext[] = {
   {"    --tlsauthtype <type>",
    "TLS authentication type",
    CURLHELP_TLS | CURLHELP_AUTH},
-  {"    --tlspassword",
+  {"    --tlspassword <string>",
    "TLS password",
    CURLHELP_TLS | CURLHELP_AUTH},
   {"    --tlsuser <name>",
@@ -829,10 +853,6 @@ static const struct helptxt helptext[] = {
   { NULL, NULL, CURLHELP_HIDDEN }
 };
 
-#ifdef NETWARE
-#  define PRINT_LINES_PAUSE 23
-#endif
-
 struct feat {
   const char *name;
   int bitmask;
@@ -866,6 +886,7 @@ static const struct feat feats[] = {
   {"PSL",            CURL_VERSION_PSL},
   {"alt-svc",        CURL_VERSION_ALTSVC},
   {"HSTS",           CURL_VERSION_HSTS},
+  {"gsasl",          CURL_VERSION_GSASL},
 };
 
 static void print_category(curlhelp_t category)
@@ -873,7 +894,7 @@ static void print_category(curlhelp_t category)
   unsigned int i;
   for(i = 0; helptext[i].opt; ++i)
     if(helptext[i].categories & category) {
-      printf(" %-19s %s\n", helptext[i].opt, helptext[i].desc);
+      printf(" %-18s  %s\n", helptext[i].opt, helptext[i].desc);
     }
 }
 
@@ -968,9 +989,6 @@ void tool_version_info(void)
       if(curlinfo->features & feats[i].bitmask)
         featp[numfeat++] = (char *)feats[i].name;
     }
-#ifdef USE_METALINK
-    featp[numfeat++] = (char *)"Metalink";
-#endif
     qsort(&featp[0], numfeat, sizeof(char *), featcomp);
     for(i = 0; i< numfeat; i++)
       printf(" %s", featp[i]);
