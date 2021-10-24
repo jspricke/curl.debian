@@ -34,7 +34,7 @@
  HackerOne](https://hackerone.com/curl).
 
  This ensures that the report reaches the curl security team so that they
- first can be deal with the report away from the public to minimize the harm
+ first can deal with the report away from the public to minimize the harm
  and impact it will have on existing users out there who might be using the
  vulnerable versions.
 
@@ -67,7 +67,7 @@
 
  If curl crashed, causing a core dump (in unix), there is hardly any use to
  send that huge file to anyone of us. Unless we have an exact same system
- setup as you, we can't do much with it. Instead we ask you to get a stack
+ setup as you, we can't do much with it. Instead, we ask you to get a stack
  trace and send that (much smaller) output to us instead!
 
  The address and how to subscribe to the mailing lists are detailed in the
@@ -168,7 +168,7 @@
  experiencing.
 
  Security wise, it is almost always a bad idea to lag behind the current curl
- versions by a lot. We keeping discovering and reporting security problems
+ versions by a lot. We keep discovering and reporting security problems
  over time see you can see in [this
  table](https://curl.se/docs/vulnerabilities.html)
 
@@ -221,8 +221,8 @@
  "nobody cares enough about it to work on it" category. Such bugs are
  perfectly valid problems that *should* get fixed but apparently aren't. We
  try to mark such bugs as `KNOWN_BUGS material` after a time of inactivity and
- if no activity is noticed after yet some time those bugs are added to
- `KNOWN_BUGS` and are closed in the issue tracker.
+ if no activity is noticed after yet some time those bugs are added to the
+ `KNOWN_BUGS` document and are closed in the issue tracker.
 
 ## `KNOWN_BUGS`
 
@@ -232,8 +232,8 @@
  considered these problems to be important enough to spend the necessary time
  and effort to have them fixed.
 
- The `KNOWN_BUGS` are always up for grabs and we will always love the ones who
- bring one of them back to live and offers solutions to them.
+ The `KNOWN_BUGS` items are always up for grabs and we love the ones who bring
+ one of them back to life and offer solutions to them.
 
  The `KNOWN_BUGS` document has a sibling document known as `TODO`.
 
@@ -242,7 +242,7 @@
  Issues that are filed or reported that aren't really bugs but more missing
  features or ideas for future improvements and so on are marked as
  'enhancement' or 'feature-request' and will be added to the `TODO` document
- instead and the issue is closed. We don't keep TODO items in the issue
+ and the issues are closed. We don't keep TODO items open in the issue
  tracker.
 
  The `TODO` document is full of ideas and suggestions of what we can add or
@@ -251,8 +251,8 @@
  implemented or provided in the project so that you can work on ticking it odd
  that document.
 
- If the issue is rather a bug and not a missing feature or functionality, it
- is listed in `KNOWN_BUGS` instead.
+ If an issue is rather a bug and not a missing feature or functionality, it is
+ listed in `KNOWN_BUGS` instead.
 
 ## Closing off stalled bugs
 
@@ -262,5 +262,5 @@
  abandoned or in other ways dormant will be closed and sometimes added to
  `TODO` and `KNOWN_BUGS` instead.
 
- This way, we only have "active" issues open on github. Irrelevant issues and
+ This way, we only have "active" issues open on GitHub. Irrelevant issues and
  pull requests will not distract developers or casual visitors.

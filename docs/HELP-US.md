@@ -5,7 +5,7 @@ looking for ways to contribute and help out, this document aims to give a few
 good starting points.
 
 A good idea is to start by subscribing to the [curl-library mailing
-list](https://cool.haxx.se/mailman/listinfo/curl-library) to keep track of the
+list](https://lists.haxx.se/listinfo/curl-library) to keep track of the
 current discussion topics.
 
 ## Scratch your own itch
@@ -26,7 +26,7 @@ with as an entry-point into the project, perhaps because you are a newcomer or
 even maybe not a terribly experienced developer, here's our advice:
 
  - Read through this document to get a grasp on a general approach to use
- - Consider adding a test case for something not currentled tested (correctly)
+ - Consider adding a test case for something not currently tested (correctly)
  - Consider updating or adding documentation
  - One way to get your feet wet gently in the project, is to participate in an
    existing issue/PR and help out by reproducing the issue, review the code in
