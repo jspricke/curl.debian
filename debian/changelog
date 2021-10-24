@@ -1,3 +1,22 @@
+curl (7.79.1-1) UNRELEASED; urgency=medium
+
+  [ Samuel Henrique ]
+  * Add myself as an Uploader
+  * Add sergiodj as an uploader
+  * New upstream version 7.79.1
+
+  [ Debian Janitor ]
+  * Use secure URI in Homepage field.
+  * Set debhelper-compat version in Build-Depends.
+  * Set upstream metadata fields: Bug-Database, Bug-Submit (from ./configure), Repository, Repository-Browse.
+  * Avoid explicitly specifying -Wl,--as-needed linker flag.
+
+  [ Helmut Grohne ]
+  * Also remove -ffile-prefix-map from curl-config (closes: #990128)
+  * Explicitly disable zstd support (closes: #992505)
+
+ -- Samuel Henrique <samueloph@debian.org>  Sun, 24 Oct 2021 15:22:58 +0100
+
 curl (7.74.0-1.3) unstable; urgency=medium
 
   * Non-maintainer upload.
