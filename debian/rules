@@ -109,6 +109,12 @@ override_dh_install:
 	    -e "/-fdebug-prefix-map=/s|\(-fdebug-prefix-map=\)/[^ ]*=.||" \
 	    -e "/-ffile-prefix-map=/s|\(-ffile-prefix-map=\)/[^ ]*=.||" \
 	    -i `find . -name curl-config`
+# When we get here, everything has been properly installed.  Because
+# of debhelper-compat 13, we have to remove some files that are
+# otherwise flagged as not installed and will cause the build to fail.
+	rm -rfv debian/tmp/usr/share/man/* \
+		debian/tmp/usr/share/fish/* \
+		debian/tmp/usr/share/aclocal/*
 
 override_dh_installchangelogs:
 	dh_installchangelogs CHANGES
