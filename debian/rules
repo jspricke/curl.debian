@@ -1,12 +1,7 @@
 #! /usr/bin/make -f
 
-# this will avoid unneded dependencies
-
-# this will catch miss-linking. (e.g. undefined symbols)
-#export DEB_LDFLAGS_MAINT_APPEND = -Wl,-z,defs
-
 # enable all hardening options (see #763372)
-export DEB_BUILD_MAINT_OPTIONS := hardening=+all
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
