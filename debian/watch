@@ -1,2 +1,3 @@
 version=4
-https://curl.haxx.se/download/ download/curl-([\d\.]+).tar.gz
+opts=pgpmode=auto \
+  https://curl.haxx.se/download/ download/curl-([\d\.]+).tar.gz
