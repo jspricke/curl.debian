@@ -4,6 +4,7 @@
 11_omit-directories-from-config.patch
 12_use-python3-in-tests.patch
 13_fix-man-formatting.patch
+14_fix-compatibility-impacket-0-9-23.patch
 
 # do not add patches below
 90_gnutls.patch

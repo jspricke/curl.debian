@@ -1,0 +1,44 @@
+From: Marc Hoersken <info@marc-hoersken.de>
+Date: Mon, 1 Nov 2021 12:06:07 +0100
+Subject: tests/smbserver.py: fix compatibility with impacket 0.9.23+
+
+impacket now performs sanity checks if the requested and to
+be served file path actually is inside the real share path.
+
+Ref: https://github.com/SecureAuthCorp/impacket/pull/1066
+
+Fixes #7924
+Closes #7935
+
+
+Origin: upstream, https://github.com/curl/curl/commit/d52316e460136634e83fa847de45d6f16df44cfe
+Reviewed-By: Sergio Durigan Junior <sergiodj@debian.org>
+---
+ tests/smbserver.py | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/tests/smbserver.py b/tests/smbserver.py
+index c04b1be..00a2b6d 100755
+--- a/tests/smbserver.py
++++ b/tests/smbserver.py
+@@ -21,8 +21,8 @@
+ #
+ """Server for testing SMB"""
+ 
+-from __future__ import absolute_import, division, print_function
+-# NOTE: the impacket configuration is not unicode_literals compatible!
++from __future__ import (absolute_import, division, print_function,
++                        unicode_literals)
+ 
+ import argparse
+ import logging
+@@ -201,7 +201,8 @@ class TestSmbServer(imp_smbserver.SMBSERVER):
+ 
+             # Get this file's information
+             resp_info, error_code = imp_smbserver.queryPathInformation(
+-                "", full_path, level=imp_smb.SMB_QUERY_FILE_ALL_INFO)
++                os.path.dirname(full_path), os.path.basename(full_path),
++                level=imp_smb.SMB_QUERY_FILE_ALL_INFO)
+ 
+             if error_code != STATUS_SUCCESS:
+                 raise SmbException(error_code, "Failed to query path info")
