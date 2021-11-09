@@ -1,3 +1,13 @@
+curl (7.79.1-2) unstable; urgency=medium
+
+  * d/rules: Make test failures non-fatal again.
+    Unfortunately there are some test failures happening on a few
+    architectures, so we have to make the build pass even if not all tests
+    are succeeding, at least until we have time to properly investigate
+    the reason for these failures.
+
+ -- Sergio Durigan Junior <sergiodj@debian.org>  Mon, 08 Nov 2021 23:54:35 -0500
+
 curl (7.79.1-1) unstable; urgency=medium
 
   [ Samuel Henrique ]
