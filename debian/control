@@ -24,6 +24,7 @@ Build-Depends:
  libssh2-1-dev,
  libssl-dev (>= 1.1),
  libtool,
+ libzstd-dev,
  openssh-server <!nocheck>,
  python3:native <!nocheck>,
  python3-impacket <!nocheck>,
