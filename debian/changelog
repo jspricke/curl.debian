@@ -1,13 +1,18 @@
-curl (7.80.0-1) UNRELEASED; urgency=medium
+curl (7.80.0-1) unstable; urgency=medium
 
   [ Samuel Henrique ]
-  * Compile with zstd support (closes: #983660)
   * New upstream version 7.80.0
+  * Bump Standards-Version to 4.6.0
+  * Add new symbol curl_url_strerror to symbols files
+  * Compile with zstd support (closes: #983660)
+  * d/p/12_use-python3-in-tests.patch: Drop patch, merged upstream
+  * d/p/13_fix-man-formatting.patch: Update patch
+  * d/p/14_fix-compatibility-impacket-0-9-23.patch: Drop patch, merged upstream
 
   [ Jeremy Bicha ]
   * debian/control: Add Build-Depends on libssh-dev for Ubuntu
 
- -- Samuel Henrique <samueloph@debian.org>  Fri, 24 Dec 2021 10:03:09 -0300
+ -- Samuel Henrique <samueloph@debian.org>  Fri, 24 Dec 2021 11:42:57 -0300
 
 curl (7.79.1-2) unstable; urgency=medium
 
