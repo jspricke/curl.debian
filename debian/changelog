@@ -1,3 +1,14 @@
+curl (7.80.0-1) UNRELEASED; urgency=medium
+
+  [ Samuel Henrique ]
+  * Compile with zstd support (closes: #983660)
+  * New upstream version 7.80.0
+
+  [ Jeremy Bicha ]
+  * debian/control: Add Build-Depends on libssh-dev for Ubuntu
+
+ -- Samuel Henrique <samueloph@debian.org>  Fri, 24 Dec 2021 10:03:09 -0300
+
 curl (7.79.1-2) unstable; urgency=medium
 
   * d/rules: Make test failures non-fatal again.
