@@ -86,5 +86,6 @@ libcurl.so.4 libcurl4 #MINVER#
  curl_url_dup@CURL_OPENSSL_4 7.63.0
  curl_url_get@CURL_OPENSSL_4 7.63.0
  curl_url_set@CURL_OPENSSL_4 7.63.0
+ curl_url_strerror@CURL_OPENSSL_4 7.80.0
  curl_version@CURL_OPENSSL_4 7.16.2
  curl_version_info@CURL_OPENSSL_4 7.16.2
