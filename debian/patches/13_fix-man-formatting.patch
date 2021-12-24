@@ -43,10 +43,10 @@ Index: curl/docs/libcurl/curl_getdate.3
  year, MM as the month number and DD as the day of the month, for the specified
  calendar date.
 -.PP
- .SH EXAMPLES
+ .SH EXAMPLE
  .nf
- Sun, 06 Nov 1994 08:49:37 GMT
-@@ -107,5 +106,5 @@ On systems with 64 bit time_t: if the ye
+  time_t t;
+@@ -110,5 +109,5 @@ On systems with 64 bit time_t: if the ye
  will return -1. (The Gregorian calendar was first introduced 1582 so no "real"
  dates in this way of doing dates existed before then.)
  .SH "SEE ALSO"
@@ -58,7 +58,7 @@ Index: curl/docs/libcurl/curl_global_init_mem.3
 ===================================================================
 --- curl.orig/docs/libcurl/curl_global_init_mem.3
 +++ curl/docs/libcurl/curl_global_init_mem.3
-@@ -54,14 +54,15 @@ To replace realloc()
+@@ -54,9 +54,10 @@ To replace realloc()
  To replace strdup()
  .IP "void *calloc_callback(size_t nmemb, size_t size);"
  To replace calloc()
@@ -67,11 +67,12 @@ Index: curl/docs/libcurl/curl_global_init_mem.3
  This function is otherwise the same as \fIcurl_global_init(3)\fP, please refer
  to that man page for documentation.
 +.RE
- .SH "CAUTION"
+ .SH CAUTION
  Manipulating these gives considerable powers to the application to severely
  screw things up for libcurl. Take care!
- .SH AVAILABILITY
- Added in 7.12.0
+@@ -72,5 +73,5 @@ Added in 7.12.0
+ CURLE_OK (0) means everything was ok, non-zero means an error occurred as
+ \fI<curl/curl.h>\fP defines - see \fIlibcurl-errors(3)\fP.
  .SH "SEE ALSO"
 -.BR curl_global_init "(3), "
 -.BR curl_global_cleanup "(3), "
@@ -81,7 +82,7 @@ Index: curl/docs/libcurl/curl_unescape.3
 ===================================================================
 --- curl.orig/docs/libcurl/curl_unescape.3
 +++ curl/docs/libcurl/curl_unescape.3
-@@ -46,4 +46,4 @@ be removed in a future release.
+@@ -60,4 +60,4 @@ be removed in a future release.
  .SH RETURN VALUE
  A pointer to a null-terminated string or NULL if it failed.
  .SH "SEE ALSO"
@@ -99,7 +100,7 @@ Index: curl/docs/libcurl/curl_url_cleanup.3
 +.
  .SH DESCRIPTION
  Frees all the resources associated with the given CURLU handle!
- .SH RETURN VALUE
+ .SH EXAMPLE
 Index: curl/docs/libcurl/curl_url_dup.3
 ===================================================================
 --- curl.orig/docs/libcurl/curl_url_dup.3
