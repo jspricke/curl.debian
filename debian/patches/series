@@ -3,7 +3,6 @@
 08_enable-zsh.patch
 11_omit-directories-from-config.patch
 13_fix-man-formatting.patch
-14_fix-compatibility-impacket-0-9-23.patch
 
 # do not add patches below
 90_gnutls.patch
