@@ -1,3 +1,18 @@
+curl (7.80.0-2) unstable; urgency=medium
+
+  * Revert "debian/control: Add Build-Depends on libssh-dev for Ubuntu"
+    (closes: #1002597)
+    The change had side effects on Debian due to the inclusion of the new
+    Build-dep, even though it doesn't changes the resulting binary. It cause
+    issues for architecture bootstraping.
+
+    We are gonna reintroduce this change once the issues are fixed, to allow
+    Ubuntu to remove its delta.
+
+    See discussions at #1002598 and #1002597 for details
+
+ -- Samuel Henrique <samueloph@debian.org>  Sat, 25 Dec 2021 10:47:13 -0300
+
 curl (7.80.0-1) unstable; urgency=medium
 
   [ Samuel Henrique ]
