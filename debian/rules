@@ -9,15 +9,13 @@ DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 CONFIGURE_ARGS = -- --disable-dependency-tracking		\
 	--disable-symbol-hiding --enable-versioned-symbols	\
 	--enable-threaded-resolver --with-lber-lib=lber		\
-	--with-gssapi=/usr --with-nghttp2	\
+	--with-gssapi=/usr --with-libssh2 --with-nghttp2	\
 	--includedir=/usr/include/$(DEB_HOST_MULTIARCH)		\
 	--with-zsh-functions-dir=/usr/share/zsh/vendor-completions
 
 # disable libssh2 on Ubuntu (see #888449)
 ifeq ($(shell dpkg-vendor --derives-from Ubuntu && echo yes),yes)
-	CONFIGURE_ARGS += --with-libssh --without-libssh2
-else
-	CONFIGURE_ARGS += --without-libssh --with-libssh2
+	CONFIGURE_ARGS += --without-libssh2 --with-libssh
 endif
 
 %:
