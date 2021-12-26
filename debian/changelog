@@ -1,3 +1,17 @@
+curl (7.80.0-3) unstable; urgency=medium
+
+  * Revert "Revert "debian/control: Add Build-Depends on libssh-dev for
+    Ubuntu".
+
+    As per #1002598, the blocker has been solved.
+
+    Note that this does not changes Debian's curl to libssh, it still
+    uses libssh2.
+
+    Discussions about changing to libssh are ongoing at #897950
+
+ -- Samuel Henrique <samueloph@debian.org>  Sun, 26 Dec 2021 13:22:18 -0300
+
 curl (7.80.0-2) unstable; urgency=medium
 
   * Revert "debian/control: Add Build-Depends on libssh-dev for Ubuntu"
