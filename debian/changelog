@@ -1,8 +1,9 @@
-curl (7.81.0-1) UNRELEASED; urgency=medium
+curl (7.81.0-1) unstable; urgency=medium
 
   * New upstream version 7.81.0
+  * d/p/13_fix-man-formatting.patch: Refresh patch
 
- -- Samuel Henrique <samueloph@debian.org>  Wed, 05 Jan 2022 08:34:33 -0300
+ -- Samuel Henrique <samueloph@debian.org>  Wed, 05 Jan 2022 09:31:32 -0300
 
 curl (7.80.0-3) unstable; urgency=medium
 
