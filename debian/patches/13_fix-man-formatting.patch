@@ -38,7 +38,7 @@ Index: curl/docs/libcurl/curl_getdate.3
 ===================================================================
 --- curl.orig/docs/libcurl/curl_getdate.3
 +++ curl/docs/libcurl/curl_getdate.3
-@@ -62,7 +62,6 @@ first three letters. This is usually not
+@@ -63,7 +63,6 @@ first three letters. This is usually not
  If a decimal number of the form YYYYMMDD appears, then YYYY is read as the
  year, MM as the month number and DD as the day of the month, for the specified
  calendar date.
@@ -46,7 +46,7 @@ Index: curl/docs/libcurl/curl_getdate.3
  .SH EXAMPLE
  .nf
   time_t t;
-@@ -110,5 +109,5 @@ On systems with 64 bit time_t: if the ye
+@@ -111,5 +110,5 @@ On systems with 64 bit time_t: if the ye
  will return -1. (The Gregorian calendar was first introduced 1582 so no "real"
  dates in this way of doing dates existed before then.)
  .SH "SEE ALSO"
@@ -58,7 +58,7 @@ Index: curl/docs/libcurl/curl_global_init_mem.3
 ===================================================================
 --- curl.orig/docs/libcurl/curl_global_init_mem.3
 +++ curl/docs/libcurl/curl_global_init_mem.3
-@@ -54,9 +54,10 @@ To replace realloc()
+@@ -56,9 +56,10 @@ To replace realloc()
  To replace strdup()
  .IP "void *calloc_callback(size_t nmemb, size_t size);"
  To replace calloc()
@@ -70,7 +70,7 @@ Index: curl/docs/libcurl/curl_global_init_mem.3
  .SH CAUTION
  Manipulating these gives considerable powers to the application to severely
  screw things up for libcurl. Take care!
-@@ -72,5 +73,5 @@ Added in 7.12.0
+@@ -74,5 +75,5 @@ Added in 7.12.0
  CURLE_OK (0) means everything was ok, non-zero means an error occurred as
  \fI<curl/curl.h>\fP defines - see \fIlibcurl-errors(3)\fP.
  .SH "SEE ALSO"
@@ -82,7 +82,7 @@ Index: curl/docs/libcurl/curl_unescape.3
 ===================================================================
 --- curl.orig/docs/libcurl/curl_unescape.3
 +++ curl/docs/libcurl/curl_unescape.3
-@@ -60,4 +60,4 @@ be removed in a future release.
+@@ -61,4 +61,4 @@ be removed in a future release.
  .SH RETURN VALUE
  A pointer to a null-terminated string or NULL if it failed.
  .SH "SEE ALSO"
@@ -92,8 +92,8 @@ Index: curl/docs/libcurl/curl_url_cleanup.3
 ===================================================================
 --- curl.orig/docs/libcurl/curl_url_cleanup.3
 +++ curl/docs/libcurl/curl_url_cleanup.3
-@@ -27,7 +27,7 @@ curl_url_cleanup - free a CURLU handle
- .B #include <curl/curl.h>
+@@ -28,7 +28,7 @@ curl_url_cleanup - free a CURLU handle
+ #include <curl/curl.h>
  
  void curl_url_cleanup(CURLU *handle);
 -.fi
@@ -105,8 +105,8 @@ Index: curl/docs/libcurl/curl_url_dup.3
 ===================================================================
 --- curl.orig/docs/libcurl/curl_url_dup.3
 +++ curl/docs/libcurl/curl_url_dup.3
-@@ -27,7 +27,7 @@ curl_url_dup - duplicate a CURLU handle
- .B #include <curl/curl.h>
+@@ -28,7 +28,7 @@ curl_url_dup - duplicate a CURLU handle
+ #include <curl/curl.h>
  
  CURLU *curl_url_dup(CURLU *inhandle);
 -.fi
@@ -118,7 +118,7 @@ Index: curl/docs/libcurl/curl_url_set.3
 ===================================================================
 --- curl.orig/docs/libcurl/curl_url_set.3
 +++ curl/docs/libcurl/curl_url_set.3
-@@ -30,7 +30,6 @@ CURLUcode curl_url_set(CURLU *url,
+@@ -31,7 +31,6 @@ CURLUcode curl_url_set(CURLU *url,
                         CURLUPart part,
                         const char *content,
                         unsigned int flags)
