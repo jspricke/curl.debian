@@ -1,3 +1,9 @@
+curl (7.81.0-1) UNRELEASED; urgency=medium
+
+  * New upstream version 7.81.0
+
+ -- Samuel Henrique <samueloph@debian.org>  Wed, 05 Jan 2022 08:34:33 -0300
+
 curl (7.80.0-3) unstable; urgency=medium
 
   * Revert "Revert "debian/control: Add Build-Depends on libssh-dev for
