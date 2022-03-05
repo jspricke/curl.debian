@@ -1,3 +1,11 @@
+curl (7.82.0-1) UNRELEASED; urgency=medium
+
+  * New upstream version 7.82.0
+  * d/salsa-ci.yml: Add CI definition customized to skip tests (nocheck), to
+    avoid long build times
+
+ -- Samuel Henrique <samueloph@debian.org>  Sat, 05 Mar 2022 12:22:12 +0000
+
 curl (7.81.0-1) unstable; urgency=medium
 
   * New upstream version 7.81.0
