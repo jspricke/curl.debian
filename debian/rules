@@ -52,8 +52,8 @@ override_dh_auto_configure:
 	cd debian/build-gnutls &&  dh_auto_configure ${CONFIGURE_ARGS} --with-gnutls	\
 		--with-ca-path=/etc/ssl/certs				\
 		--without-ssl --with-gnutls
-	cd debian/build-nss && dh_auto_configure ${CONFIGURE_ARGS} --with-nss	\
-		--without-ssl --with-nss
+	cd debian/build-nss && dh_auto_configure ${CONFIGURE_ARGS} \
+		--without-ssl --with-nss --with-nss-deprecated
 
 override_dh_auto_build:
 	cd debian/build && dh_auto_build
