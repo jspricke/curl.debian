@@ -25,16 +25,16 @@ Index: curl/lib/Makefile.am
 ===================================================================
 --- curl.orig/lib/Makefile.am
 +++ curl/lib/Makefile.am
-@@ -32,7 +32,7 @@ EXTRA_DIST = Makefile.m32 config-win32.h
-  firefox-db2pem.sh config-vxworks.h Makefile.vxworks checksrc.pl    \
-  setup-win32.h .checksrc
+@@ -29,7 +29,7 @@ EXTRA_DIST = Makefile.m32 config-win32.h
+  config-os400.h setup-os400.h mk-ca-bundle.pl mk-ca-bundle.vbs \
+  $(CMAKE_DIST) firefox-db2pem.sh checksrc.pl setup-win32.h .checksrc
  
 -lib_LTLIBRARIES = libcurl.la
 +lib_LTLIBRARIES = libcurl-gnutls.la
  
  if BUILD_UNITTESTS
  noinst_LTLIBRARIES = libcurlu.la
-@@ -84,43 +84,43 @@ AM_CPPFLAGS += -DBUILDING_LIBCURL
+@@ -74,43 +74,43 @@ AM_CPPFLAGS += -DBUILDING_LIBCURL
  AM_LDFLAGS =
  AM_CFLAGS =
  
@@ -92,7 +92,7 @@ Index: curl/lib/Makefile.am
  
  libcurlu_la_CPPFLAGS = $(AM_CPPFLAGS) -DCURL_STATICLIB -DUNITTESTS
  libcurlu_la_LDFLAGS = $(AM_LDFLAGS) -static $(LIBCURL_LIBS)
-@@ -129,7 +129,7 @@ libcurlu_la_CFLAGS = $(AM_CFLAGS)
+@@ -119,7 +119,7 @@ libcurlu_la_CFLAGS = $(AM_CFLAGS)
  # Makefile.inc provides the CSOURCES and HHEADERS defines
  include Makefile.inc
  
@@ -121,7 +121,7 @@ Index: curl/tests/libtest/Makefile.am
 ===================================================================
 --- curl.orig/tests/libtest/Makefile.am
 +++ curl/tests/libtest/Makefile.am
-@@ -57,11 +57,11 @@ CLEANFILES = lib1521.c
+@@ -47,11 +47,11 @@ CLEANFILES = lib1521.c
  LIBS = $(BLANK_AT_MAKETIME)
  
  if USE_EXPLICIT_LIB_DEPS

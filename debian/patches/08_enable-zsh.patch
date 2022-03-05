@@ -5,9 +5,11 @@ Author: Alessandro Ghedini <ghedo@debian.org>
 Reviewed-by: Alessandro Ghedini <ghedo@debian.org>
 Last-Update: 2016-08-03
 
---- a/Makefile.am
-+++ b/Makefile.am
-@@ -194,8 +194,8 @@
+Index: curl/Makefile.am
+===================================================================
+--- curl.orig/Makefile.am
++++ curl/Makefile.am
+@@ -155,8 +155,8 @@ CLEANFILES = $(VC10_LIBVCXPROJ) $(VC10_S
  
  bin_SCRIPTS = curl-config
  
