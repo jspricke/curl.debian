@@ -1,10 +1,17 @@
-curl (7.82.0-1) UNRELEASED; urgency=medium
+curl (7.82.0-1) unstable; urgency=medium
 
   * New upstream version 7.82.0
   * d/salsa-ci.yml: Add CI definition customized to skip tests (nocheck), to
     avoid long build times
+  * Update and refresh patches: 13_fix-man-formatting.patch has been merged
+    upstream
+  * d/rules:
+    - Add --with-nss-deprecated, required to build with nss now
+      (upstream will drop support in August)
+    - Look for nocheck build profile in DEB_BUILD_PROFILES instead of
+      DEB_BUILD_OPTIONS (wider coverage)
 
- -- Samuel Henrique <samueloph@debian.org>  Sat, 05 Mar 2022 12:22:12 +0000
+ -- Samuel Henrique <samueloph@debian.org>  Sat, 05 Mar 2022 13:40:14 +0000
 
 curl (7.81.0-1) unstable; urgency=medium
 
