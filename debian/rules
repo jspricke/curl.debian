@@ -61,7 +61,7 @@ override_dh_auto_build:
 	cd debian/build-nss && dh_auto_build
 
 override_dh_auto_test:
-ifeq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
+ifeq ($(filter nocheck,$(DEB_BUILD_PROFILES)),)
 	-cd debian/build && dh_auto_test
 	-cd debian/build-gnutls && dh_auto_test
 	-cd debian/build-nss && dh_auto_test
