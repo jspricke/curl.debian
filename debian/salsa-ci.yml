@@ -4,3 +4,4 @@ include:
 
 variables:
   SALSA_CI_DPKG_BUILDPACKAGE_ARGS: --build-profiles=nocheck
+  SALSA_CI_DISABLE_REPROTEST: 1
