@@ -242,6 +242,7 @@ Description: development files and documentation for libcurl (NSS flavour)
 Package: libcurl4-doc
 Section: doc
 Architecture: all
+Multi-Arch: foreign
 Depends: ${misc:Depends}
 Replaces: libcurl4-openssl-dev (<< 7.30.0-2),
  libcurl4-gnutls-dev (<< 7.30.0-2),
