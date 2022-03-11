@@ -244,12 +244,6 @@ Section: doc
 Architecture: all
 Multi-Arch: foreign
 Depends: ${misc:Depends}
-Replaces: libcurl4-openssl-dev (<< 7.30.0-2),
- libcurl4-gnutls-dev (<< 7.30.0-2),
- libcurl4-nss-dev (<< 7.30.0-2)
-Breaks: libcurl4-openssl-dev (<< 7.30.0-2),
- libcurl4-gnutls-dev (<< 7.30.0-2),
- libcurl4-nss-dev (<< 7.30.0-2)
 Description: documentation for libcurl
  libcurl is an easy-to-use client-side URL transfer library, supporting DICT,
  FILE, FTP, FTPS, GOPHER, HTTP, HTTPS, IMAP, IMAPS, LDAP, LDAPS, POP3, POP3S,
