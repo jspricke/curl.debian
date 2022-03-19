@@ -1,3 +1,15 @@
+curl (7.82.0-2) unstable; urgency=medium
+
+  * d/p/12_fix_openssl_cm_check.patch: New upstream patch to fix openssl CN
+    check (closes: #1007739, #1007740)
+  * d/control:
+    - Set libcurl4-doc as Multi-Arch: foreign
+    - Remove ancient version requirements for dependencies
+  * d/salsa-ci.yml: Disable reprotest until it acknowledges
+    SALSA_CI_DPKG_BUILDPACKAGE_ARGS
+
+ -- Samuel Henrique <samueloph@debian.org>  Sat, 19 Mar 2022 13:55:00 +0000
+
 curl (7.82.0-1) unstable; urgency=medium
 
   * New upstream version 7.82.0
