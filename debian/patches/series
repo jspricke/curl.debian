@@ -2,6 +2,7 @@
 06_always-disable-valgrind.patch
 08_enable-zsh.patch
 11_omit-directories-from-config.patch
+12_fix_openssl_cm_check.patch
 
 # do not add patches below
 90_gnutls.patch
