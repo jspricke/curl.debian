@@ -1,8 +1,29 @@
-curl (7.81.0-1~bpo11+1) bullseye-backports; urgency=medium
+curl (7.82.0-2) unstable; urgency=medium
 
-  * Rebuild for bullseye-backports.
+  * d/p/12_fix_openssl_cm_check.patch: New upstream patch to fix openssl CN
+    check (closes: #1007739, #1007740)
+  * d/control:
+    - Set libcurl4-doc as Multi-Arch: foreign
+    - Remove ancient version requirements for dependencies
+  * d/salsa-ci.yml: Disable reprotest until it acknowledges
+    SALSA_CI_DPKG_BUILDPACKAGE_ARGS
 
- -- Samuel Henrique <samueloph@debian.org>  Mon, 10 Jan 2022 17:49:03 -0300
+ -- Samuel Henrique <samueloph@debian.org>  Sat, 19 Mar 2022 13:55:00 +0000
+
+curl (7.82.0-1) unstable; urgency=medium
+
+  * New upstream version 7.82.0
+  * d/salsa-ci.yml: Add CI definition customized to skip tests (nocheck), to
+    avoid long build times
+  * Update and refresh patches: 13_fix-man-formatting.patch has been merged
+    upstream
+  * d/rules:
+    - Add --with-nss-deprecated, required to build with nss now
+      (upstream will drop support in August)
+    - Look for nocheck build profile in DEB_BUILD_PROFILES instead of
+      DEB_BUILD_OPTIONS (wider coverage)
+
+ -- Samuel Henrique <samueloph@debian.org>  Sat, 05 Mar 2022 13:40:14 +0000
 
 curl (7.81.0-1) unstable; urgency=medium
 
