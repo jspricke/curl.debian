@@ -25,16 +25,16 @@ Index: curl/lib/Makefile.am
 ===================================================================
 --- curl.orig/lib/Makefile.am
 +++ curl/lib/Makefile.am
-@@ -29,7 +29,7 @@ EXTRA_DIST = Makefile.m32 config-win32.h
-  config-os400.h setup-os400.h mk-ca-bundle.pl mk-ca-bundle.vbs \
-  $(CMAKE_DIST) firefox-db2pem.sh checksrc.pl setup-win32.h .checksrc
+@@ -28,7 +28,7 @@ EXTRA_DIST = Makefile.m32 config-win32.h
+  libcurl.plist libcurl.rc config-amigaos.h makefile.amiga config-win32ce.h \
+  config-os400.h setup-os400.h $(CMAKE_DIST) setup-win32.h .checksrc
  
 -lib_LTLIBRARIES = libcurl.la
 +lib_LTLIBRARIES = libcurl-gnutls.la
  
  if BUILD_UNITTESTS
  noinst_LTLIBRARIES = libcurlu.la
-@@ -74,43 +74,43 @@ AM_CPPFLAGS += -DBUILDING_LIBCURL
+@@ -73,43 +73,43 @@ AM_CPPFLAGS += -DBUILDING_LIBCURL
  AM_LDFLAGS =
  AM_CFLAGS =
  
@@ -92,7 +92,7 @@ Index: curl/lib/Makefile.am
  
  libcurlu_la_CPPFLAGS = $(AM_CPPFLAGS) -DCURL_STATICLIB -DUNITTESTS
  libcurlu_la_LDFLAGS = $(AM_LDFLAGS) -static $(LIBCURL_LIBS)
-@@ -119,7 +119,7 @@ libcurlu_la_CFLAGS = $(AM_CFLAGS)
+@@ -118,7 +118,7 @@ libcurlu_la_CFLAGS = $(AM_CFLAGS)
  # Makefile.inc provides the CSOURCES and HHEADERS defines
  include Makefile.inc
  
