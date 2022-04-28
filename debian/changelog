@@ -1,8 +1,18 @@
-curl (7.83.0-1) UNRELEASED; urgency=medium
+curl (7.83.0-1) unstable; urgency=medium
 
   * New upstream version 7.83.0
+    - Fix auth/cookie leak on redirect (closes: #1010252, CVE-2022-27776)
+    - Fix bad local IPv6 connection reuse (closes: #1010253, CVE-2022-27775)
+    - Fix credential leak on redirect (closes: #1010254, CVE-2022-27774)
+    - Fix OAUTH2 bearer bypass in connection re-use
+      (closes: #1010295, CVE-2022-22576)
+  * d/libcurl*.symbols: update symbols files to add curl_easy_header and
+    curl_easy_nextheader
+  * d/patches:
+    - Refresh patches
+    - 12_fix_openssl_cm_check.patch: remove patch, applied upstream
 
- -- Samuel Henrique <samueloph@debian.org>  Wed, 27 Apr 2022 20:56:38 +0100
+ -- Samuel Henrique <samueloph@debian.org>  Thu, 28 Apr 2022 18:53:32 +0100
 
 curl (7.82.0-2) unstable; urgency=medium
 
