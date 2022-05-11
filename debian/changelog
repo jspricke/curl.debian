@@ -1,3 +1,16 @@
+curl (7.83.1-1) unstable; urgency=medium
+
+  * New upstream version 7.83.1
+    - Fix the following CVEs:
+      ~ HSTS bypass via trailing dot (CVE-2022-30115)
+      ~ TLS and SSH connection too eager reuse (CVE-2022-27782)
+      ~ CERTINFO never-ending busy-loop (CVE-2022-27781)
+      ~ percent-encoded path separator in URL host (CVE-2022-27780)
+      ~ cookie for trailing dot TLD (CVE-2022-27779)
+      ~ curl removes wrong file on error (CVE-2022-27778)
+
+ -- Samuel Henrique <samueloph@debian.org>  Wed, 11 May 2022 17:46:48 +0100
+
 curl (7.83.0-1) unstable; urgency=medium
 
   * New upstream version 7.83.0
