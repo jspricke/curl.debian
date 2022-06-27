@@ -8,7 +8,7 @@ Index: curl/tests/Makefile.am
 ===================================================================
 --- curl.orig/tests/Makefile.am
 +++ curl/tests/Makefile.am
-@@ -62,7 +62,7 @@ curl:
+@@ -64,7 +64,7 @@ curl:
  if CROSSCOMPILING
  TEST = @echo "NOTICE: we can't run the tests when cross-compiling!"
  else # if not cross-compiling:
