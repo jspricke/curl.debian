@@ -1,6 +1,19 @@
+curl (7.84.0-2) unstable; urgency=medium
+
+  * d/p/20_ftbfs_import_sched.patch: New upstream patch to fix FTBFS
+    (closes: #1014596)
+
+ -- Samuel Henrique <samueloph@debian.org>  Mon, 11 Jul 2022 22:50:01 +0100
+
 curl (7.84.0-1) unstable; urgency=medium
 
   * New upstream version 7.84.0
+    - Fix the following CVEs:
+      ~ Improper Enforcement of Message Integrity During Transmission in a
+        Communication Channel (CVE-2022-32208)
+      ~ Improper Preservation of Permissions (CVE-2022-32207)
+      ~ Allocation of Resources Without Limits or Throttling (CVE-2022-32205,
+        CVE-2022-32206)
 
  -- Samuel Henrique <samueloph@debian.org>  Mon, 27 Jun 2022 22:06:25 +0100
 
