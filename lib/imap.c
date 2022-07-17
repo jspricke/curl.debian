@@ -18,6 +18,8 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * SPDX-License-Identifier: curl
+ *
  * RFC2195 CRAM-MD5 authentication
  * RFC2595 Using TLS with IMAP, POP3 and ACAP
  * RFC2831 DIGEST-MD5 authentication
@@ -624,7 +626,7 @@ static CURLcode imap_perform_authentication(struct Curl_easy *data,
       result = imap_perform_login(data, conn);
     else {
       /* Other mechanisms not supported */
-      infof(data, "No known authentication mechanisms supported!");
+      infof(data, "No known authentication mechanisms supported");
       result = CURLE_LOGIN_DENIED;
     }
   }
@@ -874,7 +876,7 @@ static CURLcode imap_state_servergreet_resp(struct Curl_easy *data,
     /* PREAUTH */
     struct imap_conn *imapc = &conn->proto.imapc;
     imapc->preauth = TRUE;
-    infof(data, "PREAUTH connection, already authenticated!");
+    infof(data, "PREAUTH connection, already authenticated");
   }
   else if(imapcode != IMAP_RESP_OK) {
     failf(data, "Got unexpected imap-server response");

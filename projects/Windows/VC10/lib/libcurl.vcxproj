@@ -2370,6 +2370,7 @@
     <ClCompile Include="..\..\..\..\lib\escape.c" />
     <ClCompile Include="..\..\..\..\lib\file.c" />
     <ClCompile Include="..\..\..\..\lib\fileinfo.c" />
+    <ClCompile Include="..\..\..\..\lib\fopen.c" />
     <ClCompile Include="..\..\..\..\lib\formdata.c" />
     <ClCompile Include="..\..\..\..\lib\ftp.c" />
     <ClCompile Include="..\..\..\..\lib\ftplistparser.c" />
@@ -2378,6 +2379,7 @@
     <ClCompile Include="..\..\..\..\lib\gopher.c" />
     <ClCompile Include="..\..\..\..\lib\h2h3.c" />
     <ClCompile Include="..\..\..\..\lib\hash.c" />
+    <ClCompile Include="..\..\..\..\lib\headers.c" />
     <ClCompile Include="..\..\..\..\lib\hmac.c" />
     <ClCompile Include="..\..\..\..\lib\hostasyn.c" />
     <ClCompile Include="..\..\..\..\lib\hostip4.c" />
@@ -2441,6 +2443,7 @@
     <ClCompile Include="..\..\..\..\lib\system_win32.c" />
     <ClCompile Include="..\..\..\..\lib\telnet.c" />
     <ClCompile Include="..\..\..\..\lib\tftp.c" />
+    <ClCompile Include="..\..\..\..\lib\timediff.c" />
     <ClCompile Include="..\..\..\..\lib\timeval.c" />
     <ClCompile Include="..\..\..\..\lib\transfer.c" />
     <ClCompile Include="..\..\..\..\lib\urlapi.c" />
@@ -2462,6 +2465,7 @@
     <ClCompile Include="..\..\..\..\lib\vauth\spnego_gssapi.c" />
     <ClCompile Include="..\..\..\..\lib\vauth\spnego_sspi.c" />
     <ClCompile Include="..\..\..\..\lib\vauth\vauth.c" />
+    <ClCompile Include="..\..\..\..\lib\vquic\msh3.c" />
     <ClCompile Include="..\..\..\..\lib\vquic\ngtcp2.c" />
     <ClCompile Include="..\..\..\..\lib\vquic\quiche.c" />
     <ClCompile Include="..\..\..\..\lib\vquic\vquic.c" />
@@ -2532,10 +2536,12 @@
     <ClInclude Include="..\..\..\..\lib\dotdot.h" />
     <ClInclude Include="..\..\..\..\lib\dynbuf.h" />
     <ClInclude Include="..\..\..\..\lib\easyif.h" />
+    <ClInclude Include="..\..\..\..\lib\easy_lock.h" />
     <ClInclude Include="..\..\..\..\lib\easyoptions.h" />
     <ClInclude Include="..\..\..\..\lib\escape.h" />
     <ClInclude Include="..\..\..\..\lib\file.h" />
     <ClInclude Include="..\..\..\..\lib\fileinfo.h" />
+    <ClInclude Include="..\..\..\..\lib\fopen.h" />
     <ClInclude Include="..\..\..\..\lib\formdata.h" />
     <ClInclude Include="..\..\..\..\lib\ftp.h" />
     <ClInclude Include="..\..\..\..\lib\ftplistparser.h" />
@@ -2543,6 +2549,7 @@
     <ClInclude Include="..\..\..\..\lib\gopher.h" />
     <ClInclude Include="..\..\..\..\lib\h2h3.h" />
     <ClInclude Include="..\..\..\..\lib\hash.h" />
+    <ClInclude Include="..\..\..\..\lib\headers.h" />
     <ClInclude Include="..\..\..\..\lib\hostip.h" />
     <ClInclude Include="..\..\..\..\lib\hsts.h" />
     <ClInclude Include="..\..\..\..\lib\http2.h" />
@@ -2596,6 +2603,7 @@
     <ClInclude Include="..\..\..\..\lib\system_win32.h" />
     <ClInclude Include="..\..\..\..\lib\telnet.h" />
     <ClInclude Include="..\..\..\..\lib\tftp.h" />
+    <ClInclude Include="..\..\..\..\lib\timediff.h" />
     <ClInclude Include="..\..\..\..\lib\timeval.h" />
     <ClInclude Include="..\..\..\..\lib\transfer.h" />
     <ClInclude Include="..\..\..\..\lib\urlapi-int.h" />
@@ -2607,6 +2615,7 @@
     <ClInclude Include="..\..\..\..\lib\vauth\digest.h" />
     <ClInclude Include="..\..\..\..\lib\vauth\ntlm.h" />
     <ClInclude Include="..\..\..\..\lib\vauth\vauth.h" />
+    <ClInclude Include="..\..\..\..\lib\vquic\msh3.h" />
     <ClInclude Include="..\..\..\..\lib\vquic\ngtcp2.h" />
     <ClInclude Include="..\..\..\..\lib\vquic\quiche.h" />
     <ClInclude Include="..\..\..\..\lib\vquic\vquic.h" />

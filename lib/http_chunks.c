@@ -18,6 +18,8 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * SPDX-License-Identifier: curl
+ *
  ***************************************************************************/
 
 #include "curl_setup.h"
@@ -221,7 +223,9 @@ CHUNKcode Curl_httpchunk_read(struct Curl_easy *data,
           tr = Curl_dyn_ptr(&conn->trailer);
           trlen = Curl_dyn_len(&conn->trailer);
           if(!data->set.http_te_skip) {
-            result = Curl_client_write(data, CLIENTWRITE_HEADER, tr, trlen);
+            result = Curl_client_write(data,
+                                       CLIENTWRITE_HEADER|CLIENTWRITE_TRAILER,
+                                       tr, trlen);
             if(result) {
               *extrap = result;
               return CHUNKE_PASSTHRU_ERROR;

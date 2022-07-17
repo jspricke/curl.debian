@@ -1,3 +1,5 @@
+c: Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+SPDX-License-Identifier: curl
 Long: json
 Arg: <data>
 Help: HTTP POST JSON
@@ -29,4 +31,4 @@ from stdin. Posting data from a file named \&'foobar' would thus be done with
 If this option is used more than once on the same command line, the additional
 data pieces will be concatenated to the previous before sending.
 
-The headers this option sets can be overriden with --header as usual.
+The headers this option sets can be overridden with --header as usual.

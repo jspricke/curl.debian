@@ -3,7 +3,7 @@
 
   This is a little program to demonstrate the usage of
 
-  - an ssl initialisation callback setting a user key and trustbases
+  - an SSL initialization callback setting a user key and trustbases
   coming from a pkcs12 file
   - using an ssl application callback to find a URI in the
   certificate presented during ssl session establishment.
@@ -79,6 +79,8 @@
  * This product includes cryptographic software written by Eric Young
  * (eay@cryptsoft.com).  This product includes software written by Tim
  * Hudson (tjh@cryptsoft.com).
+ *
+ * SPDX-License-Identifier: LicenseRef-OpenEvidence
  *
  */
 
@@ -228,7 +230,7 @@ static int ssl_app_verify_callback(X509_STORE_CTX *ctx, void *arg)
 }
 
 
-/* The SSL initialisation callback. The callback sets:
+/* The SSL initialization callback. The callback sets:
    - a private key and certificate
    - a trusted ca certificate
    - a preferred cipherlist

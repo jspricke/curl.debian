@@ -9,7 +9,7 @@ Index: curl/Makefile.am
 ===================================================================
 --- curl.orig/Makefile.am
 +++ curl/Makefile.am
-@@ -155,8 +155,8 @@ CLEANFILES = $(VC10_LIBVCXPROJ) $(VC10_S
+@@ -157,8 +157,8 @@ CLEANFILES = $(VC10_LIBVCXPROJ) $(VC10_S
  
  bin_SCRIPTS = curl-config
  

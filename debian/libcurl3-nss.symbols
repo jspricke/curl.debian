@@ -6,7 +6,9 @@ libcurl-nss.so.4 libcurl3-nss #MINVER#
  curl_easy_duphandle@CURL_NSS_3 7.23.1
  curl_easy_escape@CURL_NSS_3 7.23.1
  curl_easy_getinfo@CURL_NSS_3 7.23.1
+ curl_easy_header@CURL_NSS_3 7.83.0
  curl_easy_init@CURL_NSS_3 7.23.1
+ curl_easy_nextheader@CURL_NSS_3 7.83.0
  curl_easy_option_by_id@CURL_NSS_3 7.74.0
  curl_easy_option_by_name@CURL_NSS_3 7.74.0
  curl_easy_option_next@CURL_NSS_3 7.74.0

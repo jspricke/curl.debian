@@ -1,8 +1,64 @@
-curl (7.82.0-2~bpo11+1) bullseye-backports; urgency=medium
+curl (7.84.0-2~bpo11+1) bullseye-backports; urgency=medium
 
   * Rebuild for bullseye-backports.
 
  -- Samuel Henrique <samueloph@debian.org>  Tue, 22 Mar 2022 21:50:04 +0000
+
+curl (7.84.0-2) unstable; urgency=medium
+
+  * d/p/20_ftbfs_import_sched.patch: New upstream patch to fix FTBFS
+    (closes: #1014596)
+
+ -- Samuel Henrique <samueloph@debian.org>  Mon, 11 Jul 2022 22:50:01 +0100
+
+curl (7.84.0-1) unstable; urgency=medium
+
+  * New upstream version 7.84.0
+    - Fix the following CVEs:
+      ~ Improper Enforcement of Message Integrity During Transmission in a
+        Communication Channel (CVE-2022-32208)
+      ~ Improper Preservation of Permissions (CVE-2022-32207)
+      ~ Allocation of Resources Without Limits or Throttling (CVE-2022-32205,
+        CVE-2022-32206)
+
+ -- Samuel Henrique <samueloph@debian.org>  Mon, 27 Jun 2022 22:06:25 +0100
+
+curl (7.83.1-2) unstable; urgency=medium
+
+  * d/p/fix_multiline_header_regression.patch: New upstream patch to fix
+    regression (closes: #1012263, #1011696)
+
+ -- Samuel Henrique <samueloph@debian.org>  Tue, 14 Jun 2022 18:05:23 +0100
+
+curl (7.83.1-1) unstable; urgency=medium
+
+  * New upstream version 7.83.1
+    - Fix the following CVEs:
+      ~ HSTS bypass via trailing dot (CVE-2022-30115)
+      ~ TLS and SSH connection too eager reuse (CVE-2022-27782)
+      ~ CERTINFO never-ending busy-loop (CVE-2022-27781)
+      ~ percent-encoded path separator in URL host (CVE-2022-27780)
+      ~ cookie for trailing dot TLD (CVE-2022-27779)
+      ~ curl removes wrong file on error (CVE-2022-27778)
+
+ -- Samuel Henrique <samueloph@debian.org>  Wed, 11 May 2022 17:46:48 +0100
+
+curl (7.83.0-1) unstable; urgency=medium
+
+  * New upstream version 7.83.0
+    - Fix auth/cookie leak on redirect (closes: #1010252, CVE-2022-27776)
+    - Fix bad local IPv6 connection reuse (closes: #1010253, CVE-2022-27775)
+    - Fix credential leak on redirect (closes: #1010254, CVE-2022-27774)
+    - Fix OAUTH2 bearer bypass in connection re-use
+      (closes: #1010295, CVE-2022-22576)
+  * d/libcurl*.symbols: update symbols files to add curl_easy_header and
+    curl_easy_nextheader
+  * d/patches:
+    - Refresh patches
+    - 12_fix_openssl_cm_check.patch: remove patch, applied upstream
+
+ -- Samuel Henrique <samueloph@debian.org>  Thu, 28 Apr 2022 18:53:32 +0100
+>>>>>>> debian/7.84.0-2
 
 curl (7.82.0-2) unstable; urgency=medium
 

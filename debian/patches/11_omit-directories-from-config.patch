@@ -14,7 +14,7 @@ Index: curl/curl-config.in
 ===================================================================
 --- curl.orig/curl-config.in
 +++ curl/curl-config.in
-@@ -23,7 +23,6 @@
+@@ -25,7 +25,6 @@
  
  prefix=@prefix@
  exec_prefix=@exec_prefix@
@@ -22,7 +22,7 @@ Index: curl/curl-config.in
  cppflag_curl_staticlib=@CPPFLAG_CURL_STATICLIB@
  
  usage()
-@@ -147,19 +146,11 @@ while test $# -gt 0; do
+@@ -149,19 +148,11 @@ while test $# -gt 0; do
          else
            CPPFLAG_CURL_STATICLIB=""
          fi
@@ -44,7 +44,7 @@ Index: curl/curl-config.in
          if test "X@ENABLE_SHARED@" = "Xno"; then
            echo ${CURLLIBDIR}-lcurl @LIBCURL_LIBS@
          else
-@@ -172,7 +163,7 @@ while test $# -gt 0; do
+@@ -174,7 +165,7 @@ while test $# -gt 0; do
  
      --static-libs)
          if test "X@ENABLE_STATIC@" != "Xno" ; then

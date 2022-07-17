@@ -6,7 +6,9 @@ libcurl.so.4 libcurl4 #MINVER#
  curl_easy_duphandle@CURL_OPENSSL_4 7.16.2
  curl_easy_escape@CURL_OPENSSL_4 7.16.2
  curl_easy_getinfo@CURL_OPENSSL_4 7.16.2
+ curl_easy_header@CURL_OPENSSL_4 7.83.0
  curl_easy_init@CURL_OPENSSL_4 7.16.2
+ curl_easy_nextheader@CURL_OPENSSL_4 7.83.0
  curl_easy_option_by_id@CURL_OPENSSL_4 7.74.0
  curl_easy_option_by_name@CURL_OPENSSL_4 7.74.0
  curl_easy_option_next@CURL_OPENSSL_4 7.74.0

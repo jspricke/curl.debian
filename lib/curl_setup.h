@@ -20,10 +20,17 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * SPDX-License-Identifier: curl
+ *
  ***************************************************************************/
 
 #if defined(BUILDING_LIBCURL) && !defined(CURL_NO_OLDIES)
 #define CURL_NO_OLDIES
+#endif
+
+/* define mingw version macros, eg __MINGW{32,64}_{MINOR,MAJOR}_VERSION */
+#ifdef __MINGW32__
+#include <_mingw.h>
 #endif
 
 /*
@@ -794,8 +801,9 @@ int getpwuid_r(uid_t uid, struct passwd *pwd, char *buf,
 #define USE_HTTP2
 #endif
 
-#if defined(USE_NGTCP2) || defined(USE_QUICHE)
+#if defined(USE_NGTCP2) || defined(USE_QUICHE) || defined(USE_MSH3)
 #define ENABLE_QUIC
+#define USE_HTTP3
 #endif
 
 #if defined(USE_UNIX_SOCKETS) && defined(WIN32)
