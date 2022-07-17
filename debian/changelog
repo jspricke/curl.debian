@@ -2,7 +2,7 @@ curl (7.84.0-2~bpo11+1) bullseye-backports; urgency=medium
 
   * Rebuild for bullseye-backports.
 
- -- Samuel Henrique <samueloph@debian.org>  Tue, 22 Mar 2022 21:50:04 +0000
+ -- Samuel Henrique <samueloph@debian.org>  Sun, 17 Jul 2022 18:19:02 +0200
 
 curl (7.84.0-2) unstable; urgency=medium
 
@@ -58,7 +58,6 @@ curl (7.83.0-1) unstable; urgency=medium
     - 12_fix_openssl_cm_check.patch: remove patch, applied upstream
 
  -- Samuel Henrique <samueloph@debian.org>  Thu, 28 Apr 2022 18:53:32 +0100
->>>>>>> debian/7.84.0-2
 
 curl (7.82.0-2) unstable; urgency=medium
 
