@@ -19,7 +19,15 @@
 25_CVE-2020-8286.patch
 26_CVE-2021-22876.patch
 27_CVE-2021-22890.patch
-
-# do not add patches below
+CVE-2021-22898.patch
+CVE-2021-22924.patch
+CVE-2021-22946.patch
+CVE-2021-22947.patch
+CVE-2022-22576.patch
+CVE-2022-27776.patch
+CVE-2022-27781.patch
+CVE-2022-32206.patch
+CVE-2022-32208.patch
+CVE-2022-27782.patch
 90_gnutls.patch
 99_nss.patch

@@ -1,3 +1,16 @@
+curl (7.64.0-4+deb10u3) buster-security; urgency=high
+
+  * Non-maintainer upload by the LTS team.
+  * Fix CVE-2021-22898, CVE-2021-22924, CVE-2021-22946, CVE-2021-22947
+    CVE-2022-22576, CVE-2022-27776, CVE-2022-27781, CVE-2022-32206,
+    CVE-2022-32208, CVE-2022-27782.
+  * Multiple security vulnerabilities have been discovered in cURL, an URL
+    transfer library. These flaws may allow remote attackers to obtain
+    sensitive information, leak authentication or cookie header data or
+    facilitate a denial of service attack.
+
+ -- Markus Koschany <apo@debian.org>  Sun, 28 Aug 2022 17:35:03 +0200
+
 curl (7.64.0-4+deb10u2) buster-security; urgency=high
 
   * Fix partial password leak over DNS on HTTP redirect as per CVE-2020-8169
