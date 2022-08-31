@@ -1,8 +1,8 @@
-curl (7.84.0-2~bpo11+1) bullseye-backports; urgency=medium
+curl (7.85.0-1) UNRELEASED; urgency=medium
 
-  * Rebuild for bullseye-backports.
+  * New upstream version 7.85.0
 
- -- Samuel Henrique <samueloph@debian.org>  Sun, 17 Jul 2022 18:19:02 +0200
+ -- Samuel Henrique <samueloph@debian.org>  Wed, 31 Aug 2022 20:22:17 +0100
 
 curl (7.84.0-2) unstable; urgency=medium
 
