@@ -16,7 +16,7 @@ Index: curl/curl-config.in
 +++ curl/curl-config.in
 @@ -25,7 +25,6 @@
  
- prefix=@prefix@
+ prefix="@prefix@"
  exec_prefix=@exec_prefix@
 -includedir=@includedir@
  cppflag_curl_staticlib=@CPPFLAG_CURL_STATICLIB@
@@ -48,7 +48,7 @@ Index: curl/curl-config.in
  
      --static-libs)
          if test "X@ENABLE_STATIC@" != "Xno" ; then
--          echo @libdir@/libcurl.@libext@ @LDFLAGS@ @LIBCURL_LIBS@
+-          echo "@libdir@/libcurl.@libext@" @LDFLAGS@ @LIBCURL_LIBS@
 +          echo -Wl,-Bstatic -lcurl -Wl,-Bdynamic @LDFLAGS@ @LIBCURL_LIBS@
          else
            echo "curl was built with static libraries disabled" >&2
