@@ -1,8 +1,20 @@
 curl (7.85.0-1) UNRELEASED; urgency=medium
 
   * New upstream version 7.85.0
+    - Fix control code in cookie denial of service:
+      When curl retrieves and parses cookies from an HTTP(S) server, it
+      accepts cookies using control codes (byte values below 32). When cookies
+      that contain such control codes are later sent back to an HTTP(S) server,
+      it might make the server return a 400 response. Effectively allowing a
+      "sister site" to deny service to siblings
+      (closes: #1018831, CVE-2022-35252)
+    - Fix FTBFS on riscv64 with gcc-12 (closes: #1015835)
+  * d/patches:
+    - 11_omit-directories-from-config.patch: Update patch
+    - 20_ftbfs_import_sched.patch: Drop patch, applied upstream
+  * d/rules: Fix configure args, remove bogus '--without-ssl'
 
- -- Samuel Henrique <samueloph@debian.org>  Wed, 31 Aug 2022 20:22:17 +0100
+ -- Samuel Henrique <samueloph@debian.org>  Thu, 01 Sep 2022 22:57:10 +0100
 
 curl (7.84.0-2) unstable; urgency=medium
 
