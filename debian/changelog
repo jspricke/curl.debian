@@ -1,4 +1,4 @@
-curl (7.85.0-1) UNRELEASED; urgency=medium
+curl (7.85.0-1) unstable; urgency=medium
 
   * New upstream version 7.85.0
     - Fix control code in cookie denial of service:
@@ -9,12 +9,17 @@ curl (7.85.0-1) UNRELEASED; urgency=medium
       "sister site" to deny service to siblings
       (closes: #1018831, CVE-2022-35252)
     - Fix FTBFS on riscv64 with gcc-12 (closes: #1015835)
+  * Bump Standards-Version to 4.6.1
+  * Add lintian overrides for old-style-config-script-multiarch-path triggered
+    for curl-config
   * d/patches:
     - 11_omit-directories-from-config.patch: Update patch
     - 20_ftbfs_import_sched.patch: Drop patch, applied upstream
   * d/rules: Fix configure args, remove bogus '--without-ssl'
+  * d/copyright: Update the whole file
+  * d/(control|watch): Update upstream's URL
 
- -- Samuel Henrique <samueloph@debian.org>  Thu, 01 Sep 2022 22:57:10 +0100
+ -- Samuel Henrique <samueloph@debian.org>  Fri, 02 Sep 2022 13:00:10 +0100
 
 curl (7.84.0-2) unstable; urgency=medium
 
