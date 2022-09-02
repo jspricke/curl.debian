@@ -1,0 +1,2 @@
+# curl-config is patched to support multi-arch
+libcurl4-nss-dev: old-style-config-script-multiarch-path full text contains architecture specific dir x86_64-linux-gnu [usr/bin/curl-config]
