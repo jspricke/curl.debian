@@ -1,3 +1,9 @@
+curl (7.85.0-1~bpo11+1) bullseye-backports; urgency=medium
+
+  * Rebuild for bullseye-backports.
+
+ -- Samuel Henrique <samueloph@debian.org>  Sat, 10 Sep 2022 20:14:56 +0100
+
 curl (7.85.0-1) unstable; urgency=medium
 
   * New upstream version 7.85.0
