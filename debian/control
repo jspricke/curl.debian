@@ -142,7 +142,6 @@ Suggests: libcurl4-doc,
  libssl-dev,
  pkg-config,
  zlib1g-dev
-Multi-Arch: same
 Description: development files and documentation for libcurl (OpenSSL flavour)
  libcurl is an easy-to-use client-side URL transfer library, supporting DICT,
  FILE, FTP, FTPS, GOPHER, HTTP, HTTPS, IMAP, IMAPS, LDAP, LDAPS, POP3, POP3S,
@@ -180,7 +179,6 @@ Suggests: libcurl4-doc,
  libssh2-1-dev,
  pkg-config,
  zlib1g-dev
-Multi-Arch: same
 Description: development files and documentation for libcurl (GnuTLS flavour)
  libcurl is an easy-to-use client-side URL transfer library, supporting DICT,
  FILE, FTP, FTPS, GOPHER, HTTP, HTTPS, IMAP, IMAPS, LDAP, LDAPS, POP3, POP3S,
@@ -218,7 +216,6 @@ Suggests: libcurl4-doc,
  libssh2-1-dev,
  pkg-config,
  zlib1g-dev
-Multi-Arch: same
 Description: development files and documentation for libcurl (NSS flavour)
  libcurl is an easy-to-use client-side URL transfer library, supporting DICT,
  FILE, FTP, FTPS, GOPHER, HTTP, HTTPS, IMAP, IMAPS, LDAP, LDAPS, POP3, POP3S,
