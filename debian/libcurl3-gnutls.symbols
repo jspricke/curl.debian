@@ -91,3 +91,6 @@ libcurl-gnutls.so.4 libcurl3-gnutls #MINVER#
  curl_url_strerror@CURL_GNUTLS_3 7.80.0
  curl_version@CURL_GNUTLS_3 7.16.2
  curl_version_info@CURL_GNUTLS_3 7.16.2
+ curl_ws_meta@CURL_GNUTLS_3 7.86.0
+ curl_ws_recv@CURL_GNUTLS_3 7.86.0
+ curl_ws_send@CURL_GNUTLS_3 7.86.0
