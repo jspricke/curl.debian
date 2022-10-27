@@ -1,3 +1,9 @@
+curl (7.86.0-1) UNRELEASED; urgency=medium
+
+  * New upstream version 7.86.0
+
+ -- Samuel Henrique <samueloph@debian.org>  Thu, 27 Oct 2022 20:38:24 +0100
+
 curl (7.85.0-1) unstable; urgency=medium
 
   * New upstream version 7.85.0
