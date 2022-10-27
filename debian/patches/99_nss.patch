@@ -34,9 +34,14 @@ Index: curl/lib/Makefile.am
  
  if BUILD_UNITTESTS
  noinst_LTLIBRARIES = libcurlu.la
-@@ -75,43 +75,43 @@ AM_CPPFLAGS += -DBUILDING_LIBCURL
- AM_LDFLAGS =
- AM_CFLAGS =
+@@ -78,55 +78,55 @@ AM_CFLAGS =
+ # Makefile.inc provides the CSOURCES and HHEADERS defines
+ include Makefile.inc
+ 
+-libcurl_gnutls_la_SOURCES = $(CSOURCES) $(HHEADERS)
+-libcurlu_gnutls_la_SOURCES = $(CSOURCES) $(HHEADERS)
++libcurl_nss_la_SOURCES = $(CSOURCES) $(HHEADERS)
++libcurlu_nss_la_SOURCES = $(CSOURCES) $(HHEADERS)
  
 -libcurl_gnutls_la_CPPFLAGS_EXTRA =
 -libcurl_gnutls_la_LDFLAGS_EXTRA =
@@ -74,6 +79,12 @@ Index: curl/lib/Makefile.am
  if USE_CPPFLAG_CURL_STATICLIB
 -libcurl_gnutls_la_CPPFLAGS_EXTRA += -DCURL_STATICLIB
 +libcurl_nss_la_CPPFLAGS_EXTRA += -DCURL_STATICLIB
+ else
+ if OS_WINDOWS
+-libcurl_gnutls_la_SOURCES += $(LIB_RCFILES)
++libcurl_nss_la_SOURCES += $(LIB_RCFILES)
+ $(LIB_RCFILES): $(top_srcdir)/include/curl/curlver.h
+ endif
  endif
  
  if DOING_CURL_SYMBOL_HIDING
@@ -90,22 +101,20 @@ Index: curl/lib/Makefile.am
 +libcurl_nss_la_LDFLAGS = $(AM_LDFLAGS) $(libcurl_nss_la_LDFLAGS_EXTRA) $(LDFLAGS) $(LIBCURL_LIBS)
 +libcurl_nss_la_CFLAGS = $(AM_CFLAGS) $(libcurl_nss_la_CFLAGS_EXTRA)
  
- libcurlu_la_CPPFLAGS = $(AM_CPPFLAGS) -DCURL_STATICLIB -DUNITTESTS
- libcurlu_la_LDFLAGS = $(AM_LDFLAGS) -static $(LIBCURL_LIBS)
-@@ -120,7 +120,7 @@ libcurlu_la_CFLAGS = $(AM_CFLAGS)
- # Makefile.inc provides the CSOURCES and HHEADERS defines
- include Makefile.inc
- 
--libcurl_gnutls_la_SOURCES = $(CSOURCES) $(HHEADERS)
-+libcurl_nss_la_SOURCES = $(CSOURCES) $(HHEADERS)
- libcurlu_la_SOURCES = $(CSOURCES) $(HHEADERS)
+-libcurlu_gnutls_la_CPPFLAGS = $(AM_CPPFLAGS) -DCURL_STATICLIB -DUNITTESTS
+-libcurlu_gnutls_la_LDFLAGS = $(AM_LDFLAGS) -static $(LIBCURL_LIBS)
+-libcurlu_gnutls_la_CFLAGS = $(AM_CFLAGS)
++libcurlu_nss_la_CPPFLAGS = $(AM_CPPFLAGS) -DCURL_STATICLIB -DUNITTESTS
++libcurlu_nss_la_LDFLAGS = $(AM_LDFLAGS) -static $(LIBCURL_LIBS)
++libcurlu_nss_la_CFLAGS = $(AM_CFLAGS)
  
  CHECKSRC = $(CS_$(V))
+ CS_0 = @echo "  RUN     " $@;
 Index: curl/src/Makefile.am
 ===================================================================
 --- curl.orig/src/Makefile.am
 +++ curl/src/Makefile.am
-@@ -63,9 +63,9 @@ CFLAGS += @CURL_CFLAG_EXTRAS@
+@@ -67,9 +67,9 @@ CFLAGS += @CURL_CFLAG_EXTRAS@
  LIBS = $(BLANK_AT_MAKETIME)
  
  if USE_EXPLICIT_LIB_DEPS
