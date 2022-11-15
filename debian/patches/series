@@ -1,8 +1,15 @@
+# Packaging patches.
 04_workaround_as_needed_bug.patch
 06_always-disable-valgrind.patch
 08_enable-zsh.patch
 11_omit-directories-from-config.patch
 
-# do not add patches below
+# Upstream backports.
+0001-curl-7.86.0-noproxy.patch
+0002-curl-7.86.0-noproxy-tail-matching.patch
+0003-curl-7.86.0-noproxy-tail-matching-2.patch
+
+# Do not add patches below.
+# Used to generate packages for the other crypto libraries.
 90_gnutls.patch
 99_nss.patch
