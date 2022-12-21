@@ -1,3 +1,15 @@
+curl (7.86.0-3) unstable; urgency=medium
+
+  * Fix two HSTS-related CVEs.
+    - d/p/CVE-2022-43551-another-hsts-bypass-via-idn.patch: use the IDN
+      decoded name in HSTS checks.
+      (Closes: #1026829, CVE-2022-43551)
+    - d/p/CVE-2022-43552-http-proxy-deny-use-after-free.patch: do not free
+      smb's/telnet's protocol struct in *_done().
+      (Closes: #1026830, CVE-2022-43552)
+
+ -- Sergio Durigan Junior <sergiodj@debian.org>  Wed, 21 Dec 2022 15:55:18 -0500
+
 curl (7.86.0-2) unstable; urgency=medium
 
   [ Debian Janitor ]
