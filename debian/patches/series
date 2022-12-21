@@ -8,6 +8,8 @@
 0001-curl-7.86.0-noproxy.patch
 0002-curl-7.86.0-noproxy-tail-matching.patch
 0003-curl-7.86.0-noproxy-tail-matching-2.patch
+CVE-2022-43551-another-hsts-bypass-via-idn.patch
+CVE-2022-43552-http-proxy-deny-use-after-free.patch
 
 # Do not add patches below.
 # Used to generate packages for the other crypto libraries.
