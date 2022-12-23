@@ -1,8 +1,16 @@
-curl (7.87.0-1) UNRELEASED; urgency=medium
+curl (7.87.0-1) unstable; urgency=medium
 
   * New upstream version 7.87.0
+  * d/patches:
+    - Update patches
+    - Drop all backported patches that are applied in the new release
+  * d/copyright: Remove missing file
+  * d/*.lintian-overrides: Remove unused overrides
 
- -- Samuel Henrique <samueloph@debian.org>  Fri, 23 Dec 2022 19:58:18 +0000
+  [ Simon McVittie ]
+  * Make -dev packages 'Multi-Arch: same' back again (closes: #1024668)
+
+ -- Samuel Henrique <samueloph@debian.org>  Fri, 23 Dec 2022 20:36:01 +0000
 
 curl (7.86.0-3) unstable; urgency=medium
 
