@@ -1,3 +1,9 @@
+curl (7.87.0-1) UNRELEASED; urgency=medium
+
+  * New upstream version 7.87.0
+
+ -- Samuel Henrique <samueloph@debian.org>  Fri, 23 Dec 2022 19:58:18 +0000
+
 curl (7.86.0-3) unstable; urgency=medium
 
   * Fix two HSTS-related CVEs.
