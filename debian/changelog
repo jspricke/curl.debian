@@ -11,29 +11,6 @@ curl (7.74.0-1.3+deb11u4) UNRELEASED; urgency=high
     This flaw may surprise the application and cause it to misbehave and either
     send off the wrong data or use memory after free or similar in the subsequent
     POST request.
-  * CVE-2022-42916
-    HSTS bypass via IDN
-    curl's HSTS check could be bypassed to trick it to keep using HTTP.
-    .
-    Using its HSTS support, curl can be instructed to use HTTPS directly instead
-    of using an insecure clear-text HTTP step even when HTTP is provided in the
-    URL. This mechanism could be bypassed if the host name in the given URL uses
-    IDN characters that get replaced to ASCII counterparts as part of the IDN
-    conversion. Like using the character UTF-8 U+3002 (IDEOGRAPHIC FULL STOP)
-    instead of the common ASCII full stop (U+002E) ..
-  * CVE-2022-43551
-    Another HSTS bypass via IDN
-    url's HSTS check could be bypassed to trick it to keep using HTTP.
-    .
-    Using its HSTS support, curl can be instructed to use HTTPS instead of using
-    an insecure clear-text HTTP step even when HTTP is provided in the URL.
-    .
-    The HSTS mechanism could be bypassed if the host name in the given URL first
-    uses IDN characters that get replaced to ASCII counterparts as part of the IDN
-    conversion. Like using the character UTF-8 U+3002 (IDEOGRAPHIC FULL STOP)
-    instead of the common ASCII full stop (U+002E). Then in a subsequent request,
-    it does not detect the HSTS state and makes a clear text transfer. Because it
-    would store the info IDN encoded but look for it IDN decoded.
   * CVE-2022-43552
     HTTP Proxy deny use-after-free
     curl can be asked to tunnel virtually all protocols it supports through an
