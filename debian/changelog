@@ -1,8 +1,57 @@
-curl (7.85.0-1~bpo11+1) bullseye-backports; urgency=medium
+curl (7.87.0-1~bpo11+1) bullseye-backports; urgency=medium
 
   * Rebuild for bullseye-backports.
 
- -- Samuel Henrique <samueloph@debian.org>  Sat, 10 Sep 2022 20:14:56 +0100
+ -- Samuel Henrique <samueloph@debian.org>  Thu, 29 Dec 2022 21:59:20 +0000
+
+curl (7.87.0-1) unstable; urgency=medium
+
+  * New upstream version 7.87.0
+  * d/patches:
+    - Update patches
+    - Drop all backported patches that are applied in the new release
+  * d/copyright: Remove missing file
+  * d/*.lintian-overrides: Remove unused overrides
+
+  [ Simon McVittie ]
+  * Make -dev packages 'Multi-Arch: same' back again (closes: #1024668)
+
+ -- Samuel Henrique <samueloph@debian.org>  Fri, 23 Dec 2022 20:36:01 +0000
+
+curl (7.86.0-3) unstable; urgency=medium
+
+  * Fix two HSTS-related CVEs.
+    - d/p/CVE-2022-43551-another-hsts-bypass-via-idn.patch: use the IDN
+      decoded name in HSTS checks.
+      (Closes: #1026829, CVE-2022-43551)
+    - d/p/CVE-2022-43552-http-proxy-deny-use-after-free.patch: do not free
+      smb's/telnet's protocol struct in *_done().
+      (Closes: #1026830, CVE-2022-43552)
+
+ -- Sergio Durigan Junior <sergiodj@debian.org>  Wed, 21 Dec 2022 15:55:18 -0500
+
+curl (7.86.0-2) unstable; urgency=medium
+
+  [ Debian Janitor ]
+  * Apply multi-arch hints. + libcurl4-gnutls-dev, libcurl4-nss-dev,
+    libcurl4-openssl-dev: Drop Multi-Arch: same.
+
+  [ Samuel Henrique ]
+  * d/patches: Backport three upstream patches to fix noproxy option.
+
+ -- Samuel Henrique <samueloph@debian.org>  Tue, 15 Nov 2022 21:04:55 +0000
+
+curl (7.86.0-1) unstable; urgency=medium
+
+  * New upstream version 7.86.0
+    - Fix HSTS bypass via IDN:
+      curl's HSTS check could be bypassed to trick it to keep using HTTP.
+      (closes: CVE-2022-42916)
+    - Fix HTTP proxy double-free (closes: CVE-2022-42915)
+    - Fix .netrc parser out-of-bounds access (closes: CVE-2022-35260)
+    - Fix POST following PUT confusion (closes: CVE-2022-32221)
+
+ -- Samuel Henrique <samueloph@debian.org>  Thu, 27 Oct 2022 20:38:24 +0100
 
 curl (7.85.0-1) unstable; urgency=medium
 

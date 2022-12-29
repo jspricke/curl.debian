@@ -1,8 +1,12 @@
+# Packaging patches.
 04_workaround_as_needed_bug.patch
 06_always-disable-valgrind.patch
 08_enable-zsh.patch
+build-Divide-mit-krb5-gssapi-link-flags-between-LDFLAGS-a.patch
 11_omit-directories-from-config.patch
+Remove-curl-s-LDFLAGS-from-curl-config-static-libs.patch
 
-# do not add patches below
+# Do not add patches below.
+# Used to generate packages for the other crypto libraries.
 90_gnutls.patch
 99_nss.patch
