@@ -1,8 +1,8 @@
 curl (7.74.0-1.3+deb11u4) UNRELEASED; urgency=high
 
   * Fix backport of patch for CVE-2021-22946, which was passing a wrong first
-    argument to ldap_connect, this was likely causing a regression when using
-    ftp.
+    argument to ftp_state_user_resp, this was likely causing a regression when
+    using ftp.
   * Backport two patches from upstream to solve 2 CVEs:
     CVE-2022-32221.patch, CVE-2022-43552.patch.
     - CVE-2022-32221
