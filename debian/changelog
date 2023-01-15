@@ -1,3 +1,11 @@
+curl (7.87.0-2) unstable; urgency=medium
+
+  * d/patches: Add new upstream patch to fix regression in setopt/getinfo
+    (closes: #1027564)
+  * d/p/build-Divide-mit-krb5...patch: Refresh patch
+
+ -- Samuel Henrique <samueloph@debian.org>  Sun, 15 Jan 2023 21:12:09 +0000
+
 curl (7.87.0-1) unstable; urgency=medium
 
   * New upstream version 7.87.0
