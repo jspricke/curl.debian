@@ -1,3 +1,9 @@
+curl (7.87.0-2~bpo11+1) bullseye-backports; urgency=medium
+
+  * Rebuild for bullseye-backports.
+
+ -- Samuel Henrique <samueloph@debian.org>  Sat, 21 Jan 2023 22:18:40 +0000
+
 curl (7.87.0-2) unstable; urgency=medium
 
   * d/patches: Add new upstream patch to fix regression in setopt/getinfo
