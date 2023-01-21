@@ -1,8 +1,10 @@
-curl (7.87.0-1~bpo11+1) bullseye-backports; urgency=medium
+curl (7.87.0-2) unstable; urgency=medium
 
-  * Rebuild for bullseye-backports.
+  * d/patches: Add new upstream patch to fix regression in setopt/getinfo
+    (closes: #1027564)
+  * d/p/build-Divide-mit-krb5...patch: Refresh patch
 
- -- Samuel Henrique <samueloph@debian.org>  Thu, 29 Dec 2022 21:59:20 +0000
+ -- Samuel Henrique <samueloph@debian.org>  Sun, 15 Jan 2023 21:12:09 +0000
 
 curl (7.87.0-1) unstable; urgency=medium
 
