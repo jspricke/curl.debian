@@ -23,7 +23,10 @@ CVE-2022-32205.patch
 CVE-2022-32206.patch
 CVE-2022-32207.patch
 CVE-2022-32208.patch
-CVE-2022-27774.patch
+CVE-2022-27774_1_of_4.patch
+CVE-2022-27774_2_of_4.patch
+CVE-2022-27774_3_of_4.patch
+CVE-2022-27774_4_of_4.patch
 cookie-reject-cookies-with-control-bytes.patch
 test8-verify-that-ctrl-byte-cookies-are-ignored.patch
 CVE-2022-32221.patch
