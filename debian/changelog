@@ -1,8 +1,16 @@
-curl (7.88.1-1) UNRELEASED; urgency=medium
+curl (7.88.1-1) unstable; urgency=medium
 
   * New upstream version 7.88.1
+    - Fix the following CVEs (closes: #1031371)
+      ~ CVE-2023-23916: HTTP multi-header compression denial of service
+      ~ CVE-2023-23915: HSTS amnesia with --parallel
+      ~ CVE-2023-23914: HSTS ignored on multiple requests
+    - Fix curl_multi_socket_action regression (closes: #1029231)
+  * d/patches: Drop backported patch added to fix regression in setopt/getinfo
+  * d/copyright: Drop removed file from copyright
+  * d/control: Update BD to drop transitional package libidn11-dev
 
- -- Samuel Henrique <samueloph@debian.org>  Mon, 20 Feb 2023 22:15:05 +0000
+ -- Samuel Henrique <samueloph@debian.org>  Mon, 20 Feb 2023 22:35:53 +0000
 
 curl (7.87.0-2) unstable; urgency=medium
 
