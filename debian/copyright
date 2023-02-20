@@ -254,10 +254,6 @@ Copyright: 1998, Vijay Panghal, <vpanghal@maginatics.com>, et al.
   1998-2022, Daniel Stenberg, <daniel@haxx.se>, et al.
 License: curl
 
-Files: docs/examples/curlgtk.c
-Copyright: 2000-2022, David Odin (aka DindinX) for MandrakeSoft
-License: curl
-
 Files: docs/libcurl/libcurl.m4
 Copyright: 2006-2022, David Shaw <dshaw@jabberwocky.com>
 License: curl
