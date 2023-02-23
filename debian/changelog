@@ -1,3 +1,10 @@
+curl (7.74.0-1.3+deb11u7) bullseye-security; urgency=medium
+
+  * Fix CVE-2023-23916: HTTP multi-header compression denial of service:
+    - Done by d/p/CVE-2023-23916.patch.
+
+ -- Samuel Henrique <samueloph@debian.org>  Thu, 23 Feb 2023 22:09:57 +0000
+
 curl (7.74.0-1.3+deb11u6) bullseye-security; urgency=high
 
   * Follow up to CVE-2022-27774:
@@ -5,7 +12,7 @@ curl (7.74.0-1.3+deb11u6) bullseye-security; urgency=high
     such that it incorrectly manages redirects with authentication.  As a
     result, authetication credentials are cleared in some instances where they
     should be retained, breaking certain requests.  The patch is corrected in
-    this version.
+    this version (closes: #1030863).
 
  -- Roberto C. Sánchez <roberto@debian.org>  Tue, 21 Feb 2023 08:47:56 -0500
 
