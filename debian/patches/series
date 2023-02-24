@@ -37,6 +37,7 @@ CVE-2022-32221.patch
 cookie-reject-cookies-with-control-bytes.patch
 test8-verify-that-ctrl-byte-cookies-are-ignored.patch
 CVE-2022-43552.patch
+0001-content_encoding-do-not-reset-stage-counter-for-each.patch
 
 # Always add CVE patches before these two patches
 90_gnutls.patch
