@@ -20,6 +20,13 @@ else
 	CONFIGURE_ARGS += --without-libssh --with-libssh2
 endif
 
+
+ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+  NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+  MAKEFLAGS += -j$(NUMJOBS)
+endif
+
+
 %:
 	dh $@
 
@@ -60,9 +67,9 @@ override_dh_auto_build:
 
 override_dh_auto_test:
 ifeq ($(filter nocheck,$(DEB_BUILD_PROFILES)),)
-	-cd debian/build && dh_auto_test
-	-cd debian/build-gnutls && dh_auto_test
-	-cd debian/build-nss && dh_auto_test
+	-cd debian/build && $(MAKE) test-nonflaky VERBOSE=1
+	-cd debian/build-gnutls && $(MAKE) test-nonflaky VERBOSE=1
+	-cd debian/build-nss && $(MAKE) test-nonflaky VERBOSE=1
 endif
 
 override_dh_install:
