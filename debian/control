@@ -28,6 +28,7 @@ Build-Depends:
  openssh-server <!nocheck>,
  python3:native <!nocheck>,
  python3-impacket <!nocheck>,
+ gnutls-bin <!nocheck>,
  quilt,
  stunnel4 <!nocheck>,
  zlib1g-dev
