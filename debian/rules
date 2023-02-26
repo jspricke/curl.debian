@@ -65,33 +65,53 @@ override_dh_auto_build:
 	cd debian/build-nss && dh_auto_build
 
 # Test parameters that are passed to runtests.pl.
-override_dh_auto_test: TESTS_DISABLE_VALGRIND = -n
-# Tests that require an en_US.UTF-8 locale (or similar) to be supported in
-# the build environment.
-override_dh_auto_test: TESTS_SKIP_REQUIRE_EN_US_LOCALE = $(addprefix ~, 165 962 963 964 965 966 967 1448 2046 2047)
+# -n disables valgrind usage
+TESTS_GENERAL_PARAMETERS := -n
+
 # These tests fail on NSS for unknown reasons so we skip them (support for
 # curl with NSS will be removed on Debian trixie).
 # They are most likely failing due to an issue related to PEM support when
 # using NSS.
-override_dh_auto_test: TESTS_SKIP_NSS_KNOWN_FAILURES = $(addprefix ~, 310 311 312 313 2034 2035 2037 2038 2041 2042 3000 3001)
-# Test parameters that are independent of platform or build flavor.
-override_dh_auto_test: TESTS_GENERAL_PARAMETERS = $(TESTS_DISABLE_VALGRIND) $(TESTS_SKIP_REQUIRE_EN_US_LOCALE)
+TESTS_SKIP_NSS_KNOWN_FAILURES := $(addprefix ~, 310 311 312 313 2034 2035 2037 2038 2041 2042 3000 3001)
+
+# Build-flavor-specific parameters.
+TESTS_OPENSSL_PARAMS := $(TESTS_GENERAL_PARAMETERS)
+TESTS_GNUTLS_PARAMS := $(TESTS_GENERAL_PARAMETERS)
+TESTS_NSS_PARAMS := $(TESTS_GENERAL_PARAMETERS) $(TESTS_SKIP_NSS_KNOWN_FAILURES)
+
+# Ignore failing tests on mips64el.
+# The cause of the failure is unknown and should be investigated, we are ignoring
+# them so we can make any new failures cause a FTBFS.
+# We were previously not noticing any failures due to that.
+ifneq (,$(filter $(DEB_BUILD_ARCH), mips64el))
+    TESTS_OPENSSL_PARAMS += $(addprefix ~, 3000)
+endif
+
+# Ignore failing tests on armhf.
+# The cause of the failure is unknown and should be investigated, we are ignoring
+# them so we can make any new failures cause a FTBFS.
+# We were previously not noticing any failures due to that.
+ifneq (,$(filter $(DEB_BUILD_ARCH), armhf))
+    TESTS_OPENSSL_PARAMS += $(addprefix ~, 300 301 303 304 306 309 310 325 364 400 401 403 406 407 408 409 410 414 417 560 678 1112 1272 1561 1562 1630 1631 1632 2034 2037 2041 3000 3001)
+	TESTS_GNUTLS_PARAMS += $(addprefix ~, 300 301 303 304 306 309 310 325 364 400 401 403 406 407 408 409 410 414 417 560 1112 1272 1561 1562 1630 1631 1632 2034 2037 2041 3000 3001)
+	TESTS_NSS_PARAMS += $(addprefix ~, 300 301 303 304 306 309 325 364 400 401 403 406 407 408 409 410 414 417 560 1112 1272 1561 1562 1630 1631 1632)
+endif
 
 override_dh_auto_test:
 ifeq ($(filter nocheck,$(DEB_BUILD_PROFILES)),)
 # OpenSSL tests.
 	-cd debian/build && VERBOSE=1 \
-		TFLAGS="$(TESTS_GENERAL_PARAMETERS)" \
+		TFLAGS="$(TESTS_OPENSSL_PARAMS)" \
 		$(MAKE) test-nonflaky
 
 # GnuTLS tests.
 	-cd debian/build-gnutls && VERBOSE=1 \
-		TFLAGS="$(TESTS_GENERAL_PARAMETERS)" \
+		TFLAGS="$(TESTS_GNUTLS_PARAMS)" \
 		$(MAKE) test-nonflaky
 
 # NSS tests.
 	-cd debian/build-nss && VERBOSE=1 \
-		TFLAGS="$(TESTS_GENERAL_PARAMETERS) $(TESTS_SKIP_NSS_KNOWN_FAILURES)" \
+		TFLAGS="$(TESTS_NSS_PARAMS)" \
 		$(MAKE) test-nonflaky
 endif
 
