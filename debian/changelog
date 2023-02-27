@@ -1,3 +1,9 @@
+curl (7.88.1-2~exp4) experimental; urgency=medium
+
+  * d/rules: Fail the build if tests fails
+
+ -- Samuel Henrique <samueloph@debian.org>  Mon, 27 Feb 2023 22:19:03 +0000
+
 curl (7.88.1-2~exp3) experimental; urgency=medium
 
   * Fix locale-related tests and ignore known failures
