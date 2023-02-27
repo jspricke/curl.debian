@@ -100,17 +100,17 @@ endif
 override_dh_auto_test:
 ifeq ($(filter nocheck,$(DEB_BUILD_PROFILES)),)
 # OpenSSL tests.
-	-cd debian/build && VERBOSE=1 \
+	cd debian/build && VERBOSE=1 \
 		TFLAGS="$(TESTS_OPENSSL_PARAMS)" \
 		$(MAKE) test-nonflaky
 
 # GnuTLS tests.
-	-cd debian/build-gnutls && VERBOSE=1 \
+	cd debian/build-gnutls && VERBOSE=1 \
 		TFLAGS="$(TESTS_GNUTLS_PARAMS)" \
 		$(MAKE) test-nonflaky
 
 # NSS tests.
-	-cd debian/build-nss && VERBOSE=1 \
+	cd debian/build-nss && VERBOSE=1 \
 		TFLAGS="$(TESTS_NSS_PARAMS)" \
 		$(MAKE) test-nonflaky
 endif
