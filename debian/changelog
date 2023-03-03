@@ -1,3 +1,20 @@
+curl (7.88.1-2) unstable; urgency=medium
+
+  * Multiple test improvements, which will increase the reliability of the
+    package, especially when backporting fixes on stable and oldstable:
+    - Test results are now critical to the build process, if a test fails,
+      the build will fail.
+    - Add two new test build-dependencies to increase coverage: locales-all
+      and gnutls-bin.
+    - Only run non-flaky tests.
+    - Print logs of failed tests.
+    - Run all tests even if there was a failure.
+    - Ignore results of known failing tests (for Debian).
+    - Disable valgrind through a test parameter instead of patching
+      upstream source code.
+
+ -- Samuel Henrique <samueloph@debian.org>  Fri, 03 Mar 2023 08:28:19 +0000
+
 curl (7.88.1-1) unstable; urgency=medium
 
   * New upstream version 7.88.1
