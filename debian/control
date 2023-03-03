@@ -25,9 +25,11 @@ Build-Depends:
  libssl-dev,
  libtool,
  libzstd-dev,
+ locales-all <!nocheck>,
  openssh-server <!nocheck>,
  python3:native <!nocheck>,
  python3-impacket <!nocheck>,
+ gnutls-bin <!nocheck>,
  quilt,
  stunnel4 <!nocheck>,
  zlib1g-dev
