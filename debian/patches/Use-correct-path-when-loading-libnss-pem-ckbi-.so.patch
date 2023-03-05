@@ -24,8 +24,8 @@ index 774cbdd..fbcd0ee 100644
 +#define xstr(a) str(a)
 +#define str(a) #a
 +
-+static const char *pem_library = "/usr/lib/" xstr(_DEB_HOST_ARCH) "/libnsspem.so";
-+static const char *trust_library = "/usr/lib/" xstr(_DEB_HOST_ARCH) "/libnssckbi.so";
++static const char *pem_library = "/usr/lib/" xstr(_DEB_HOST_ARCH) "/nss/libnsspem.so";
++static const char *trust_library = "/usr/lib/" xstr(_DEB_HOST_ARCH) "/nss/libnssckbi.so";
 +
 +#undef xstr
 +#undef str
