@@ -26,6 +26,9 @@ ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
   MAKEFLAGS += -j$(NUMJOBS)
 endif
 
+export DEB_CFLAGS_MAINT_APPEND = -D_DEB_HOST_ARCH=$(DEB_HOST_MULTIARCH)
+export DEB_CXXFLAGS_MAINT_APPEND = -D_DEB_HOST_ARCH=$(DEB_HOST_MULTIARCH)
+
 %:
 	dh $@
 
@@ -68,16 +71,10 @@ override_dh_auto_build:
 # -n disables valgrind usage
 TESTS_GENERAL_PARAMETERS := -n
 
-# These tests fail on NSS for unknown reasons so we skip them (support for
-# curl with NSS will be removed on Debian trixie).
-# They are most likely failing due to an issue related to PEM support when
-# using NSS.
-TESTS_SKIP_NSS_KNOWN_FAILURES := $(addprefix ~, 310 311 312 313 2034 2035 2037 2038 2041 2042 3000 3001)
-
 # Build-flavor-specific parameters.
 TESTS_OPENSSL_PARAMS := $(TESTS_GENERAL_PARAMETERS)
 TESTS_GNUTLS_PARAMS := $(TESTS_GENERAL_PARAMETERS)
-TESTS_NSS_PARAMS := $(TESTS_GENERAL_PARAMETERS) $(TESTS_SKIP_NSS_KNOWN_FAILURES)
+TESTS_NSS_PARAMS := $(TESTS_GENERAL_PARAMETERS)
 
 # Ignore failing tests on mips64el.
 # The cause of the failure is unknown and should be investigated, we are ignoring
