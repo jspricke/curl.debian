@@ -1,0 +1,34 @@
+From: Sergio Durigan Junior <sergiodj@debian.org>
+Date: Sun, 5 Mar 2023 12:00:03 -0500
+Subject: Use correct path when loading libnss{pem,ckbi}.so
+
+Bug-Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=726073
+---
+ lib/vtls/nss.c | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/lib/vtls/nss.c b/lib/vtls/nss.c
+index 774cbdd..fbcd0ee 100644
+--- a/lib/vtls/nss.c
++++ b/lib/vtls/nss.c
+@@ -255,8 +255,18 @@ static const char *trust_library = "nssckbi.dll";
+ static const char *pem_library = "libnsspem.dylib";
+ static const char *trust_library = "libnssckbi.dylib";
+ #else
+-static const char *pem_library = "libnsspem.so";
+-static const char *trust_library = "libnssckbi.so";
++#ifndef _DEB_HOST_ARCH
++#error "_DEB_HOST_ARCH must be defined"
++#endif
++
++#define xstr(a) str(a)
++#define str(a) #a
++
++static const char *pem_library = "/usr/lib/" xstr(_DEB_HOST_ARCH) "/libnsspem.so";
++static const char *trust_library = "/usr/lib/" xstr(_DEB_HOST_ARCH) "/libnssckbi.so";
++
++#undef xstr
++#undef str
+ #endif
+ 
+ static SECMODModule *pem_module = NULL;
