@@ -1,3 +1,13 @@
+curl (7.88.1-3) unstable; urgency=medium
+
+  * d/p/Use-correct-path-when-loading-libnss-pem-ckbi-.so.patch:
+    Use correct paths when loading libnss{pem,ckbi}.so. (Closes: #726073)
+  * d/rules: Pass _DEB_HOST_ARCH via C{,XX}FLAGS; reenable NSS PEM tests.
+  * d/control: B-D on nss-plugin-pem (test only).
+    Also, make libcurl3-nss depend on nss-plugin-pem as well.
+
+ -- Sergio Durigan Junior <sergiodj@debian.org>  Sun, 05 Mar 2023 12:59:58 -0500
+
 curl (7.88.1-2) unstable; urgency=medium
 
   * Multiple test improvements, which will increase the reliability of the
