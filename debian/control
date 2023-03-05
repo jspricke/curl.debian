@@ -32,7 +32,8 @@ Build-Depends:
  gnutls-bin <!nocheck>,
  quilt,
  stunnel4 <!nocheck>,
- zlib1g-dev
+ zlib1g-dev,
+ nss-plugin-pem <!nocheck>,
 Build-Conflicts: autoconf2.13, automake1.4
 Standards-Version: 4.6.1
 Vcs-Git: https://salsa.debian.org/debian/curl.git
@@ -105,7 +106,7 @@ Description: easy-to-use client-side URL transfer library (GnuTLS flavour)
 Package: libcurl3-nss
 Architecture: any
 Section: libs
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, nss-plugin-pem
 Recommends: ca-certificates
 Pre-Depends: ${misc:Pre-Depends}
 Multi-Arch: same
