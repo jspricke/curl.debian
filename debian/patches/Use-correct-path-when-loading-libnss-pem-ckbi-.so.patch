@@ -11,7 +11,7 @@ diff --git a/lib/vtls/nss.c b/lib/vtls/nss.c
 index 774cbdd..fbcd0ee 100644
 --- a/lib/vtls/nss.c
 +++ b/lib/vtls/nss.c
-@@ -255,8 +255,18 @@ static const char *trust_library = "nssckbi.dll";
+@@ -255,8 +255,12 @@ static const char *trust_library = "nssckbi.dll";
  static const char *pem_library = "libnsspem.dylib";
  static const char *trust_library = "libnssckbi.dylib";
  #else
@@ -21,14 +21,8 @@ index 774cbdd..fbcd0ee 100644
 +#error "_DEB_HOST_ARCH must be defined"
 +#endif
 +
-+#define xstr(a) str(a)
-+#define str(a) #a
-+
-+static const char *pem_library = "/usr/lib/" xstr(_DEB_HOST_ARCH) "/nss/libnsspem.so";
-+static const char *trust_library = "/usr/lib/" xstr(_DEB_HOST_ARCH) "/nss/libnssckbi.so";
-+
-+#undef xstr
-+#undef str
++static const char *pem_library = "/usr/lib/" _DEB_HOST_ARCH "/nss/libnsspem.so";
++static const char *trust_library = "/usr/lib/" _DEB_HOST_ARCH "/nss/libnssckbi.so";
  #endif
  
  static SECMODModule *pem_module = NULL;
