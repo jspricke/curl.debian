@@ -1,3 +1,12 @@
+curl (7.88.1-5) unstable; urgency=medium
+
+  * Fix stringification of _DEB_HOST_ARCH macro.
+    - d/p/Use-correct-path-when-loading-libnss-pem-ckbi-.so.patch:
+      Use _DEB_HOST_ARCH directly.
+    - d/rules: Quote _DEB_HOST_ARCH when passing it with -D.
+
+ -- Sergio Durigan Junior <sergiodj@debian.org>  Mon, 06 Mar 2023 10:22:32 -0500
+
 curl (7.88.1-4) unstable; urgency=medium
 
   * d/p/Use-correct-path-when-loading-libnss-pem-ckbi-.so.patch:
