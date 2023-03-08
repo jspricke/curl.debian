@@ -26,6 +26,9 @@ ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
   MAKEFLAGS += -j$(NUMJOBS)
 endif
 
+export DEB_CFLAGS_MAINT_APPEND = -D_DEB_HOST_ARCH=\"$(DEB_HOST_MULTIARCH)\"
+export DEB_CXXFLAGS_MAINT_APPEND = -D_DEB_HOST_ARCH=\"$(DEB_HOST_MULTIARCH)\"
+
 %:
 	dh $@
 
@@ -68,50 +71,28 @@ override_dh_auto_build:
 # -n disables valgrind usage
 TESTS_GENERAL_PARAMETERS := -n
 
-# These tests fail on NSS for unknown reasons so we skip them (support for
-# curl with NSS will be removed on Debian trixie).
-# They are most likely failing due to an issue related to PEM support when
-# using NSS.
-TESTS_SKIP_NSS_KNOWN_FAILURES := $(addprefix ~, 310 311 312 313 2034 2035 2037 2038 2041 2042 3000 3001)
+# These tests fail if a IPv6-only builder is used:
+# https://bugs.debian.org/1032343
+# https://github.com/curl/curl/issues/10682
+TESTS_FAILS_ON_IPV6_ONLY_MACHINES += $(addprefix ~, 300 301 303 304 306 309 310 325 364 400 401 403 406 407 408 409 410 414 417 560 678 1112 1272 1561 1562 1630 1631 1632 2034 2037 2041 3000 3001)
 
-# Build-flavor-specific parameters.
-TESTS_OPENSSL_PARAMS := $(TESTS_GENERAL_PARAMETERS)
-TESTS_GNUTLS_PARAMS := $(TESTS_GENERAL_PARAMETERS)
-TESTS_NSS_PARAMS := $(TESTS_GENERAL_PARAMETERS) $(TESTS_SKIP_NSS_KNOWN_FAILURES)
-
-# Ignore failing tests on mips64el.
-# The cause of the failure is unknown and should be investigated, we are ignoring
-# them so we can make any new failures cause a FTBFS.
-# We were previously not noticing any failures due to that.
-ifneq (,$(filter $(DEB_BUILD_ARCH), mips64el))
-    TESTS_OPENSSL_PARAMS += $(addprefix ~, 3000)
-endif
-
-# Ignore failing tests on armhf.
-# The cause of the failure is unknown and should be investigated, we are ignoring
-# them so we can make any new failures cause a FTBFS.
-# We were previously not noticing any failures due to that.
-ifneq (,$(filter $(DEB_BUILD_ARCH), armhf))
-    TESTS_OPENSSL_PARAMS += $(addprefix ~, 300 301 303 304 306 309 310 325 364 400 401 403 406 407 408 409 410 414 417 560 678 1112 1272 1561 1562 1630 1631 1632 2034 2037 2041 3000 3001)
-	TESTS_GNUTLS_PARAMS += $(addprefix ~, 300 301 303 304 306 309 310 325 364 400 401 403 406 407 408 409 410 414 417 560 1112 1272 1561 1562 1630 1631 1632 2034 2037 2041 3000 3001)
-	TESTS_NSS_PARAMS += $(addprefix ~, 300 301 303 304 306 309 325 364 400 401 403 406 407 408 409 410 414 417 560 1112 1272 1561 1562 1630 1631 1632)
-endif
+TESTS_GENERAL_PARAMETERS += $(TESTS_FAILS_ON_IPV6_ONLY_MACHINES)
 
 override_dh_auto_test:
 ifeq ($(filter nocheck,$(DEB_BUILD_PROFILES)),)
 # OpenSSL tests.
 	cd debian/build && VERBOSE=1 \
-		TFLAGS="$(TESTS_OPENSSL_PARAMS)" \
+		TFLAGS="$(TESTS_GENERAL_PARAMETERS)" \
 		$(MAKE) test-nonflaky
 
 # GnuTLS tests.
 	cd debian/build-gnutls && VERBOSE=1 \
-		TFLAGS="$(TESTS_GNUTLS_PARAMS)" \
+		TFLAGS="$(TESTS_GENERAL_PARAMETERS)" \
 		$(MAKE) test-nonflaky
 
 # NSS tests.
 	cd debian/build-nss && VERBOSE=1 \
-		TFLAGS="$(TESTS_NSS_PARAMS)" \
+		TFLAGS="$(TESTS_GENERAL_PARAMETERS)" \
 		$(MAKE) test-nonflaky
 endif
 
