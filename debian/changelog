@@ -1,3 +1,12 @@
+curl (7.88.1-6) unstable; urgency=medium
+
+  * d/rules: Ignore test results from tests that fail on IPv6-only builders
+    (closes: #1032343)
+  * d/control: Don't install gnutls-bin for tests on ppc64el (tests hangs
+    forever)
+
+ -- Samuel Henrique <samueloph@debian.org>  Wed, 08 Mar 2023 20:57:09 +0000
+
 curl (7.88.1-5) unstable; urgency=medium
 
   * Fix stringification of _DEB_HOST_ARCH macro.
