@@ -32,6 +32,11 @@ test8-verify-that-ctrl-byte-cookies-are-ignored.patch
 CVE-2022-32221.patch
 CVE-2022-43552.patch
 CVE-2023-23916.patch
+CVE-2023-27533.patch
+CVE-2023-27534.patch
+CVE-2023-27538.patch
+CVE-2023-27535.patch
+CVE-2023-27536.patch
 
 # Always add CVE patches before these two patches
 90_gnutls.patch
