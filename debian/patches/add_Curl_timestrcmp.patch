@@ -1,0 +1,51 @@
+Description: Backport Curl_timestrcmp in lib/strcase.(c|h)
+ This patch was backported by Samuel Henrique <samueloph@debian.org> and it
+ only has the changes required to backport other patches, so we are not
+ converting the whole codebase to make use of the new function (yet).
+Author: Samuel Henrique <samueloph@debian.org>
+
+Original patch details
+Author: Daniel Stenberg <daniel@haxx.se>
+Origin: https://github.com/curl/curl/commit/ed5095ed94281989e103c72e032200b83be37878
+
+Index: curl/lib/strcase.c
+===================================================================
+--- curl.orig/lib/strcase.c
++++ curl/lib/strcase.c
+@@ -271,3 +271,25 @@ int curl_strnequal(const char *first, co
+ {
+   return Curl_strncasecompare(first, second, max);
+ }
++
++/*
++ * Curl_timestrcmp() returns 0 if the two strings are identical. The time this
++ * function spends is a function of the shortest string, not of the contents.
++ */
++int Curl_timestrcmp(const char *a, const char *b)
++{
++  int match = 0;
++  int i = 0;
++
++  if(a && b) {
++    while(1) {
++      match |= a[i]^b[i];
++      if(!a[i] || !b[i])
++        break;
++      i++;
++    }
++  }
++  else
++    return a || b;
++  return match;
++}
+Index: curl/lib/strcase.h
+===================================================================
+--- curl.orig/lib/strcase.h
++++ curl/lib/strcase.h
+@@ -49,5 +49,6 @@ void Curl_strntoupper(char *dest, const
+ void Curl_strntolower(char *dest, const char *src, size_t n);
+ 
+ bool Curl_safecmp(char *a, char *b);
++int Curl_timestrcmp(const char *first, const char *second);
+ 
+ #endif /* HEADER_CURL_STRCASE_H */
