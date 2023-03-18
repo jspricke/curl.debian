@@ -1,3 +1,9 @@
+curl (7.64.0-4+deb10u5) buster-security; urgency=medium
+
+  * Import backported patches from debian/bullseye
+
+ -- Samuel Henrique <samueloph@debian.org>  Sat, 18 Mar 2023 13:36:58 +0000
+
 curl (7.64.0-4+deb10u4) buster-security; urgency=high
 
   * Non-maintainer upload by the LTS Team.
