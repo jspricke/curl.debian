@@ -7,9 +7,11 @@ Origin: https://github.com/curl/curl/commit/2fc031d834d488854ffc58bf7dbcef7fa7c1
  tests/data/test8 |   32 +++++++++++++++++++++++++++++++-
  1 file changed, 31 insertions(+), 1 deletion(-)
 
---- a/tests/data/test8
-+++ b/tests/data/test8
-@@ -47,6 +47,36 @@
+Index: curl/tests/data/test8
+===================================================================
+--- curl.orig/tests/data/test8
++++ curl/tests/data/test8
+@@ -47,6 +47,36 @@ Set-Cookie: nocookie=yes; path=/WE;
  Set-Cookie: blexp=yesyes; domain=%HOSTIP; domain=%HOSTIP; expiry=totally bad;
  Set-Cookie: partialip=nono; domain=.0.0.1;
  Set-Cookie: chocolate=chip; domain=curl; path=/we/want;
@@ -46,7 +48,7 @@ Origin: https://github.com/curl/curl/commit/2fc031d834d488854ffc58bf7dbcef7fa7c1
  
  </file>
  <precheck>
-@@ -63,7 +93,7 @@
+@@ -63,7 +93,7 @@ perl -e 'if ("%HOSTIP" !~ /\.0\.0\.1$/)
  GET /we/want/8 HTTP/1.1
  Host: %HOSTIP:%HTTPPORT
  Accept: */*
