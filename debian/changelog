@@ -1,10 +1,17 @@
-curl (7.88.1-7~exp1) experimental; urgency=medium
+curl (7.88.1-7) unstable; urgency=medium
 
-  * Revert "d/control: Don't install gnutls-bin for tests on ppc64el (tests
-    hangs forever)"
-    So we can confirm whether the build only hangs on unstable.
+  * Bump Standards-Version to 4.6.2
+  * d/p/06_always-disable-valgrind.patch: Remove unused patch
+  * d/patches: Refresh all patches
+  * Import 5 new upstream patches fixing CVES:
+    - CVE-2023-27533: TELNET option IAC injection
+    - CVE-2023-27534: SFTP path ~ resolving discrepancy
+    - CVE-2023-27535: FTP too eager connection reuse
+    - CVE-2023-27536: GSS delegation too eager connection re-use
+    - CVE-2023-27537: HSTS double-free
+    - CVE-2023-27538: SSH connection too eager reuse still
 
- -- Samuel Henrique <samueloph@debian.org>  Wed, 08 Mar 2023 21:45:48 +0000
+ -- Samuel Henrique <samueloph@debian.org>  Tue, 21 Mar 2023 22:39:05 +0000
 
 curl (7.88.1-6) unstable; urgency=medium
 
