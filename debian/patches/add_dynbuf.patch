@@ -1,10 +1,9 @@
 Description: Backport dynbuf
- This patch was backported by Samuel Henrique <samueloph@debian.org>
+ Backports dynbuf up to the following commit:
+ https://github.com/curl/curl/commit/7e8561e030fcfaba5cd620d7e9c9ab8356163132
 Author: Samuel Henrique <samueloph@debian.org>
-
-Original patch details:
 Author: Daniel Stenberg <daniel@haxx.se>
-Origin: ed35d6590e72c23c568af1e3b8ac6e4e2d883888
+Origin: backport, https://github.com/curl/curl/commit/ed35d6590e72c23c568af1e3b8ac6e4e2d883888
 
 Index: curl/lib/Makefile.inc
 ===================================================================
