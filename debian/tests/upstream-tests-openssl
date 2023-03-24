@@ -1,0 +1,23 @@
+#!/bin/sh
+set -e
+
+export DEB_BUILD_PROFILES="pkg.curl.openssl-only"
+export VERBOSE=1
+TESTS_GENERAL_PARAMETERS="-c /usr/bin/curl"
+TESTS_GENERAL_PARAMETERS="-vc /usr/bin/curl"
+export TESTS_GENERAL_PARAMETERS
+
+echo "dh_update_autotools_config"
+dh_update_autotools_config
+
+echo "dh_autoreconf"
+dh_autoreconf
+
+echo "debian/rules override_dh_auto_configure "
+debian/rules override_dh_auto_configure
+
+echo "debian/rules override_dh_auto_build"
+debian/rules override_dh_auto_build
+
+echo "debian/rules override_dh_auto_test"
+debian/rules override_dh_auto_test

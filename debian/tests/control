@@ -1,0 +1,8 @@
+Tests: upstream-tests-openssl
+Depends: curl, @builddeps@
+
+Tests: upstream-tests-gnutls
+Depends: @builddeps@
+
+Tests: upstream-tests-nss
+Depends: @builddeps@
