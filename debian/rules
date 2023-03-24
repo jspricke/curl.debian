@@ -29,47 +29,88 @@ endif
 export DEB_CFLAGS_MAINT_APPEND = -D_DEB_HOST_ARCH=\"$(DEB_HOST_MULTIARCH)\"
 export DEB_CXXFLAGS_MAINT_APPEND = -D_DEB_HOST_ARCH=\"$(DEB_HOST_MULTIARCH)\"
 
+ifneq ($(filter pkg.curl.openssl-only,$(DEB_BUILD_PROFILES)),)
+	DEB_BUILD_PROFILES += pkg.curl.no-gnutls pkg.curl.no-nss
+endif
+ifneq ($(filter pkg.curl.gnutls-only,$(DEB_BUILD_PROFILES)),)
+	DEB_BUILD_PROFILES += pkg.curl.no-openssl pkg.curl.no-nss
+endif
+ifneq ($(filter pkg.curl.nss-only,$(DEB_BUILD_PROFILES)),)
+	DEB_BUILD_PROFILES += pkg.curl.no-openssl pkg.curl.no-gnutls
+endif
+
 %:
 	dh $@
 
 override_dh_auto_configure:
-	mkdir -p debian/build debian/build-gnutls debian/build-nss
-	# pop the last patch (nss)
+ifeq ($(filter pkg.curl.no-openssl,$(DEB_BUILD_PROFILES)),)
+	mkdir -p debian/build
+endif
+ifeq ($(filter pkg.curl.no-gnutls,$(DEB_BUILD_PROFILES)),)
+	mkdir -p debian/build-gnutls
+endif
+ifeq ($(filter pkg.curl.no-nss,$(DEB_BUILD_PROFILES)),)
+	mkdir -p debian/build-nss
+endif
+# pop the last patch (nss)
 	quilt pop
-	# pop the second last patch (gnutls)
+# pop the second last patch (gnutls)
 	quilt pop
-	# get the source without nss and gnutls patches
+ifeq ($(filter pkg.curl.no-openssl,$(DEB_BUILD_PROFILES)),)
+# get the source without nss and gnutls patches
 	tar -cf - --exclude=debian/build* --exclude=.pc . \
 		| tar -xf - -C debian/build
-	# push the second last patch which must be gnutls
+endif
+# push the second last patch which must be gnutls
 	quilt push
-	# get the source with gnutls patch applied
+ifeq ($(filter pkg.curl.no-gnutls,$(DEB_BUILD_PROFILES)),)
+# get the source with gnutls patch applied
 	tar -cf - --exclude=debian/build* --exclude=.pc . \
 		| tar -xf - -C debian/build-gnutls
-	# push the last patch which must be nss
+endif
+# push the last patch which must be nss
 	quilt push
-	# get the source with nss patch applied
+ifeq ($(filter pkg.curl.no-nss,$(DEB_BUILD_PROFILES)),)
+# get the source with nss patch applied
 	tar -cf - --exclude=debian/build* --exclude=.pc . \
 		| tar -xf - -C debian/build-nss
-	# run buildconf and make sure to copy the patched ltmain.sh
-	for flavour in build build-gnutls build-nss; do \
-		(cd debian/$$flavour && ./buildconf && cp ../../ltmain.sh .) \
-	done
-	cd debian/build && dh_auto_configure ${CONFIGURE_ARGS} --with-openssl \
+endif
+ifeq ($(filter pkg.curl.no-openssl,$(DEB_BUILD_PROFILES)),)
+	cd debian/build && \
+	./buildconf && \
+	cp ../../ltmain.sh . && \
+	dh_auto_configure ${CONFIGURE_ARGS} --with-openssl \
 		--with-ca-path=/etc/ssl/certs \
 		--with-ca-bundle=/etc/ssl/certs/ca-certificates.crt
-	cd debian/build-gnutls && dh_auto_configure ${CONFIGURE_ARGS} --with-gnutls \
+endif
+ifeq ($(filter pkg.curl.no-gnutls,$(DEB_BUILD_PROFILES)),)
+	cd debian/build-gnutls && \
+	./buildconf && \
+	cp ../../ltmain.sh . && \
+	dh_auto_configure ${CONFIGURE_ARGS} --with-gnutls \
 		--with-ca-path=/etc/ssl/certs
-	cd debian/build-nss && dh_auto_configure ${CONFIGURE_ARGS} --with-nss --with-nss-deprecated
+endif
+ifeq ($(filter pkg.curl.no-nss,$(DEB_BUILD_PROFILES)),)
+	cd debian/build-nss && \
+	./buildconf && \
+	cp ../../ltmain.sh . && \
+	dh_auto_configure ${CONFIGURE_ARGS} --with-nss --with-nss-deprecated
+endif
 
 override_dh_auto_build:
+ifeq ($(filter pkg.curl.no-openssl,$(DEB_BUILD_PROFILES)),)
 	cd debian/build && dh_auto_build
+endif
+ifeq ($(filter pkg.curl.no-gnutls,$(DEB_BUILD_PROFILES)),)
 	cd debian/build-gnutls && dh_auto_build
+endif
+ifeq ($(filter pkg.curl.no-nss,$(DEB_BUILD_PROFILES)),)
 	cd debian/build-nss && dh_auto_build
+endif
 
 # Test parameters that are passed to runtests.pl.
 # -n disables valgrind usage
-TESTS_GENERAL_PARAMETERS := -n
+TESTS_GENERAL_PARAMETERS += -n
 
 # These tests fail if a IPv6-only builder is used:
 # https://bugs.debian.org/1032343
@@ -80,36 +121,52 @@ TESTS_GENERAL_PARAMETERS += $(TESTS_FAILS_ON_IPV6_ONLY_MACHINES)
 
 override_dh_auto_test:
 ifeq ($(filter nocheck,$(DEB_BUILD_PROFILES)),)
+ifeq ($(filter pkg.curl.no-openssl,$(DEB_BUILD_PROFILES)),)
 # OpenSSL tests.
 	cd debian/build && VERBOSE=1 \
 		TFLAGS="$(TESTS_GENERAL_PARAMETERS)" \
 		$(MAKE) test-nonflaky
-
+endif
+ifeq ($(filter pkg.curl.no-gnutls,$(DEB_BUILD_PROFILES)),)
 # GnuTLS tests.
 	cd debian/build-gnutls && VERBOSE=1 \
 		TFLAGS="$(TESTS_GENERAL_PARAMETERS)" \
 		$(MAKE) test-nonflaky
-
+endif
+ifeq ($(filter pkg.curl.no-nss,$(DEB_BUILD_PROFILES)),)
 # NSS tests.
 	cd debian/build-nss && VERBOSE=1 \
 		TFLAGS="$(TESTS_GENERAL_PARAMETERS)" \
 		$(MAKE) test-nonflaky
 endif
+endif
 
 override_dh_install:
+ifeq ($(filter pkg.curl.no-openssl,$(DEB_BUILD_PROFILES)),)
 	${MAKE} -C debian/build					\
 		DESTDIR=$(shell pwd)/debian/tmp install
+endif
+ifeq ($(filter pkg.curl.no-gnutls,$(DEB_BUILD_PROFILES)),)
 	${MAKE} -C debian/build-gnutls				\
 		DESTDIR=$(shell pwd)/debian/tmp-gnutls install
+endif
+ifeq ($(filter pkg.curl.no-nss,$(DEB_BUILD_PROFILES)),)
 	${MAKE} -C debian/build-nss				\
 		DESTDIR=$(shell pwd)/debian/tmp-nss install
+endif
 	find debian/tmp* -name '*.la' -delete
-	dh_install -plibcurl3-gnutls -plibcurl4-gnutls-dev	\
-		--sourcedir=debian/tmp-gnutls
-	dh_install -plibcurl3-nss -plibcurl4-nss-dev		\
-		--sourcedir=debian/tmp-nss
+ifeq ($(filter pkg.curl.no-openssl,$(DEB_BUILD_PROFILES)),)
 	dh_install -pcurl -plibcurl4 -plibcurl4-openssl-dev -plibcurl4-doc \
 		--sourcedir=debian/tmp
+endif
+ifeq ($(filter pkg.curl.no-gnutls,$(DEB_BUILD_PROFILES)),)
+	dh_install -plibcurl3-gnutls -plibcurl4-gnutls-dev	\
+		--sourcedir=debian/tmp-gnutls
+endif
+ifeq ($(filter pkg.curl.no-nss,$(DEB_BUILD_PROFILES)),)
+	dh_install -plibcurl3-nss -plibcurl4-nss-dev		\
+		--sourcedir=debian/tmp-nss
+endif
 # Modify curl-config to make it architecture-independent:
 # 1. In --static-libs output, replace the output of krb5-config (which
 #    currently includes architecture-specific paths) with a call at
