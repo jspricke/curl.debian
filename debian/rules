@@ -130,11 +130,15 @@ override_dh_install:
 # 4. In --configure output, remove
 #    -fdebug-prefix-map=/buildd/specific/random/path=. and
 #    -ffile-prefix-map=/buildd/specific/random/path=.
+# 5. Remove -D_DEB_HOST_ARCH from CFLAGS.  This is a (hopefully
+#    temporary) hack needed to properly build curl with NSS PEM
+#    support in Debian.
 	sed -e "/-lcurl /s|`krb5-config --libs gssapi`|\`krb5-config --libs gssapi\`|" \
 	    -e "/--prefix/s|/$(DEB_HOST_MULTIARCH)'|/'\\\\\`dpkg-architecture -qDEB_HOST_MULTIARCH\\\\\`|g" \
 	    -e "/--prefix/s|=$(DEB_BUILD_GNU_TYPE)'|='\\\\\`dpkg-architecture -qDEB_BUILD_GNU_TYPE\\\\\`|g" \
 	    -e "/-fdebug-prefix-map=/s|\(-fdebug-prefix-map=\)/[^ ]*=.||" \
 	    -e "/-ffile-prefix-map=/s|\(-ffile-prefix-map=\)/[^ ]*=.||" \
+	    -e "/-D_DEB_HOST_ARCH=/s|-D_DEB_HOST_ARCH=\\\\\"[^ ']*\\\\\"||" \
 	    -i `find . -name curl-config`
 # When we get here, everything has been properly installed.  Because
 # of debhelper-compat 13, we have to remove some files that are
