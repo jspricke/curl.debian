@@ -1,9 +1,69 @@
-curl (7.88.1-1~bpo11+1) bullseye-backports; urgency=medium
+curl (7.88.1-7) unstable; urgency=medium
 
-  * Rebuild for bullseye-backports.
-  * Revert "d/control: Update BD to drop transitional package libidn11-dev"
+  * Bump Standards-Version to 4.6.2
+  * d/p/06_always-disable-valgrind.patch: Remove unused patch
+  * d/patches: Refresh all patches
+  * Import 5 new upstream patches fixing CVES:
+    - CVE-2023-27533: TELNET option IAC injection
+    - CVE-2023-27534: SFTP path ~ resolving discrepancy
+    - CVE-2023-27535: FTP too eager connection reuse
+    - CVE-2023-27536: GSS delegation too eager connection re-use
+    - CVE-2023-27537: HSTS double-free
+    - CVE-2023-27538: SSH connection too eager reuse still
 
- -- Samuel Henrique <samueloph@debian.org>  Fri, 03 Mar 2023 08:43:53 +0000
+ -- Samuel Henrique <samueloph@debian.org>  Tue, 21 Mar 2023 22:39:05 +0000
+
+curl (7.88.1-6) unstable; urgency=medium
+
+  * d/rules: Ignore test results from tests that fail on IPv6-only builders
+    (closes: #1032343)
+  * d/control: Don't install gnutls-bin for tests on ppc64el (tests hangs
+    forever)
+
+ -- Samuel Henrique <samueloph@debian.org>  Wed, 08 Mar 2023 20:57:09 +0000
+
+curl (7.88.1-5) unstable; urgency=medium
+
+  * Fix stringification of _DEB_HOST_ARCH macro.
+    - d/p/Use-correct-path-when-loading-libnss-pem-ckbi-.so.patch:
+      Use _DEB_HOST_ARCH directly.
+    - d/rules: Quote _DEB_HOST_ARCH when passing it with -D.
+
+ -- Sergio Durigan Junior <sergiodj@debian.org>  Mon, 06 Mar 2023 10:22:32 -0500
+
+curl (7.88.1-4) unstable; urgency=medium
+
+  * d/p/Use-correct-path-when-loading-libnss-pem-ckbi-.so.patch:
+    Prepend "/nss/" before the library name.
+
+ -- Sergio Durigan Junior <sergiodj@debian.org>  Sun, 05 Mar 2023 18:38:13 -0500
+
+curl (7.88.1-3) unstable; urgency=medium
+
+  * d/p/Use-correct-path-when-loading-libnss-pem-ckbi-.so.patch:
+    Use correct paths when loading libnss{pem,ckbi}.so. (Closes: #726073)
+  * d/rules: Pass _DEB_HOST_ARCH via C{,XX}FLAGS; reenable NSS PEM tests.
+  * d/control: B-D on nss-plugin-pem (test only).
+    Also, make libcurl3-nss depend on nss-plugin-pem as well.
+
+ -- Sergio Durigan Junior <sergiodj@debian.org>  Sun, 05 Mar 2023 12:59:58 -0500
+
+curl (7.88.1-2) unstable; urgency=medium
+
+  * Multiple test improvements, which will increase the reliability of the
+    package, especially when backporting fixes on stable and oldstable:
+    - Test results are now critical to the build process, if a test fails,
+      the build will fail.
+    - Add two new test build-dependencies to increase coverage: locales-all
+      and gnutls-bin.
+    - Only run non-flaky tests.
+    - Print logs of failed tests.
+    - Run all tests even if there was a failure.
+    - Ignore results of known failing tests (for Debian).
+    - Disable valgrind through a test parameter instead of patching
+      upstream source code.
+
+ -- Samuel Henrique <samueloph@debian.org>  Fri, 03 Mar 2023 08:28:19 +0000
 
 curl (7.88.1-1) unstable; urgency=medium
 

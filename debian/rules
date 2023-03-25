@@ -20,6 +20,15 @@ else
 	CONFIGURE_ARGS += --without-libssh --with-libssh2
 endif
 
+
+ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+  NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+  MAKEFLAGS += -j$(NUMJOBS)
+endif
+
+export DEB_CFLAGS_MAINT_APPEND = -D_DEB_HOST_ARCH=\"$(DEB_HOST_MULTIARCH)\"
+export DEB_CXXFLAGS_MAINT_APPEND = -D_DEB_HOST_ARCH=\"$(DEB_HOST_MULTIARCH)\"
+
 %:
 	dh $@
 
@@ -58,11 +67,33 @@ override_dh_auto_build:
 	cd debian/build-gnutls && dh_auto_build
 	cd debian/build-nss && dh_auto_build
 
+# Test parameters that are passed to runtests.pl.
+# -n disables valgrind usage
+TESTS_GENERAL_PARAMETERS := -n
+
+# These tests fail if a IPv6-only builder is used:
+# https://bugs.debian.org/1032343
+# https://github.com/curl/curl/issues/10682
+TESTS_FAILS_ON_IPV6_ONLY_MACHINES += $(addprefix ~, 300 301 303 304 306 309 310 325 364 400 401 403 406 407 408 409 410 414 417 560 678 1112 1272 1561 1562 1630 1631 1632 2034 2037 2041 3000 3001)
+
+TESTS_GENERAL_PARAMETERS += $(TESTS_FAILS_ON_IPV6_ONLY_MACHINES)
+
 override_dh_auto_test:
 ifeq ($(filter nocheck,$(DEB_BUILD_PROFILES)),)
-	-cd debian/build && dh_auto_test
-	-cd debian/build-gnutls && dh_auto_test
-	-cd debian/build-nss && dh_auto_test
+# OpenSSL tests.
+	cd debian/build && VERBOSE=1 \
+		TFLAGS="$(TESTS_GENERAL_PARAMETERS)" \
+		$(MAKE) test-nonflaky
+
+# GnuTLS tests.
+	cd debian/build-gnutls && VERBOSE=1 \
+		TFLAGS="$(TESTS_GENERAL_PARAMETERS)" \
+		$(MAKE) test-nonflaky
+
+# NSS tests.
+	cd debian/build-nss && VERBOSE=1 \
+		TFLAGS="$(TESTS_GENERAL_PARAMETERS)" \
+		$(MAKE) test-nonflaky
 endif
 
 override_dh_install:
