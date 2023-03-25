@@ -5,16 +5,16 @@ export DEB_BUILD_PROFILES="pkg.curl.gnutls-only"
 export VERBOSE=1
 
 echo "dh_update_autotools_config"
-dh_update_autotools_config
+dh_update_autotools_config 2>&1
 
 echo "dh_autoreconf"
-dh_autoreconf
+dh_autoreconf 2>&1
 
 echo "debian/rules override_dh_auto_configure "
-debian/rules override_dh_auto_configure
+debian/rules override_dh_auto_configure 2>&1
 
 echo "debian/rules override_dh_auto_build"
-debian/rules override_dh_auto_build
+debian/rules override_dh_auto_build 2>&1
 
 echo "debian/rules override_dh_auto_test"
 debian/rules override_dh_auto_test
