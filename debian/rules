@@ -81,17 +81,17 @@ TESTS_GENERAL_PARAMETERS += $(TESTS_FAILS_ON_IPV6_ONLY_MACHINES)
 override_dh_auto_test:
 ifeq ($(filter nocheck,$(DEB_BUILD_PROFILES)),)
 # OpenSSL tests.
-	cd debian/build && VERBOSE=1 \
+	-cd debian/build && VERBOSE=1 \
 		TFLAGS="$(TESTS_GENERAL_PARAMETERS)" \
 		$(MAKE) test-nonflaky
 
 # GnuTLS tests.
-	cd debian/build-gnutls && VERBOSE=1 \
+	-cd debian/build-gnutls && VERBOSE=1 \
 		TFLAGS="$(TESTS_GENERAL_PARAMETERS)" \
 		$(MAKE) test-nonflaky
 
 # NSS tests.
-	cd debian/build-nss && VERBOSE=1 \
+	-cd debian/build-nss && VERBOSE=1 \
 		TFLAGS="$(TESTS_GENERAL_PARAMETERS)" \
 		$(MAKE) test-nonflaky
 endif
