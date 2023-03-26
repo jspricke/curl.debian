@@ -1,8 +1,15 @@
-curl (7.64.0-4+deb10u5) buster-security; urgency=medium
+curl (7.64.0-4+deb10u6) buster; urgency=medium
 
   * Import backported patches from debian/bullseye
 
  -- Samuel Henrique <samueloph@debian.org>  Sat, 18 Mar 2023 13:36:58 +0000
+
+curl (7.64.0-4+deb10u5) buster-security; urgency=medium
+
+  * Non-maintainer upload by the LTS Team.
+  * CVE-2023-23916: HTTP multi-header compression denial of service
+
+ -- Adrian Bunk <bunk@debian.org>  Fri, 24 Feb 2023 09:25:01 +0200
 
 curl (7.64.0-4+deb10u4) buster-security; urgency=high
 
