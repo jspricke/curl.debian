@@ -1,3 +1,10 @@
+curl (8.0.1-1~exp1) experimental; urgency=medium
+
+  * New upstream version 8.0.1
+  * d/patches: Remove CVE patches that are present on 8.0.1
+
+ -- Samuel Henrique <samueloph@debian.org>  Sun, 02 Apr 2023 20:05:56 +0100
+
 curl (7.88.1-8) unstable; urgency=medium
 
   [ Samuel Henrique ]
