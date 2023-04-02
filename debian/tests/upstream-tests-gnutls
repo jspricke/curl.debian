@@ -1,6 +1,15 @@
 #!/bin/sh
 set -e
 
+# Building curl is required because libauthretry (from "make test") requires
+# libcurl.
+#
+# It might be possible to patch the makefile to have libauthretry link against
+# the system's installed libcurl, patches welcome.
+#
+# gnutls tests run against the built curl and libcurl rather than the installed
+# one as we don't ship a curl linked against gnutls (only gnutls libraries).
+
 export DEB_BUILD_PROFILES="pkg.curl.gnutls-only"
 export VERBOSE=1
 
