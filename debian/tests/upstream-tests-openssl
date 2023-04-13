@@ -15,6 +15,14 @@ TESTS_GENERAL_PARAMETERS="-c /usr/bin/curl"
 TESTS_GENERAL_PARAMETERS="-vc /usr/bin/curl"
 export TESTS_GENERAL_PARAMETERS
 
+# Don't skip tests which fail on ipv6-only environments for autopkgtests.
+# I'm not aware of runners with this configuration for debci, and a retry
+# should be easy enough it it happens.
+# References:
+# https://bugs.debian.org/1032343
+# https://github.com/curl/curl/issues/10682
+export TESTS_FAILS_ON_IPV6_ONLY_MACHINES=""
+
 echo "dh_update_autotools_config"
 dh_update_autotools_config
 
