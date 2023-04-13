@@ -1,3 +1,10 @@
+curl (7.88.1-9) UNRELEASED; urgency=medium
+
+  * d/p/Use-correct-path-when-loading-libnss-pem-ckbi-.so.patch:
+    Don't prepend "nss" when opening libnssckbi.so. (Closes: #1034359)
+
+ -- Sergio Durigan Junior <sergiodj@debian.org>  Thu, 13 Apr 2023 18:27:08 -0400
+
 curl (7.88.1-8) unstable; urgency=medium
 
   [ Samuel Henrique ]
