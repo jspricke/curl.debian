@@ -16,11 +16,11 @@ Subject: [PATCH] Fixing unix domain socket use in https connects.
  4 files changed, 138 insertions(+), 7 deletions(-)
  create mode 100644 tests/tests-httpd/test_11_unix.py
 
-diff --git a/lib/cf-http.c b/lib/cf-http.c
-index 2ee3d4da60ce5..a2d52ce842e8c 100644
---- a/lib/cf-http.c
-+++ b/lib/cf-http.c
-@@ -266,7 +266,8 @@ static CURLcode cf_hc_connect(struct Curl_cfilter *cf,
+Index: curl/lib/cf-http.c
+===================================================================
+--- curl.orig/lib/cf-http.c
++++ curl/lib/cf-http.c
+@@ -266,7 +266,8 @@ static CURLcode cf_hc_connect(struct Cur
          Curl_expire(data, ctx->soft_eyeballs_timeout_ms, EXPIRE_ALPN_EYEBALLS);
      }
      else if(ctx->h21_baller.enabled)
@@ -30,7 +30,7 @@ index 2ee3d4da60ce5..a2d52ce842e8c 100644
      ctx->state = CF_HC_CONNECT;
      /* FALLTHROUGH */
  
-@@ -280,7 +281,8 @@ static CURLcode cf_hc_connect(struct Curl_cfilter *cf,
+@@ -280,7 +281,8 @@ static CURLcode cf_hc_connect(struct Cur
      }
  
      if(time_to_start_h21(cf, data, now)) {
@@ -40,13 +40,13 @@ index 2ee3d4da60ce5..a2d52ce842e8c 100644
      }
  
      if(cf_hc_baller_is_active(&ctx->h21_baller)) {
-diff --git a/lib/http.c b/lib/http.c
-index f25843743f741..299a499f0091a 100644
---- a/lib/http.c
-+++ b/lib/http.c
-@@ -236,14 +236,10 @@ static CURLcode http_setup_conn(struct Curl_easy *data,
+Index: curl/lib/http.c
+===================================================================
+--- curl.orig/lib/http.c
++++ curl/lib/http.c
+@@ -234,14 +234,10 @@ static CURLcode http_setup_conn(struct C
+   Curl_mime_initpart(&http->form);
    data->req.p.http = http;
-   connkeep(conn, "HTTP default");
  
 -  if((data->state.httpwant == CURL_HTTP_VERSION_3)
 -     || (data->state.httpwant == CURL_HTTP_VERSION_3ONLY)) {
@@ -60,11 +60,11 @@ index f25843743f741..299a499f0091a 100644
    }
  
    return CURLE_OK;
-diff --git a/lib/vquic/vquic.c b/lib/vquic/vquic.c
-index aac69c7e9d889..bbdeabd6952d7 100644
---- a/lib/vquic/vquic.c
-+++ b/lib/vquic/vquic.c
-@@ -364,6 +364,10 @@ bool Curl_conn_is_http3(const struct Curl_easy *data,
+Index: curl/lib/vquic/vquic.c
+===================================================================
+--- curl.orig/lib/vquic/vquic.c
++++ curl/lib/vquic/vquic.c
+@@ -363,6 +363,10 @@ bool Curl_conn_is_http3(const struct Cur
  CURLcode Curl_conn_may_http3(struct Curl_easy *data,
                               const struct connectdata *conn)
  {
@@ -75,11 +75,10 @@ index aac69c7e9d889..bbdeabd6952d7 100644
    if(!(conn->handler->flags & PROTOPT_SSL)) {
      failf(data, "HTTP/3 requested for non-HTTPS URL");
      return CURLE_URL_MALFORMAT;
-diff --git a/tests/tests-httpd/test_11_unix.py b/tests/tests-httpd/test_11_unix.py
-new file mode 100644
-index 0000000000000..8d58f498f8424
+Index: curl/tests/tests-httpd/test_11_unix.py
+===================================================================
 --- /dev/null
-+++ b/tests/tests-httpd/test_11_unix.py
++++ curl/tests/tests-httpd/test_11_unix.py
 @@ -0,0 +1,129 @@
 +#!/usr/bin/env python3
 +# -*- coding: utf-8 -*-
