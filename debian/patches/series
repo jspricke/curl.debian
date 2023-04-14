@@ -6,6 +6,8 @@ build-Divide-mit-krb5-gssapi-link-flags-between-LDFLAGS-a.patch
 Remove-curl-s-LDFLAGS-from-curl-config-static-libs.patch
 Use-correct-path-when-loading-libnss-pem-ckbi-.so.patch
 
+fix-unix-domain-socket.patch
+
 # CVE fixes.
 CVE-2023-27533.patch
 CVE-2023-27534.patch
