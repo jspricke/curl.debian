@@ -18,11 +18,9 @@ Closes #9381
  lib/cookie.c | 29 +++++++++++++++++++++++++++++
  1 file changed, 29 insertions(+)
 
-Index: curl/lib/cookie.c
-===================================================================
---- curl.orig/lib/cookie.c
-+++ curl/lib/cookie.c
-@@ -372,6 +372,30 @@ static void strstore(char **str, const c
+--- a/lib/cookie.c
++++ b/lib/cookie.c
+@@ -375,6 +375,30 @@ static void strstore(char **str, const c
  }
  
  /*
@@ -53,7 +51,7 @@ Index: curl/lib/cookie.c
   * remove_expired() removes expired cookies.
   */
  static void remove_expired(struct CookieInfo *cookies)
-@@ -542,6 +566,11 @@ Curl_cookie_add(struct Curl_easy *data,
+@@ -562,6 +586,11 @@ Curl_cookie_add(struct Curl_easy *data,
              badcookie = TRUE;
              break;
            }
