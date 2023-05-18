@@ -1,3 +1,15 @@
+curl (7.88.1-10) unstable; urgency=medium
+
+  * Add new patches to fix CVEs (closes: #1036239):
+    - CVE-2023-28319: UAF in SSH sha256 fingerprint check
+    - CVE-2023-28320: siglongjmp race condition
+    - CVE-2023-28321: IDN wildcard match
+    - CVE-2023-28322: more POST-after-PUT confusion
+  * d/libcurl*.symbols: Drop curl_jmpenv, not built anymore due to
+    CVE-2023-28320
+
+ -- Samuel Henrique <samueloph@debian.org>  Thu, 18 May 2023 23:43:40 +0100
+
 curl (7.88.1-9) unstable; urgency=medium
 
   [ Sergio Durigan Junior ]
