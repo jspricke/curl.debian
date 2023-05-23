@@ -5,6 +5,32 @@ curl (8.0.1-1~exp1) experimental; urgency=medium
 
  -- Samuel Henrique <samueloph@debian.org>  Sun, 02 Apr 2023 20:05:56 +0100
 
+curl (7.88.1-10) unstable; urgency=medium
+
+  * Add new patches to fix CVEs (closes: #1036239):
+    - CVE-2023-28319: UAF in SSH sha256 fingerprint check
+    - CVE-2023-28320: siglongjmp race condition
+    - CVE-2023-28321: IDN wildcard match
+    - CVE-2023-28322: more POST-after-PUT confusion
+  * d/libcurl*.symbols: Drop curl_jmpenv, not built anymore due to
+    CVE-2023-28320
+
+ -- Samuel Henrique <samueloph@debian.org>  Thu, 18 May 2023 23:43:40 +0100
+
+curl (7.88.1-9) unstable; urgency=medium
+
+  [ Sergio Durigan Junior ]
+  * d/p/Use-correct-path-when-loading-libnss-pem-ckbi-.so.patch:
+    Don't prepend "nss" when opening libnssckbi.so. (Closes: #1034359)
+
+  [ Samuel Henrique ]
+  * Update list of tests that fail on IPv6-only envs and don't skip them on
+    autopkgtest
+  * d/p/fix-unix-domain-socket.patch: Import upstream patch to fix --unix
+    (closes: #1033963)
+
+ -- Samuel Henrique <samueloph@debian.org>  Sat, 15 Apr 2023 20:03:44 +0100
+
 curl (7.88.1-8) unstable; urgency=medium
 
   [ Samuel Henrique ]
