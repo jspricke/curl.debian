@@ -1,3 +1,11 @@
+curl (7.88.1-10+deb12u1) bookworm-security; urgency=medium
+
+  * Team upload.
+  * Fix CVE-2023-32001: TOCTOU race condition in Curl_fopen():
+      - Done by d/p/CVE-2023-32001.patch (Closes: #1041812).
+
+ -- Carlos Henrique Lima Melara <charlesmelara@riseup.net>  Sun, 23 Jul 2023 18:43:52 -0300
+
 curl (7.88.1-10) unstable; urgency=medium
 
   * Add new patches to fix CVEs (closes: #1036239):
