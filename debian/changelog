@@ -1,3 +1,17 @@
+curl (7.88.1-11) unstable; urgency=medium
+
+  [ Carlos Henrique Lima Melara ]
+  * Fix CVE-2023-32001: TOCTOU race condition in Curl_fopen():
+    - Done by d/p/CVE-2023-32001.patch (Closes: #1041812).
+
+  [ John Scott ]
+  * LDAP backend: correct the usage of OpenLDAP-specific functionality being
+    disabled with an upstream patch (Closes: #1041964)
+    This corrects the improper fetching of binary attributes.
+  * debian/tests: add a DEP-8 test that getting binary LDAP attributes works now
+
+ -- Samuel Henrique <samueloph@debian.org>  Fri, 28 Jul 2023 21:11:25 +0100
+
 curl (7.88.1-10) unstable; urgency=medium
 
   * Add new patches to fix CVEs (closes: #1036239):
