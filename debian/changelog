@@ -1,3 +1,13 @@
+curl (7.88.1-10+deb12u2) bookworm; urgency=medium
+
+  * Team upload.
+  * LDAP backend: correct the usage of OpenLDAP-specific functionality being
+    disabled with an upstream patch (Closes: #1041964)
+    This corrects the improper fetching of binary attributes.
+  * debian/tests: add a DEP-8 test that getting binary LDAP attributes works now
+
+ -- John Scott <jscott@posteo.net>  Tue, 25 Jul 2023 08:11:34 -0400
+
 curl (7.88.1-10+deb12u1) bookworm-security; urgency=medium
 
   * Team upload.
