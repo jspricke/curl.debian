@@ -1,3 +1,9 @@
+curl (7.88.1-10+deb12u1~bpo12+1) bullseye-backports; urgency=medium
+
+  * Rebuild for bullseye-backports.
+
+ -- Samuel Henrique <samueloph@debian.org>  Tue, 01 Aug 2023 20:59:28 +0100
+
 curl (7.88.1-10+deb12u1) bookworm-security; urgency=medium
 
   * Team upload.
