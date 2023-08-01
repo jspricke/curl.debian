@@ -22,7 +22,7 @@ index 774cbdd..fbcd0ee 100644
 +#endif
 +
 +static const char *pem_library = "/usr/lib/" _DEB_HOST_ARCH "/nss/libnsspem.so";
-+static const char *trust_library = "/usr/lib/" _DEB_HOST_ARCH "/nss/libnssckbi.so";
++static const char *trust_library = "/usr/lib/" _DEB_HOST_ARCH "/libnssckbi.so";
  #endif
  
  static SECMODModule *pem_module = NULL;

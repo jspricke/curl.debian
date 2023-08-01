@@ -1,3 +1,50 @@
+curl (7.88.1-10+deb12u1) bookworm-security; urgency=medium
+
+  * Team upload.
+  * Fix CVE-2023-32001: TOCTOU race condition in Curl_fopen():
+    - Done by d/p/CVE-2023-32001.patch (Closes: #1041812).
+
+ -- Carlos Henrique Lima Melara <charlesmelara@riseup.net>  Sun, 23 Jul 2023 18:43:52 -0300
+
+curl (7.88.1-10) unstable; urgency=medium
+
+  * Add new patches to fix CVEs (closes: #1036239):
+    - CVE-2023-28319: UAF in SSH sha256 fingerprint check
+    - CVE-2023-28320: siglongjmp race condition
+    - CVE-2023-28321: IDN wildcard match
+    - CVE-2023-28322: more POST-after-PUT confusion
+  * d/libcurl*.symbols: Drop curl_jmpenv, not built anymore due to
+    CVE-2023-28320
+
+ -- Samuel Henrique <samueloph@debian.org>  Thu, 18 May 2023 23:43:40 +0100
+
+curl (7.88.1-9) unstable; urgency=medium
+
+  [ Sergio Durigan Junior ]
+  * d/p/Use-correct-path-when-loading-libnss-pem-ckbi-.so.patch:
+    Don't prepend "nss" when opening libnssckbi.so. (Closes: #1034359)
+
+  [ Samuel Henrique ]
+  * Update list of tests that fail on IPv6-only envs and don't skip them on
+    autopkgtest
+  * d/p/fix-unix-domain-socket.patch: Import upstream patch to fix --unix
+    (closes: #1033963)
+
+ -- Samuel Henrique <samueloph@debian.org>  Sat, 15 Apr 2023 20:03:44 +0100
+
+curl (7.88.1-8) unstable; urgency=medium
+
+  [ Samuel Henrique ]
+  * d/gbp.conf: Push gbp conf with sane defaults
+  * d/salsa-ci.yml: Disable dh_auto_test with DEB_BUILD_OPTIONS
+  * d/rules: Add new build profiles to limit builds to a single TLS backend
+  * d/tests: Add new autopkgtests that runs curl's test suite
+
+  [ Sergio Durigan Junior ]
+  * d/rules: Remove -D_DEB_HOST_ARCH from curl-config's CFLAGS.
+
+ -- Samuel Henrique <samueloph@debian.org>  Sun, 26 Mar 2023 11:36:24 +0100
+
 curl (7.88.1-7~bpo11+2) bullseye-backports; urgency=medium
 
   * Rebuild for bullseye-backports.
