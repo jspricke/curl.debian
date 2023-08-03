@@ -72,6 +72,7 @@ LIB_VTLS_HFILES =           \
   vtls/openssl.h            \
   vtls/rustls.h             \
   vtls/schannel.h           \
+  vtls/schannel_int.h       \
   vtls/sectransp.h          \
   vtls/vtls.h               \
   vtls/vtls_int.h           \
@@ -105,9 +106,13 @@ LIB_CFILES =         \
   asyn-ares.c        \
   asyn-thread.c      \
   base64.c           \
+  bufq.c             \
   bufref.c           \
   c-hyper.c          \
-  cf-http.c          \
+  cf-h1-proxy.c      \
+  cf-h2-proxy.c      \
+  cf-haproxy.c       \
+  cf-https-connect.c \
   cf-socket.c        \
   cfilters.c         \
   conncache.c        \
@@ -135,6 +140,7 @@ LIB_CFILES =         \
   dict.c             \
   doh.c              \
   dynbuf.c           \
+  dynhds.c           \
   easy.c             \
   easygetopt.c       \
   easyoptions.c      \
@@ -148,7 +154,6 @@ LIB_CFILES =         \
   getenv.c           \
   getinfo.c          \
   gopher.c           \
-  h2h3.c             \
   hash.c             \
   headers.c          \
   hmac.c             \
@@ -159,6 +164,7 @@ LIB_CFILES =         \
   hostsyn.c          \
   hsts.c             \
   http.c             \
+  http1.c            \
   http2.c            \
   http_chunks.c      \
   http_digest.c      \
@@ -174,6 +180,7 @@ LIB_CFILES =         \
   krb5.c             \
   ldap.c             \
   llist.c            \
+  macos.c            \
   md4.c              \
   md5.c              \
   memdebug.c         \
@@ -223,7 +230,6 @@ LIB_CFILES =         \
   version.c          \
   version_win32.c    \
   warnless.c         \
-  wildcard.c         \
   ws.c
 
 LIB_HFILES =         \
@@ -231,9 +237,13 @@ LIB_HFILES =         \
   amigaos.h          \
   arpa_telnet.h      \
   asyn.h             \
+  bufq.h             \
   bufref.h           \
   c-hyper.h          \
-  cf-http.h          \
+  cf-h1-proxy.h      \
+  cf-h2-proxy.h      \
+  cf-haproxy.h       \
+  cf-https-connect.h \
   cf-socket.h        \
   cfilters.h         \
   conncache.h        \
@@ -274,6 +284,7 @@ LIB_HFILES =         \
   dict.h             \
   doh.h              \
   dynbuf.h           \
+  dynhds.h           \
   easy_lock.h        \
   easyif.h           \
   easyoptions.h      \
@@ -287,12 +298,12 @@ LIB_HFILES =         \
   ftplistparser.h    \
   getinfo.h          \
   gopher.h           \
-  h2h3.h             \
   hash.h             \
   headers.h          \
   hostip.h           \
   hsts.h             \
   http.h             \
+  http1.h            \
   http2.h            \
   http_chunks.h      \
   http_digest.h      \
@@ -306,6 +317,7 @@ LIB_HFILES =         \
   inet_ntop.h        \
   inet_pton.h        \
   llist.h            \
+  macos.h            \
   memdebug.h         \
   mime.h             \
   mqtt.h             \
@@ -352,7 +364,6 @@ LIB_HFILES =         \
   urldata.h          \
   version_win32.h    \
   warnless.h         \
-  wildcard.h         \
   ws.h
 
 LIB_RCFILES = libcurl.rc
