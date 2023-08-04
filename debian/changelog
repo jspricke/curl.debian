@@ -1,3 +1,29 @@
+curl (8.2.1-1) unstable; urgency=medium
+
+  [ Samuel Henrique ]
+  * New upstream version 8.2.1
+
+  [ Sergio Durigan Junior ]
+  * d/p/{90_gnutls,99_nss}.patch:
+    Update GNUTls/NSS patches to unbreak tests/http/clients
+  * Drop unnecessary patches.
+    d/p/CVE-2023-27533.patch
+    d/p/CVE-2023-27534.patch
+    d/p/CVE-2023-27535.patch
+    d/p/CVE-2023-27536.patch
+    d/p/CVE-2023-27537.patch
+    d/p/CVE-2023-27538.patch
+    d/p/CVE-2023-28319.patch
+    d/p/CVE-2023-28320-1.patch
+    d/p/CVE-2023-28320.patch
+    d/p/CVE-2023-28321.patch
+    d/p/CVE-2023-28322.patch
+    d/p/CVE-2023-32001.patch
+    d/p/Use-OpenLDAP-specific-functionality.patch
+    d/p/fix-unix-domain-socket.patch
+
+ -- Sergio Durigan Junior <sergiodj@debian.org>  Thu, 03 Aug 2023 20:00:01 -0400
+
 curl (7.88.1-11) unstable; urgency=medium
 
   [ Carlos Henrique Lima Melara ]
