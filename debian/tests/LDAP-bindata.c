@@ -117,12 +117,18 @@ int main(void) {
 		ldap_perror(p, "Failed to initialize libldap");
 		exit(EXIT_FAILURE);
 	}
-	if(p = ldap_connect(ldp)) {
-		ldap_perror(p, "Failed to connect to slapd over UNIX domain socket");
-		if(p = ldap_unbind_ext(ldp, NULL, NULL)) {
-			ldap_perror(p, "Failed to deinitialize libldap");
+	unsigned int counter = 0;
+	while (p = ldap_connect(ldp)) {
+		counter++;
+		fprintf(stderr, "ldapi:// connection failed, retrying (count=%u)\n", counter);
+		if (counter >= 10) {
+			ldap_perror(p, "Failed to connect to slapd over UNIX domain socket");
+			if (p = ldap_unbind_ext(ldp, NULL, NULL)) {
+				ldap_perror(p, "Failed to deinitialize libldap");
+			}
+			exit(EXIT_FAILURE);
 		}
-		exit(EXIT_FAILURE);
+		sleep(1);
 	}
 	if(p = ldap_sasl_bind_s(ldp, u8"CN=admin,DC=example,DC=com", LDAP_SASL_SIMPLE, &(struct berval){.bv_len = strlen(u8"Password"), .bv_val = u8"Password"}, NULL, NULL, NULL)) {
 		ldap_perror(p, "Failed to bind to directory server");

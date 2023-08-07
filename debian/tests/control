@@ -10,6 +10,6 @@ Tests: upstream-tests-nss
 Depends: @builddeps@
 Restrictions: allow-stderr
 
-Test-Command: gcc debian/tests/LDAP-bindata.c $(pkgconf --cflags --libs ldap libcurl) -o "$AUTOPKGTEST_TMP"/ldap-test && "$AUTOPKGTEST_TMP"/ldap-test
+Tests: curl-ldapi-test
 Depends: gcc, libc-dev, libcurl4-openssl-dev | libcurl-dev, libldap-dev, slapd, pkgconf
 Restrictions: allow-stderr, isolation-container, needs-root
