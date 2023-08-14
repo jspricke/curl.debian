@@ -1,4 +1,4 @@
-curl (7.88.1-10+deb12u1~bpo12+1) bullseye-backports; urgency=medium
+curl (7.88.1-10+deb12u1~bpo11+1) bullseye-backports; urgency=medium
 
   * Rebuild for bullseye-backports.
 
