@@ -1,3 +1,15 @@
+curl (8.2.1-2) unstable; urgency=medium
+
+  [ Andreas Hasenack ]
+  * Move ldap-test to a script and add retry logic
+
+  [ Samuel Henrique ]
+  * Build without nss, dropped by upstream in the next release
+  * d/p/gen_pl_escape_all_dashes.patch: New patch to fix manpage generation
+    (closes: #1043309, #1043339)
+
+ -- Samuel Henrique <samueloph@debian.org>  Fri, 25 Aug 2023 20:05:02 +0100
+
 curl (8.2.1-1) unstable; urgency=medium
 
   [ Samuel Henrique ]
