@@ -28,6 +28,9 @@ CVE-2023-28322.patch
 CVE-2023-32001.patch
 Use-OpenLDAP-specific-functionality.patch
 
+# Patches from 8.3.0.
+CVE-2023-38039.patch
+
 # Do not add patches below.
 # Used to generate packages for the other crypto libraries.
 90_gnutls.patch
