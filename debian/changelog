@@ -1,8 +1,15 @@
-curl (8.3.0-1) UNRELEASED; urgency=medium
+curl (8.3.0-1) unstable; urgency=medium
 
   * New upstream version 8.3.0
+    - Fix CVE-2023-38039: HTTP headers eat all memory
+  * debian/: Remove files used for the nss packaging
+  * d/patches:
+    - Refresh patches
+    - gen_pl_escape_all_dashes.patch: Drop merged patch
+    - 90_gnutls.patch: Update patch
+  * d/libcurl*.symbols: New symbol curl_global_trace
 
- -- Samuel Henrique <samueloph@debian.org>  Thu, 14 Sep 2023 03:25:53 +0530
+ -- Samuel Henrique <samueloph@debian.org>  Thu, 14 Sep 2023 16:13:10 +0530
 
 curl (8.2.1-2) unstable; urgency=medium
 
