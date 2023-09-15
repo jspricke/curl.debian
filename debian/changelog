@@ -1,3 +1,16 @@
+curl (7.88.1-10+deb12u3) bookworm; urgency=medium
+
+  * Team upload.
+
+  [ Andreas Hasenack ]
+  * Move ldap-test to a script and add retry logic.
+
+  [ Carlos Henrique Lima Melara ]
+  * Fix CVE-2023-38039: HTTP headers eat all memory.
+      - Done by debian/patches/CVE-2023-38039.patch.
+
+ -- Carlos Henrique Lima Melara <charlesmelara@riseup.net>  Fri, 15 Sep 2023 22:31:23 +0530
+
 curl (7.88.1-10+deb12u2) bookworm; urgency=medium
 
   * Team upload.
