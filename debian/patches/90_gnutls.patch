@@ -1,9 +1,20 @@
-Description: Build with GnuTLS.
+From: Ramakrishnan Muthukrishnan <vu3rdd@gmail.com>
+Date: Thu, 3 Aug 2023 18:35:34 -0400
+Subject: Build with GnuTLS.
+
 Origin: vendor
 Forwarded: not-needed
-Author: Ramakrishnan Muthukrishnan <vu3rdd@gmail.com>
 Reviewed-by: Alessandro Ghedini <ghedo@debian.org>
 Last-Update: 2018-05-23
+---
+ docs/examples/Makefile.am      |  4 ++--
+ lib/Makefile.am                | 42 +++++++++++++++++++++---------------------
+ lib/libcurl.vers.in            |  2 +-
+ src/Makefile.am                |  4 ++--
+ tests/http/clients/Makefile.am |  4 ++--
+ tests/http/clients/Makefile.in | 20 ++++++++++----------
+ tests/libtest/Makefile.am      |  8 ++++----
+ 7 files changed, 42 insertions(+), 42 deletions(-)
 
 Index: curl/docs/examples/Makefile.am
 ===================================================================
@@ -110,42 +121,6 @@ Index: curl/lib/Makefile.am
  
  CHECKSRC = $(CS_$(V))
  CS_0 = @echo "  RUN     " $@;
-Index: curl/src/Makefile.am
-===================================================================
---- curl.orig/src/Makefile.am
-+++ curl/src/Makefile.am
-@@ -67,9 +67,9 @@ CFLAGS += @CURL_CFLAG_EXTRAS@
- LIBS = $(BLANK_AT_MAKETIME)
- 
- if USE_EXPLICIT_LIB_DEPS
--curl_LDADD = $(top_builddir)/lib/libcurl.la @LIBCURL_LIBS@
-+curl_LDADD = $(top_builddir)/lib/libcurl-gnutls.la @LIBCURL_LIBS@
- else
--curl_LDADD = $(top_builddir)/lib/libcurl.la @NSS_LIBS@ @SSL_LIBS@ @ZLIB_LIBS@ @CURL_NETWORK_AND_TIME_LIBS@
-+curl_LDADD = $(top_builddir)/lib/libcurl-gnutls.la @NSS_LIBS@ @SSL_LIBS@ @ZLIB_LIBS@ @CURL_NETWORK_AND_TIME_LIBS@
- endif
- 
- # if unit tests are enabled, build a static library to link them with
-Index: curl/tests/libtest/Makefile.am
-===================================================================
---- curl.orig/tests/libtest/Makefile.am
-+++ curl/tests/libtest/Makefile.am
-@@ -49,11 +49,11 @@ CLEANFILES = lib1521.c
- LIBS = $(BLANK_AT_MAKETIME)
- 
- if USE_EXPLICIT_LIB_DEPS
--SUPPORTFILES_LIBS = $(top_builddir)/lib/libcurl.la @LIBCURL_LIBS@
--TESTUTIL_LIBS = $(top_builddir)/lib/libcurl.la @LIBCURL_LIBS@
-+SUPPORTFILES_LIBS = $(top_builddir)/lib/libcurl-gnutls.la @LIBCURL_LIBS@
-+TESTUTIL_LIBS = $(top_builddir)/lib/libcurl-gnutls.la @LIBCURL_LIBS@
- else
--SUPPORTFILES_LIBS = $(top_builddir)/lib/libcurl.la @CURL_NETWORK_LIBS@ @NSS_LIBS@
--TESTUTIL_LIBS = $(top_builddir)/lib/libcurl.la @CURL_NETWORK_AND_TIME_LIBS@ @NSS_LIBS@
-+SUPPORTFILES_LIBS = $(top_builddir)/lib/libcurl-gnutls.la @CURL_NETWORK_LIBS@ @NSS_LIBS@
-+TESTUTIL_LIBS = $(top_builddir)/lib/libcurl-gnutls.la @CURL_NETWORK_AND_TIME_LIBS@ @NSS_LIBS@
- endif
- 
- # Dependencies (may need to be overridden)
 Index: curl/lib/libcurl.vers.in
 ===================================================================
 --- curl.orig/lib/libcurl.vers.in
@@ -159,3 +134,132 @@ Index: curl/lib/libcurl.vers.in
  {
    global: curl_*;
    local: *;
+Index: curl/src/Makefile.am
+===================================================================
+--- curl.orig/src/Makefile.am
++++ curl/src/Makefile.am
+@@ -67,9 +67,9 @@ CFLAGS += @CURL_CFLAG_EXTRAS@
+ LIBS = $(BLANK_AT_MAKETIME)
+ 
+ if USE_EXPLICIT_LIB_DEPS
+-curl_LDADD = $(top_builddir)/lib/libcurl.la @LIBCURL_LIBS@
++curl_LDADD = $(top_builddir)/lib/libcurl-gnutls.la @LIBCURL_LIBS@
+ else
+-curl_LDADD = $(top_builddir)/lib/libcurl.la @SSL_LIBS@ @ZLIB_LIBS@ @CURL_NETWORK_AND_TIME_LIBS@
++curl_LDADD = $(top_builddir)/lib/libcurl-gnutls.la @SSL_LIBS@ @ZLIB_LIBS@ @CURL_NETWORK_AND_TIME_LIBS@
+ endif
+ 
+ # if unit tests are enabled, build a static library to link them with
+Index: curl/tests/http/clients/Makefile.am
+===================================================================
+--- curl.orig/tests/http/clients/Makefile.am
++++ curl/tests/http/clients/Makefile.am
+@@ -51,9 +51,9 @@ LIBS = $(BLANK_AT_MAKETIME)
+ 
+ # Dependencies
+ if USE_EXPLICIT_LIB_DEPS
+-LDADD = $(LIBDIR)/libcurl.la @LIBCURL_LIBS@
++LDADD = $(LIBDIR)/libcurl-gnutls.la @LIBCURL_LIBS@
+ else
+-LDADD = $(LIBDIR)/libcurl.la
++LDADD = $(LIBDIR)/libcurl-gnutls.la
+ endif
+ 
+ # This might hold -Werror
+Index: curl/tests/http/clients/Makefile.in
+===================================================================
+--- curl.orig/tests/http/clients/Makefile.in
++++ curl/tests/http/clients/Makefile.in
+@@ -178,9 +178,9 @@ h2_download_SOURCES = h2-download.c
+ h2_download_OBJECTS = h2-download.$(OBJEXT)
+ h2_download_LDADD = $(LDADD)
+ @USE_EXPLICIT_LIB_DEPS_FALSE@h2_download_DEPENDENCIES =  \
+-@USE_EXPLICIT_LIB_DEPS_FALSE@	$(LIBDIR)/libcurl.la
++@USE_EXPLICIT_LIB_DEPS_FALSE@	$(LIBDIR)/libcurl-gnutls.la
+ @USE_EXPLICIT_LIB_DEPS_TRUE@h2_download_DEPENDENCIES =  \
+-@USE_EXPLICIT_LIB_DEPS_TRUE@	$(LIBDIR)/libcurl.la
++@USE_EXPLICIT_LIB_DEPS_TRUE@	$(LIBDIR)/libcurl-gnutls.la
+ AM_V_lt = $(am__v_lt_@AM_V@)
+ am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+ am__v_lt_0 = --silent
+@@ -189,37 +189,37 @@ h2_serverpush_SOURCES = h2-serverpush.c
+ h2_serverpush_OBJECTS = h2-serverpush.$(OBJEXT)
+ h2_serverpush_LDADD = $(LDADD)
+ @USE_EXPLICIT_LIB_DEPS_FALSE@h2_serverpush_DEPENDENCIES =  \
+-@USE_EXPLICIT_LIB_DEPS_FALSE@	$(LIBDIR)/libcurl.la
++@USE_EXPLICIT_LIB_DEPS_FALSE@	$(LIBDIR)/libcurl-gnutls.la
+ @USE_EXPLICIT_LIB_DEPS_TRUE@h2_serverpush_DEPENDENCIES =  \
+-@USE_EXPLICIT_LIB_DEPS_TRUE@	$(LIBDIR)/libcurl.la
++@USE_EXPLICIT_LIB_DEPS_TRUE@	$(LIBDIR)/libcurl-gnutls.la
+ h2_upgrade_extreme_SOURCES = h2-upgrade-extreme.c
+ h2_upgrade_extreme_OBJECTS = h2-upgrade-extreme.$(OBJEXT)
+ h2_upgrade_extreme_LDADD = $(LDADD)
+ @USE_EXPLICIT_LIB_DEPS_FALSE@h2_upgrade_extreme_DEPENDENCIES =  \
+-@USE_EXPLICIT_LIB_DEPS_FALSE@	$(LIBDIR)/libcurl.la
++@USE_EXPLICIT_LIB_DEPS_FALSE@	$(LIBDIR)/libcurl-gnutls.la
+ @USE_EXPLICIT_LIB_DEPS_TRUE@h2_upgrade_extreme_DEPENDENCIES =  \
+-@USE_EXPLICIT_LIB_DEPS_TRUE@	$(LIBDIR)/libcurl.la
++@USE_EXPLICIT_LIB_DEPS_TRUE@	$(LIBDIR)/libcurl-gnutls.la
+ tls_session_reuse_SOURCES = tls-session-reuse.c
+ tls_session_reuse_OBJECTS = tls-session-reuse.$(OBJEXT)
+ tls_session_reuse_LDADD = $(LDADD)
+ @USE_EXPLICIT_LIB_DEPS_FALSE@tls_session_reuse_DEPENDENCIES =  \
+-@USE_EXPLICIT_LIB_DEPS_FALSE@	$(LIBDIR)/libcurl.la
++@USE_EXPLICIT_LIB_DEPS_FALSE@	$(LIBDIR)/libcurl-gnutls.la
+ @USE_EXPLICIT_LIB_DEPS_TRUE@tls_session_reuse_DEPENDENCIES =  \
+-@USE_EXPLICIT_LIB_DEPS_TRUE@	$(LIBDIR)/libcurl.la
++@USE_EXPLICIT_LIB_DEPS_TRUE@	$(LIBDIR)/libcurl-gnutls.la
+ ws_data_SOURCES = ws-data.c
+ ws_data_OBJECTS = ws-data.$(OBJEXT)
+ ws_data_LDADD = $(LDADD)
+ @USE_EXPLICIT_LIB_DEPS_FALSE@ws_data_DEPENDENCIES =  \
+-@USE_EXPLICIT_LIB_DEPS_FALSE@	$(LIBDIR)/libcurl.la
++@USE_EXPLICIT_LIB_DEPS_FALSE@	$(LIBDIR)/libcurl-gnutls.la
+ @USE_EXPLICIT_LIB_DEPS_TRUE@ws_data_DEPENDENCIES =  \
+-@USE_EXPLICIT_LIB_DEPS_TRUE@	$(LIBDIR)/libcurl.la
++@USE_EXPLICIT_LIB_DEPS_TRUE@	$(LIBDIR)/libcurl-gnutls.la
+ ws_pingpong_SOURCES = ws-pingpong.c
+ ws_pingpong_OBJECTS = ws-pingpong.$(OBJEXT)
+ ws_pingpong_LDADD = $(LDADD)
+ @USE_EXPLICIT_LIB_DEPS_FALSE@ws_pingpong_DEPENDENCIES =  \
+-@USE_EXPLICIT_LIB_DEPS_FALSE@	$(LIBDIR)/libcurl.la
++@USE_EXPLICIT_LIB_DEPS_FALSE@	$(LIBDIR)/libcurl-gnutls.la
+ @USE_EXPLICIT_LIB_DEPS_TRUE@ws_pingpong_DEPENDENCIES =  \
+-@USE_EXPLICIT_LIB_DEPS_TRUE@	$(LIBDIR)/libcurl.la
++@USE_EXPLICIT_LIB_DEPS_TRUE@	$(LIBDIR)/libcurl-gnutls.la
+ AM_V_P = $(am__v_P_@AM_V@)
+ am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
+ am__v_P_0 = false
+@@ -525,10 +525,10 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I
+ 	-I$(top_srcdir)/lib -DCURL_DISABLE_DEPRECATION \
+ 	-DCURL_NO_OLDIES $(am__append_1)
+ LIBDIR = $(top_builddir)/lib
+-@USE_EXPLICIT_LIB_DEPS_FALSE@LDADD = $(LIBDIR)/libcurl.la
++@USE_EXPLICIT_LIB_DEPS_FALSE@LDADD = $(LIBDIR)/libcurl-gnutls.la
+ 
+ # Dependencies
+-@USE_EXPLICIT_LIB_DEPS_TRUE@LDADD = $(LIBDIR)/libcurl.la @LIBCURL_LIBS@
++@USE_EXPLICIT_LIB_DEPS_TRUE@LDADD = $(LIBDIR)/libcurl-gnutls.la @LIBCURL_LIBS@
+ CHECKSRC = $(CS_$(V))
+ CS_0 = @echo "  RUN     " $@;
+ CS_1 = 
+Index: curl/tests/libtest/Makefile.am
+===================================================================
+--- curl.orig/tests/libtest/Makefile.am
++++ curl/tests/libtest/Makefile.am
+@@ -49,11 +49,11 @@ CLEANFILES = lib1521.c
+ LIBS = $(BLANK_AT_MAKETIME)
+ 
+ if USE_EXPLICIT_LIB_DEPS
+-SUPPORTFILES_LIBS = $(top_builddir)/lib/libcurl.la @LIBCURL_LIBS@
+-TESTUTIL_LIBS = $(top_builddir)/lib/libcurl.la @LIBCURL_LIBS@
++SUPPORTFILES_LIBS = $(top_builddir)/lib/libcurl-gnutls.la @LIBCURL_LIBS@
++TESTUTIL_LIBS = $(top_builddir)/lib/libcurl-gnutls.la @LIBCURL_LIBS@
+ else
+-SUPPORTFILES_LIBS = $(top_builddir)/lib/libcurl.la @CURL_NETWORK_LIBS@
+-TESTUTIL_LIBS = $(top_builddir)/lib/libcurl.la @CURL_NETWORK_AND_TIME_LIBS@
++SUPPORTFILES_LIBS = $(top_builddir)/lib/libcurl-gnutls.la @CURL_NETWORK_LIBS@
++TESTUTIL_LIBS = $(top_builddir)/lib/libcurl-gnutls.la @CURL_NETWORK_AND_TIME_LIBS@
+ endif
+ 
+ # Dependencies (may need to be overridden)

@@ -1,27 +1,67 @@
-curl (8.2.1-1) experimental; urgency=medium
+curl (8.3.0-1) unstable; urgency=medium
 
+  * New upstream version 8.3.0
+    - Fix CVE-2023-38039: HTTP headers eat all memory
+  * debian/: Remove files used for the nss packaging
+  * d/patches:
+    - Refresh patches
+    - gen_pl_escape_all_dashes.patch: Drop merged patch
+    - 90_gnutls.patch: Update patch
+  * d/libcurl*.symbols: New symbol curl_global_trace
+
+ -- Samuel Henrique <samueloph@debian.org>  Thu, 14 Sep 2023 16:13:10 +0530
+
+curl (8.2.1-2) unstable; urgency=medium
+
+  [ Andreas Hasenack ]
+  * Move ldap-test to a script and add retry logic
+
+  [ Samuel Henrique ]
+  * Build without nss, dropped by upstream in the next release
+  * d/p/gen_pl_escape_all_dashes.patch: New patch to fix manpage generation
+    (closes: #1043309, #1043339)
+
+ -- Samuel Henrique <samueloph@debian.org>  Fri, 25 Aug 2023 20:05:02 +0100
+
+curl (8.2.1-1) unstable; urgency=medium
+
+  [ Samuel Henrique ]
   * New upstream version 8.2.1
 
- -- Samuel Henrique <samueloph@debian.org>  Wed, 26 Jul 2023 10:00:20 +0100
+  [ Sergio Durigan Junior ]
+  * d/p/{90_gnutls,99_nss}.patch:
+    Update GNUTls/NSS patches to unbreak tests/http/clients
+  * Drop unnecessary patches.
+    d/p/CVE-2023-27533.patch
+    d/p/CVE-2023-27534.patch
+    d/p/CVE-2023-27535.patch
+    d/p/CVE-2023-27536.patch
+    d/p/CVE-2023-27537.patch
+    d/p/CVE-2023-27538.patch
+    d/p/CVE-2023-28319.patch
+    d/p/CVE-2023-28320-1.patch
+    d/p/CVE-2023-28320.patch
+    d/p/CVE-2023-28321.patch
+    d/p/CVE-2023-28322.patch
+    d/p/CVE-2023-32001.patch
+    d/p/Use-OpenLDAP-specific-functionality.patch
+    d/p/fix-unix-domain-socket.patch
 
-curl (8.2.0-1) experimental; urgency=medium
+ -- Sergio Durigan Junior <sergiodj@debian.org>  Thu, 03 Aug 2023 20:00:01 -0400
 
-  * New upstream version 8.2.0
+curl (7.88.1-11) unstable; urgency=medium
 
- -- Samuel Henrique <samueloph@debian.org>  Wed, 19 Jul 2023 19:31:15 +0100
+  [ Carlos Henrique Lima Melara ]
+  * Fix CVE-2023-32001: TOCTOU race condition in Curl_fopen():
+    - Done by d/p/CVE-2023-32001.patch (Closes: #1041812).
 
-curl (8.1.2-1~exp1) experimental; urgency=medium
+  [ John Scott ]
+  * LDAP backend: correct the usage of OpenLDAP-specific functionality being
+    disabled with an upstream patch (Closes: #1041964)
+    This corrects the improper fetching of binary attributes.
+  * debian/tests: add a DEP-8 test that getting binary LDAP attributes works now
 
-  * New upstream version 8.1.2
-
- -- Samuel Henrique <samueloph@debian.org>  Tue, 30 May 2023 08:36:34 +0100
-
-curl (8.1.1-1~exp1) experimental; urgency=medium
-
-  * New upstream version 8.1.1
-  * d/patches: Drop all backported patches
-
- -- Samuel Henrique <samueloph@debian.org>  Tue, 23 May 2023 10:21:41 +0100
+ -- Samuel Henrique <samueloph@debian.org>  Fri, 28 Jul 2023 21:11:25 +0100
 
 curl (7.88.1-10) unstable; urgency=medium
 

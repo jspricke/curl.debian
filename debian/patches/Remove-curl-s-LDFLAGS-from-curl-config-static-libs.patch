@@ -27,10 +27,10 @@ Signed-off-by: Simon McVittie <smcv@collabora.com>
  curl-config.in | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/curl-config.in b/curl-config.in
-index 5bf4256..620bff6 100644
---- a/curl-config.in
-+++ b/curl-config.in
+Index: curl/curl-config.in
+===================================================================
+--- curl.orig/curl-config.in
++++ curl/curl-config.in
 @@ -165,7 +165,7 @@ while test $# -gt 0; do
  
      --static-libs)
