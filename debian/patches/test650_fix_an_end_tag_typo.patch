@@ -1,0 +1,22 @@
+From 877e1035844404a82d675c5625184b8ad2fda994 Mon Sep 17 00:00:00 2001
+From: Dan Fandrich <dan@coneharvesters.com>
+Date: Wed, 6 Sep 2023 11:07:58 -0700
+Subject: [PATCH] test650: fix an end tag typo
+
+---
+ tests/data/test650 | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tests/data/test650 b/tests/data/test650
+index cb3f72cf8469e..f34af0f4bf73a 100644
+--- a/tests/data/test650
++++ b/tests/data/test650
+@@ -29,7 +29,7 @@ Connection: close
+ Content-Type: text/html
+ 
+ -foo-
+-</data>
++</data2>
+ </reply>
+ 
+ # Client-side
