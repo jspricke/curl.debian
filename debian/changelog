@@ -1,4 +1,4 @@
-curl (8.3.0-1~exp1) experimental; urgency=medium
+curl (8.3.0-2~exp1) experimental; urgency=medium
 
   * d/patches: Import two upstream patches to try to fix FTBFS on armel/armhf:
     - test650_fix_an_end_tag_typo.patch
