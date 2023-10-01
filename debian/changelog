@@ -1,3 +1,14 @@
+curl (8.3.0-2) unstable; urgency=medium
+
+  * d/rules: Add test 3102 to TESTS_FAILS_ON_IPV6_ONLY_MACHINES
+  * d/patches: Import two upstream patches to try to fix FTBFS on armel/armhf
+    - test650_fix_an_end_tag_typo.patch
+    - tests_increase_the_default_server_logs_lock_timeout.patch
+  * d/p/lib_use_wrapper_for_curl_mime_data_fseek_callback.patch: New patch to
+    fix armel/armhf FTBFS
+
+ -- Samuel Henrique <samueloph@debian.org>  Sun, 01 Oct 2023 15:01:42 +0100
+
 curl (8.3.0-1) unstable; urgency=medium
 
   * New upstream version 8.3.0
