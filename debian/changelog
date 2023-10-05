@@ -1,3 +1,9 @@
+curl (8.3.0-3) unstable; urgency=high
+
+  * Add patches to fix CVE-2023-38545 and CVE-2023-38546
+
+ -- Samuel Henrique <samueloph@debian.org>  Thu, 05 Oct 2023 22:26:40 +0100
+
 curl (8.3.0-2) unstable; urgency=medium
 
   * d/rules: Add test 3102 to TESTS_FAILS_ON_IPV6_ONLY_MACHINES
