@@ -1,3 +1,9 @@
+curl (7.88.1-10+deb12u4) bookworm-security; urgency=high
+
+  * Add patches to fix CVE-2023-38545 and CVE-2023-38546
+
+ -- Samuel Henrique <samueloph@debian.org>  Thu, 05 Oct 2023 22:31:47 +0100
+
 curl (7.88.1-10+deb12u3) bookworm; urgency=medium
 
   * Team upload.
