@@ -65,12 +65,14 @@ override_dh_auto_build:
 	cd debian/build-nss && dh_auto_build
 
 override_dh_auto_test:
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 	-cd debian/build && VERBOSE=1 \
 		$(MAKE) test-nonflaky
 	-cd debian/build-gnutls && VERBOSE=1 \
 		$(MAKE) test-nonflaky
 	-cd debian/build-nss && VERBOSE=1 \
 		$(MAKE) test-nonflaky
+endif
 
 override_dh_install:
 	${MAKE} -C debian/build					\
