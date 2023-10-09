@@ -9,3 +9,7 @@ Restrictions: allow-stderr
 Tests: upstream-tests-nss
 Depends: @builddeps@
 Restrictions: allow-stderr
+
+Tests: curl-ldapi-test
+Depends: gcc, libc-dev, libcurl4-openssl-dev | libcurl-dev, libldap-dev, slapd, pkgconf
+Restrictions: allow-stderr, isolation-container, needs-root

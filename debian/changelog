@@ -1,3 +1,26 @@
+curl (7.88.1-10+deb12u3) bookworm; urgency=medium
+
+  * Team upload.
+
+  [ Andreas Hasenack ]
+  * Move ldap-test to a script and add retry logic.
+
+  [ Carlos Henrique Lima Melara ]
+  * Fix CVE-2023-38039: HTTP headers eat all memory.
+      - Done by debian/patches/CVE-2023-38039.patch.
+
+ -- Carlos Henrique Lima Melara <charlesmelara@riseup.net>  Fri, 15 Sep 2023 22:31:23 +0530
+
+curl (7.88.1-10+deb12u2) bookworm; urgency=medium
+
+  * Team upload.
+  * LDAP backend: correct the usage of OpenLDAP-specific functionality being
+    disabled with an upstream patch (Closes: #1041964)
+    This corrects the improper fetching of binary attributes.
+  * debian/tests: add a DEP-8 test that getting binary LDAP attributes works now
+
+ -- John Scott <jscott@posteo.net>  Tue, 25 Jul 2023 08:11:34 -0400
+
 curl (7.88.1-10+deb12u1~bpo11+1) bullseye-backports; urgency=medium
 
   * Rebuild for bullseye-backports.

@@ -1,0 +1,35 @@
+Description: Fix Autotools not enabling OpenLDAP-specific functionality
+ The non-OpenLDAP code paths are less tested, less featureful, less secure,
+ and omitted in the build system by accident. It has been discovered that this
+ also mitigates curl not being able to make LDIF output when attributes have
+ binary values.
+Origin: upstream, https://github.com/curl/curl/commit/0ac6108856b9d500bc376d1d7e0b648d15499837.patch
+Bug: https://github.com/curl/curl/issues/11372
+Applied-Upstream: 8.2.0, https://github.com/curl/curl/commit/0ac6108856b9d500bc376d1d7e0b648d15499837
+Reviewed-By: John Scott <jscott@posteo.net>
+Last-Update: 2023-07-25
+
+--- curl-7.88.1.orig/configure.ac
++++ curl-7.88.1/configure.ac
+@@ -1663,16 +1663,19 @@ if test x$CURL_DISABLE_LDAP != x1 ; then
+ fi
+
+ if test x$CURL_DISABLE_LDAP != x1 ; then
+-  AC_CHECK_FUNCS([ldap_url_parse])
++  AC_CHECK_FUNCS([ldap_url_parse \
++                  ldap_init_fd])
+
+   if test "$LDAPLIBNAME" = "wldap32"; then
+     curl_ldap_msg="enabled (winldap)"
+     AC_DEFINE(USE_WIN32_LDAP, 1, [Use Windows LDAP implementation])
+   else
+-    curl_ldap_msg="enabled (OpenLDAP)"
+     if test "x$ac_cv_func_ldap_init_fd" = "xyes"; then
++      curl_ldap_msg="enabled (OpenLDAP)"
+       AC_DEFINE(USE_OPENLDAP, 1, [Use OpenLDAP-specific code])
+       AC_SUBST(USE_OPENLDAP, [1])
++    else
++      curl_ldap_msg="enabled (ancient OpenLDAP)"
+     fi
+   fi
+ fi
