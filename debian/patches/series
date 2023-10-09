@@ -4,7 +4,11 @@
 build-Divide-mit-krb5-gssapi-link-flags-between-LDFLAGS-a.patch
 11_omit-directories-from-config.patch
 Remove-curl-s-LDFLAGS-from-curl-config-static-libs.patch
-gen_pl_escape_all_dashes.patch
+
+# Upstream patches.
+test650_fix_an_end_tag_typo.patch
+tests_increase_the_default_server_logs_lock_timeout.patch
+lib_use_wrapper_for_curl_mime_data_fseek_callback.patch
 
 # Do not add patches below.
 # Used to generate packages for the other crypto libraries.

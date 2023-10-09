@@ -10,7 +10,7 @@ Index: curl/ltmain.sh
 ===================================================================
 --- curl.orig/ltmain.sh
 +++ curl/ltmain.sh
-@@ -7500,6 +7500,11 @@ func_mode_link ()
+@@ -7488,6 +7488,11 @@ func_mode_link ()
  	arg=$func_stripname_result
  	;;
  
@@ -22,7 +22,7 @@ Index: curl/ltmain.sh
        -Wl,*)
  	func_stripname '-Wl,' '' "$arg"
  	args=$func_stripname_result
-@@ -7899,6 +7904,15 @@ func_mode_link ()
+@@ -7887,6 +7892,15 @@ func_mode_link ()
  	lib=
  	found=false
  	case $deplib in

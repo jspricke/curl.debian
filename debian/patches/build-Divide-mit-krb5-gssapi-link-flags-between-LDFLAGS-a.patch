@@ -20,7 +20,7 @@ Index: curl/configure.ac
 ===================================================================
 --- curl.orig/configure.ac
 +++ curl/configure.ac
-@@ -1942,7 +1942,8 @@ if test x"$want_gss" = xyes; then
+@@ -1978,7 +1978,8 @@ if test x"$want_gss" = xyes; then
             gss_libs=`$GSSAPI_ROOT/bin/$host_alias-krb5-config --libs gssapi`
             LIBS="$gss_libs $LIBS"
          elif test "$PKGCONFIG" != "no" ; then

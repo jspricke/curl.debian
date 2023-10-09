@@ -1,3 +1,27 @@
+curl (8.3.0-2) unstable; urgency=medium
+
+  * d/rules: Add test 3102 to TESTS_FAILS_ON_IPV6_ONLY_MACHINES
+  * d/patches: Import two upstream patches to try to fix FTBFS on armel/armhf
+    - test650_fix_an_end_tag_typo.patch
+    - tests_increase_the_default_server_logs_lock_timeout.patch
+  * d/p/lib_use_wrapper_for_curl_mime_data_fseek_callback.patch: New patch to
+    fix armel/armhf FTBFS
+
+ -- Samuel Henrique <samueloph@debian.org>  Sun, 01 Oct 2023 15:01:42 +0100
+
+curl (8.3.0-1) unstable; urgency=medium
+
+  * New upstream version 8.3.0
+    - Fix CVE-2023-38039: HTTP headers eat all memory
+  * debian/: Remove files used for the nss packaging
+  * d/patches:
+    - Refresh patches
+    - gen_pl_escape_all_dashes.patch: Drop merged patch
+    - 90_gnutls.patch: Update patch
+  * d/libcurl*.symbols: New symbol curl_global_trace
+
+ -- Samuel Henrique <samueloph@debian.org>  Thu, 14 Sep 2023 16:13:10 +0530
+
 curl (8.2.1-2~bpo12+1) bookworm-backports; urgency=medium
 
   * Rebuild for bookworm-backports.
