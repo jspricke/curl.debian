@@ -1,3 +1,9 @@
+curl (8.4.0-1) UNRELEASED; urgency=medium
+
+  * New upstream version 8.4.0
+
+ -- Samuel Henrique <samueloph@debian.org>  Thu, 12 Oct 2023 22:57:28 +0100
+
 curl (8.3.0-3) unstable; urgency=high
 
   * Add patches to fix CVE-2023-38545 and CVE-2023-38546
