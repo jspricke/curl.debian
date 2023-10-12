@@ -16,10 +16,8 @@ Last-Update: 2018-05-23
  tests/libtest/Makefile.am      |  8 ++++----
  7 files changed, 42 insertions(+), 42 deletions(-)
 
-Index: curl/docs/examples/Makefile.am
-===================================================================
---- curl.orig/docs/examples/Makefile.am
-+++ curl/docs/examples/Makefile.am
+--- a/docs/examples/Makefile.am
++++ b/docs/examples/Makefile.am
 @@ -51,9 +51,9 @@ LIBS = $(BLANK_AT_MAKETIME)
  
  # Dependencies
@@ -32,10 +30,8 @@ Index: curl/docs/examples/Makefile.am
  endif
  
  # This might hold -Werror
-Index: curl/lib/Makefile.am
-===================================================================
---- curl.orig/lib/Makefile.am
-+++ curl/lib/Makefile.am
+--- a/lib/Makefile.am
++++ b/lib/Makefile.am
 @@ -31,7 +31,7 @@ EXTRA_DIST = Makefile.mk config-win32.h
   config-os400.h setup-os400.h $(CMAKE_DIST) setup-win32.h .checksrc \
   Makefile.soname
@@ -121,10 +117,8 @@ Index: curl/lib/Makefile.am
  
  CHECKSRC = $(CS_$(V))
  CS_0 = @echo "  RUN     " $@;
-Index: curl/lib/libcurl.vers.in
-===================================================================
---- curl.orig/lib/libcurl.vers.in
-+++ curl/lib/libcurl.vers.in
+--- a/lib/libcurl.vers.in
++++ b/lib/libcurl.vers.in
 @@ -6,7 +6,7 @@ HIDDEN
      _save*;
  };
@@ -134,11 +128,9 @@ Index: curl/lib/libcurl.vers.in
  {
    global: curl_*;
    local: *;
-Index: curl/src/Makefile.am
-===================================================================
---- curl.orig/src/Makefile.am
-+++ curl/src/Makefile.am
-@@ -67,9 +67,9 @@ CFLAGS += @CURL_CFLAG_EXTRAS@
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -68,9 +68,9 @@ CFLAGS += @CURL_CFLAG_EXTRAS@
  LIBS = $(BLANK_AT_MAKETIME)
  
  if USE_EXPLICIT_LIB_DEPS
@@ -150,10 +142,8 @@ Index: curl/src/Makefile.am
  endif
  
  # if unit tests are enabled, build a static library to link them with
-Index: curl/tests/http/clients/Makefile.am
-===================================================================
---- curl.orig/tests/http/clients/Makefile.am
-+++ curl/tests/http/clients/Makefile.am
+--- a/tests/http/clients/Makefile.am
++++ b/tests/http/clients/Makefile.am
 @@ -51,9 +51,9 @@ LIBS = $(BLANK_AT_MAKETIME)
  
  # Dependencies
@@ -166,11 +156,9 @@ Index: curl/tests/http/clients/Makefile.am
  endif
  
  # This might hold -Werror
-Index: curl/tests/http/clients/Makefile.in
-===================================================================
---- curl.orig/tests/http/clients/Makefile.in
-+++ curl/tests/http/clients/Makefile.in
-@@ -178,9 +178,9 @@ h2_download_SOURCES = h2-download.c
+--- a/tests/http/clients/Makefile.in
++++ b/tests/http/clients/Makefile.in
+@@ -179,9 +179,9 @@ h2_download_SOURCES = h2-download.c
  h2_download_OBJECTS = h2-download.$(OBJEXT)
  h2_download_LDADD = $(LDADD)
  @USE_EXPLICIT_LIB_DEPS_FALSE@h2_download_DEPENDENCIES =  \
@@ -182,7 +170,16 @@ Index: curl/tests/http/clients/Makefile.in
  AM_V_lt = $(am__v_lt_@AM_V@)
  am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
  am__v_lt_0 = --silent
-@@ -189,37 +189,37 @@ h2_serverpush_SOURCES = h2-serverpush.c
+@@ -190,44 +190,44 @@ h2_pausing_SOURCES = h2-pausing.c
+ h2_pausing_OBJECTS = h2-pausing.$(OBJEXT)
+ h2_pausing_LDADD = $(LDADD)
+ @USE_EXPLICIT_LIB_DEPS_FALSE@h2_pausing_DEPENDENCIES =  \
+-@USE_EXPLICIT_LIB_DEPS_FALSE@	$(LIBDIR)/libcurl.la
++@USE_EXPLICIT_LIB_DEPS_FALSE@	$(LIBDIR)/libcurl-gnutls.la
+ @USE_EXPLICIT_LIB_DEPS_TRUE@h2_pausing_DEPENDENCIES =  \
+-@USE_EXPLICIT_LIB_DEPS_TRUE@	$(LIBDIR)/libcurl.la
++@USE_EXPLICIT_LIB_DEPS_TRUE@	$(LIBDIR)/libcurl-gnutls.la
+ h2_serverpush_SOURCES = h2-serverpush.c
  h2_serverpush_OBJECTS = h2-serverpush.$(OBJEXT)
  h2_serverpush_LDADD = $(LDADD)
  @USE_EXPLICIT_LIB_DEPS_FALSE@h2_serverpush_DEPENDENCIES =  \
@@ -230,7 +227,7 @@ Index: curl/tests/http/clients/Makefile.in
  AM_V_P = $(am__v_P_@AM_V@)
  am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
  am__v_P_0 = false
-@@ -525,10 +525,10 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I
+@@ -536,10 +536,10 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I
  	-I$(top_srcdir)/lib -DCURL_DISABLE_DEPRECATION \
  	-DCURL_NO_OLDIES $(am__append_1)
  LIBDIR = $(top_builddir)/lib
@@ -243,10 +240,8 @@ Index: curl/tests/http/clients/Makefile.in
  CHECKSRC = $(CS_$(V))
  CS_0 = @echo "  RUN     " $@;
  CS_1 = 
-Index: curl/tests/libtest/Makefile.am
-===================================================================
---- curl.orig/tests/libtest/Makefile.am
-+++ curl/tests/libtest/Makefile.am
+--- a/tests/libtest/Makefile.am
++++ b/tests/libtest/Makefile.am
 @@ -49,11 +49,11 @@ CLEANFILES = lib1521.c
  LIBS = $(BLANK_AT_MAKETIME)
  
