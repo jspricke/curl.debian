@@ -1,8 +1,12 @@
-curl (8.4.0-1) UNRELEASED; urgency=medium
+curl (8.4.0-1) unstable; urgency=medium
 
   * New upstream version 8.4.0
+  * d/libcurl*.symbols: New symbol curl_multi_get_handles
+  * d/patches:
+    - Remove patches from 8.4.0 release
+    - 90_gnutls.patch: Update patch
 
- -- Samuel Henrique <samueloph@debian.org>  Thu, 12 Oct 2023 22:57:28 +0100
+ -- Samuel Henrique <samueloph@debian.org>  Fri, 13 Oct 2023 00:53:16 +0100
 
 curl (8.3.0-3) unstable; urgency=high
 
