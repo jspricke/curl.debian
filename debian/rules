@@ -6,6 +6,9 @@ export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 # this will catch miss-linking. (e.g. undefined symbols)
 #export DEB_LDFLAGS_MAINT_APPEND = -Wl,-z,defs
 
+# Include pkg-info to make use of DEB_VERSION
+include /usr/share/dpkg/pkg-info.mk
+
 # enable all hardening options (see #763372)
 export DEB_BUILD_MAINT_OPTIONS := hardening=+all
 
@@ -23,6 +26,9 @@ CONFIGURE_ARGS = -- --disable-dependency-tracking		\
 ifeq ($(shell dpkg-vendor --derives-from Ubuntu && echo yes),yes)
 	CONFIGURE_ARGS += --without-libssh2 --with-libssh
 endif
+
+export DEB_CFLAGS_MAINT_APPEND = -DCURL_PATCHSTAMP=\"$(DEB_VERSION)\"
+export DEB_CXXFLAGS_MAINT_APPEND = -DCURL_PATCHSTAMP=\"$(DEB_VERSION)\"
 
 %:
 	dh $@
