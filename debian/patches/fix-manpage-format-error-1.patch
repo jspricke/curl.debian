@@ -1,0 +1,39 @@
+From e2006b5d58e0d58d25d1b33d4d807c63081a5dca Mon Sep 17 00:00:00 2001
+From: Daniel Stenberg <daniel@haxx.se>
+Date: Sat, 14 Oct 2023 18:22:03 +0200
+Subject: [PATCH] opts: fix two minor man page format mistakes
+Origin: upstream, https://github.com/curl/curl/commit/e2006b5d58e0d58d25d1b33d4d807c63081a5dca
+Last-Update: 2023-10-15
+
+---
+ docs/libcurl/opts/CURLOPT_HTTPHEADER.3          | 2 +-
+ docs/libcurl/opts/CURLOPT_PROXY_TRANSFER_MODE.3 | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/docs/libcurl/opts/CURLOPT_HTTPHEADER.3 b/docs/libcurl/opts/CURLOPT_HTTPHEADER.3
+index 05b02857281652..4817927ab87611 100644
+--- a/docs/libcurl/opts/CURLOPT_HTTPHEADER.3
++++ b/docs/libcurl/opts/CURLOPT_HTTPHEADER.3
+@@ -100,7 +100,7 @@ MIME mail is only composed of alternative representations of the same data
+ (i.e.: HTML and plain text), this header must be set to "multipart/alternative".
+ In all cases the value must be of the form "multipart/*" to respect the
+ document structure and may not include the "boundary=" parameter.
+-.P
++
+ Other specific headers that do not have a libcurl default value but are
+ strongly desired by mail delivery and user agents should also be included.
+ These are "From:", "To:", "Date:" and "Subject:" among others and their
+diff --git a/docs/libcurl/opts/CURLOPT_PROXY_TRANSFER_MODE.3 b/docs/libcurl/opts/CURLOPT_PROXY_TRANSFER_MODE.3
+index 495133e7f5ffdd..b96bc2d21b0a52 100644
+--- a/docs/libcurl/opts/CURLOPT_PROXY_TRANSFER_MODE.3
++++ b/docs/libcurl/opts/CURLOPT_PROXY_TRANSFER_MODE.3
+@@ -60,7 +60,7 @@ Added in 7.18.0
+ Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if the
+ enabled value is not supported.
+ .SH "SEE ALSO"
+-.BN CURLOPT_CRLF (3),
+-.BN CURLOPT_TRANSFERTEXT (3),
++.BR CURLOPT_CRLF (3),
++.BR CURLOPT_TRANSFERTEXT (3),
+ .BR CURLOPT_HTTPPROXYTUNNEL (3),
+ .BR CURLOPT_PROXY (3)
