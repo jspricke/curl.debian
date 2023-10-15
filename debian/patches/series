@@ -5,6 +5,7 @@ build-Divide-mit-krb5-gssapi-link-flags-between-LDFLAGS-a.patch
 11_omit-directories-from-config.patch
 Remove-curl-s-LDFLAGS-from-curl-config-static-libs.patch
 fix-manpage-format-error-1.patch
+fix-manpage-format-error-2.patch
 
 # Do not add patches below.
 # Used to generate packages for the other crypto libraries.
