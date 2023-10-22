@@ -1,3 +1,9 @@
+curl (8.4.0-2~bpo12+1) bookworm-backports; urgency=medium
+
+  * Rebuild for bookworm-backports.
+
+ -- Samuel Henrique <samueloph@debian.org>  Sun, 22 Oct 2023 11:59:36 +0100
+
 curl (8.4.0-2) unstable; urgency=medium
 
   * d/rules: set CURL_PATCHSTAMP to package's version, so it shows up in
