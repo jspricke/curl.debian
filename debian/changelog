@@ -1,3 +1,26 @@
+curl (8.4.0-2) unstable; urgency=medium
+
+  * d/rules: set CURL_PATCHSTAMP to package's version, so it shows up in
+    "--version" output
+
+ -- Samuel Henrique <samueloph@debian.org>  Sat, 14 Oct 2023 12:19:21 +0100
+
+curl (8.4.0-1) unstable; urgency=medium
+
+  * New upstream version 8.4.0
+  * d/libcurl*.symbols: New symbol curl_multi_get_handles
+  * d/patches:
+    - Remove patches from 8.4.0 release
+    - 90_gnutls.patch: Update patch
+
+ -- Samuel Henrique <samueloph@debian.org>  Fri, 13 Oct 2023 00:53:16 +0100
+
+curl (8.3.0-3) unstable; urgency=high
+
+  * Add patches to fix CVE-2023-38545 and CVE-2023-38546
+
+ -- Samuel Henrique <samueloph@debian.org>  Thu, 05 Oct 2023 22:26:40 +0100
+
 curl (8.3.0-2~bpo12+1) bookworm-backports; urgency=medium
 
   * Rebuild for bookworm-backports.
