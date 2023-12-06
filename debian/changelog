@@ -1,3 +1,18 @@
+curl (8.5.0-1) UNRELEASED; urgency=medium
+
+  [ Samuel Henrique ]
+  * d/rules: Use pkg-info.mk instead of dpkg-parsechangelog for DEB_VERSION
+  * New upstream version 8.5.0
+
+  [ Carlos Henrique Lima Melara ]
+  * d/p/fix-manpage-format-error-1.patch: import patch from upstream
+  * d/p/fix-manpage-format-error-2.patch: import patch from upstream
+  * d/control: change Maintainer field to curl packaging team
+  * d/README.Debian: add readme to explain curl's team creation
+  * d/control: add myself to Uploaders
+
+ -- Samuel Henrique <samueloph@debian.org>  Wed, 06 Dec 2023 18:47:59 +0000
+
 curl (8.4.0-2) unstable; urgency=medium
 
   * d/rules: set CURL_PATCHSTAMP to package's version, so it shows up in
