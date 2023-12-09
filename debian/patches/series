@@ -45,6 +45,9 @@ CVE-2023-28322.patch
 CVE-2023-38545.patch
 CVE-2023-38546.patch
 
+# Patches from 8.5.0.
+CVE-2023-46218.patch
+
 # Always add CVE patches before these two patches
 90_gnutls.patch
 99_nss.patch
