@@ -1,3 +1,11 @@
+curl (7.88.1-10+deb12u5) bookworm-security; urgency=high
+
+  * Add patches to fix CVE-2023-46218 and CVE-2023-46219
+  * d/rules: set CURL_PATCHSTAMP to package's version, so it shows up in
+    "--version" output
+
+ -- Samuel Henrique <samueloph@debian.org>  Sun, 10 Dec 2023 06:07:30 +0000
+
 curl (7.88.1-10+deb12u4) bookworm-security; urgency=high
 
   * Add patches to fix CVE-2023-38545 and CVE-2023-38546
