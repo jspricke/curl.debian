@@ -1,3 +1,19 @@
+curl (7.64.0-4+deb10u8) buster-security; urgency=medium
+
+  * Non-maintainer upload by the LTS Team.
+  * CVE-2023-28322: POST-after-PUT confusion.
+  * CVE-2023-46218: Cookie mixed case PSL bypass.
+
+  [ Boyuan Yang ]
+  * Reduce verbose "Expire in" ... messages. (Closes: #926148)
+
+  [ Samuel Henrique ]
+  * Set CURL_PATCHSTAMP to package's version,
+    so it shows up in "--version" output.
+  * Add debian/salsa-ci.yml
+
+ -- Adrian Bunk <bunk@debian.org>  Sun, 17 Dec 2023 23:18:25 +0200
+
 curl (7.64.0-4+deb10u7) buster-security; urgency=medium
 
   * Non-maintainer upload by the LTS team.
