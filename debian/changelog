@@ -1,3 +1,11 @@
+curl (7.64.0-4+deb10u7) buster-security; urgency=medium
+
+  * Non-maintainer upload by the LTS team.
+  * CVE-2023-38546: cookie injection
+  * CVE-2023-28321: IDN wildcard match
+
+ -- Emilio Pozuelo Monfort <pochu@debian.org>  Wed, 11 Oct 2023 12:40:37 +0200
+
 curl (7.64.0-4+deb10u6) buster-security; urgency=high
 
   * Non-maintainer upload by the LTS team.
