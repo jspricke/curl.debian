@@ -1,3 +1,9 @@
+curl (8.5.0-1+exp1) experimental; urgency=medium
+
+  * Build on experimental with a newer openldap to help investigate #1057855
+
+ -- Samuel Henrique <samueloph@debian.org>  Fri, 22 Dec 2023 11:20:39 -0300
+
 curl (8.5.0-1) unstable; urgency=medium
 
   [ Samuel Henrique ]
