@@ -22,7 +22,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_SSL_CTX_DATA 3 "August 22, 2023" "ibcurl 8.3.0" libcurl
+.TH CURLOPT_SSL_CTX_DATA 3 "December 04, 2023" "ibcurl 8.5.0" libcurl
 
 .SH NAME
 CURLOPT_SSL_CTX_DATA \- pointer passed to SSL context callback
@@ -60,7 +60,7 @@ static CURLcode sslctx_function(CURL *curl, void *sslctx, void *parm)
    * X509 structure that SSL can use
    */
   PEM_read_bio_X509(bio, &cert, 0, NULL);
-  if(cert == NULL)
+  if(!cert)
     printf("PEM_read_bio_X509 failed...\\n");
 
   /* get a pointer to the X509 certificate store (which may be empty) */
@@ -80,7 +80,7 @@ static CURLcode sslctx_function(CURL *curl, void *sslctx, void *parm)
 
 int main(void)
 {
-  CURL * ch;
+  CURL *ch;
   CURLcode rv;
   char *mypem = /* example CA cert PEM - shortened */
     "-----BEGIN CERTIFICATE-----\\n"
@@ -123,4 +123,5 @@ CURLE_NOT_BUILT_IN - Not supported by the SSL backend
 
 CURLE_UNKNOWN_OPTION
 .SH "SEE ALSO"
-.BR CURLOPT_SSL_CTX_FUNCTION "(3), " CURLOPT_SSLVERSION "(3), "
+.BR CURLOPT_SSL_CTX_FUNCTION (3),
+.BR CURLOPT_SSLVERSION (3)

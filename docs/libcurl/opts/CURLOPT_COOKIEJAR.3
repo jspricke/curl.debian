@@ -22,7 +22,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_COOKIEJAR 3 "August 22, 2023" "ibcurl 8.3.0" libcurl
+.TH CURLOPT_COOKIEJAR 3 "December 04, 2023" "ibcurl 8.5.0" libcurl
 
 .SH NAME
 CURLOPT_COOKIEJAR \- file name to store cookies to
@@ -61,17 +61,21 @@ NULL
 HTTP
 .SH EXAMPLE
 .nf
-CURL *curl = curl_easy_init();
-if(curl) {
-  curl_easy_setopt(curl, CURLOPT_URL, "https://example.com/foo.bin");
+int main(void)
+{
+  CURL *curl = curl_easy_init();
+  if(curl) {
+    CURLcode res;
+    curl_easy_setopt(curl, CURLOPT_URL, "https://example.com/foo.bin");
 
-  /* export cookies to this file when closing the handle */
-  curl_easy_setopt(curl, CURLOPT_COOKIEJAR, "/tmp/cookies.txt");
+    /* export cookies to this file when closing the handle */
+    curl_easy_setopt(curl, CURLOPT_COOKIEJAR, "/tmp/cookies.txt");
 
-  ret = curl_easy_perform(curl);
+    res = curl_easy_perform(curl);
 
-  /* close the handle, write the cookies! */
-  curl_easy_cleanup(curl);
+    /* close the handle, write the cookies! */
+    curl_easy_cleanup(curl);
+  }
 }
 .fi
 .SH AVAILABILITY
@@ -80,5 +84,6 @@ Along with HTTP
 Returns CURLE_OK if HTTP is supported, CURLE_UNKNOWN_OPTION if not, or
 CURLE_OUT_OF_MEMORY if there was insufficient heap space.
 .SH "SEE ALSO"
-.BR CURLOPT_COOKIEFILE "(3), " CURLOPT_COOKIE "(3), "
-.BR CURLOPT_COOKIELIST "(3), "
+.BR CURLOPT_COOKIE (3),
+.BR CURLOPT_COOKIEFILE (3),
+.BR CURLOPT_COOKIELIST (3)

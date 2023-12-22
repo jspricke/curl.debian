@@ -40,26 +40,14 @@
 #include <inet.h>
 #endif
 
-#ifdef HAVE_SETJMP_H
 #include <setjmp.h>
-#endif
-#ifdef HAVE_SIGNAL_H
 #include <signal.h>
-#endif
 
 #include "urldata.h"
 #include "connect.h"
 #include "cfilters.h"
 #include "multiif.h"
 #include "curl_trc.h"
-
-/* copied from hostip.c to switch using SIGALARM for timeouts.
- * SIGALARM has only seconds resolution, so our tests will not work
- * here. */
-#if defined(CURLRES_SYNCH) && \
-    defined(HAVE_ALARM) && defined(SIGALRM) && defined(HAVE_SIGSETJMP)
-#define USE_ALARM_TIMEOUT
-#endif
 
 
 static CURL *easy;
@@ -136,7 +124,7 @@ static void cf_test_destroy(struct Curl_cfilter *cf, struct Curl_easy *data)
   struct cf_test_ctx *ctx = cf->ctx;
 #ifndef CURL_DISABLE_VERBOSE_STRINGS
   infof(data, "%04dms: cf[%s] destroyed",
-       (int)Curl_timediff(Curl_now(), current_tr->started), ctx->id);
+        (int)Curl_timediff(Curl_now(), current_tr->started), ctx->id);
 #else
   (void)data;
 #endif
@@ -157,7 +145,7 @@ static CURLcode cf_test_connect(struct Curl_cfilter *cf,
   duration_ms = Curl_timediff(Curl_now(), ctx->started);
   if(duration_ms >= ctx->fail_delay_ms) {
     infof(data, "%04dms: cf[%s] fail delay reached",
-         (int)duration_ms, ctx->id);
+          (int)duration_ms, ctx->id);
     return CURLE_COULDNT_CONNECT;
   }
   if(duration_ms)
@@ -174,7 +162,7 @@ static struct Curl_cftype cft_test = {
   cf_test_connect,
   Curl_cf_def_close,
   Curl_cf_def_get_host,
-  Curl_cf_def_get_select_socks,
+  Curl_cf_def_adjust_pollset,
   Curl_cf_def_data_pending,
   Curl_cf_def_send,
   Curl_cf_def_recv,
@@ -197,7 +185,7 @@ static CURLcode cf_test_create(struct Curl_cfilter **pcf,
 
   (void)data;
   (void)conn;
-  ctx = calloc(sizeof(*ctx), 1);
+  ctx = calloc(1, sizeof(*ctx));
   if(!ctx) {
     result = CURLE_OUT_OF_MEMORY;
     goto out;
@@ -270,7 +258,6 @@ static void check_result(struct test_case *tc,
     fail(msg);
   }
 
-#ifndef USE_ALARM_TIMEOUT
   duration_ms = Curl_timediff(tr->ended, tr->started);
   if(duration_ms < tc->min_duration_ms) {
     curl_msprintf(msg, "%d: expected min duration of %dms, but took %dms",
@@ -282,7 +269,6 @@ static void check_result(struct test_case *tc,
                   tc->id, (int)tc->max_duration_ms, (int)duration_ms);
     fail(msg);
   }
-#endif
   if(tr->cf6.creations && tr->cf4.creations && tc->pref_family) {
     /* did ipv4 and ipv6 both, expect the preferred family to start right arway
      * with the other being delayed by the happy_eyeball_timeout */
@@ -297,11 +283,7 @@ static void check_result(struct test_case *tc,
                     tc->id, stats1->family, (int)stats1->first_created);
       fail(msg);
     }
-#ifndef USE_ALARM_TIMEOUT
     if(stats2->first_created < tc->he_timeout_ms) {
-#else
-    if(stats2->first_created < 1000) {
-#endif
       curl_msprintf(msg, "%d: expected ip%s to start delayed after %dms, "
                     "instead first attempt made after %dms",
                     tc->id, stats2->family, (int)tc->he_timeout_ms,
@@ -326,15 +308,8 @@ static void test_connect(struct test_case *tc)
   curl_easy_setopt(easy, CURLOPT_IPRESOLVE, (long)tc->ip_version);
   curl_easy_setopt(easy, CURLOPT_CONNECTTIMEOUT_MS,
                    (long)tc->connect_timeout_ms);
-#ifdef USE_ALARM_TIMEOUT
-  /* we only 1sec timer resolution here */
-  curl_easy_setopt(easy, CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS,
-                   (tc->he_timeout_ms > tc->connect_timeout_ms)?
-                   3000L : 1000L);
-#else
   curl_easy_setopt(easy, CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS,
                    (long)tc->he_timeout_ms);
-#endif
 
   curl_easy_setopt(easy, CURLOPT_URL, tc->url);
   memset(&tr, 0, sizeof(tr));

@@ -22,7 +22,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLINFO_CONN_ID 3 "May 23, 2023" "libcurl 8.3.0" "libcurl"
+.TH CURLINFO_CONN_ID 3 "December 04, 2023" "libcurl 8.5.0" "libcurl"
 
 .SH NAME
 CURLINFO_CONN_ID \- get the ID of the last connection used by the handle
@@ -45,18 +45,23 @@ same multi handle.
 All
 .SH EXAMPLE
 .nf
-CURL *curl = curl_easy_init();
-if(curl) {
-  curl_easy_setopt(curl, CURLOPT_URL, "https://example.com");
+int main(void)
+{
+  CURL *curl = curl_easy_init();
+  if(curl) {
+    CURLcode res;
 
-  /* Perform the request */
-  res = curl_easy_perform(curl);
+    curl_easy_setopt(curl, CURLOPT_URL, "https://example.com");
 
-  if(!res) {
-    curl_off_t conn_id;
-    res = curl_easy_getinfo(curl, CURLINFO_CONN_ID, &conn_id);
+    /* Perform the request */
+    res = curl_easy_perform(curl);
+
     if(!res) {
-      printf("Connection used: %" CURL_FORMAT_CURL_OFF_T "\\n", conn_id);
+      curl_off_t conn_id;
+      res = curl_easy_getinfo(curl, CURLINFO_CONN_ID, &conn_id);
+      if(!res) {
+        printf("Connection used: %" CURL_FORMAT_CURL_OFF_T "\\n", conn_id);
+      }
     }
   }
 }
@@ -66,5 +71,6 @@ Added in 8.2.0
 .SH RETURN VALUE
 Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR curl_easy_getinfo "(3), " curl_easy_setopt "(3), "
-.BR CURLINFO_XFER_ID "(3), "
+.BR curl_easy_getinfo (3),
+.BR curl_easy_setopt (3),
+.BR CURLINFO_XFER_ID (3)

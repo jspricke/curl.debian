@@ -22,7 +22,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH curl_easy_cleanup 3 "August 22, 2023" "libcurl 8.3.0" "libcurl"
+.TH curl_easy_cleanup 3 "December 04, 2023" "libcurl 8.5.0" "libcurl"
 
 .SH NAME
 curl_easy_cleanup - End a libcurl easy handle
@@ -58,12 +58,17 @@ Passing in a NULL pointer in \fIhandle\fP makes this function return
 immediately with no action.
 .SH EXAMPLE
 .nf
-CURL *curl = curl_easy_init();
-if(curl) {
-  CURLcode res;
-  curl_easy_setopt(curl, CURLOPT_URL, "https://example.com");
-  res = curl_easy_perform(curl);
-  curl_easy_cleanup(curl);
+int main(void)
+{
+  CURL *curl = curl_easy_init();
+  if(curl) {
+    CURLcode res;
+    curl_easy_setopt(curl, CURLOPT_URL, "https://example.com");
+    res = curl_easy_perform(curl);
+    if(res)
+      printf("error: %s\\n", curl_easy_strerror(res));
+    curl_easy_cleanup(curl);
+  }
 }
 .fi
 .SH AVAILABILITY
@@ -71,6 +76,8 @@ Added in 7.1
 .SH RETURN VALUE
 None
 .SH "SEE ALSO"
-.BR curl_easy_init "(3), " curl_easy_duphandle "(3), "
-.BR curl_easy_reset "(3), "
-.BR curl_multi_cleanup "(3), " curl_multi_remove_handle "(3) "
+.BR curl_easy_duphandle (3),
+.BR curl_easy_init (3),
+.BR curl_easy_reset (3),
+.BR curl_multi_cleanup (3),
+.BR curl_multi_remove_handle (3)

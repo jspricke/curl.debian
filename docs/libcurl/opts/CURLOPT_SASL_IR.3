@@ -22,7 +22,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_SASL_IR 3 "August 22, 2023" "ibcurl 8.3.0" libcurl
+.TH CURLOPT_SASL_IR 3 "December 04, 2023" "ibcurl 8.5.0" libcurl
 
 .SH NAME
 CURLOPT_SASL_IR \- send initial response in first packet
@@ -53,12 +53,16 @@ SASL-IR CAPABILITY.
 IMAP, POP3 and SMTP
 .SH EXAMPLE
 .nf
-CURL *curl = curl_easy_init();
-if(curl) {
-  curl_easy_setopt(curl, CURLOPT_URL, "smtp://example.com/");
-  curl_easy_setopt(curl, CURLOPT_SASL_IR, 1L);
-  ret = curl_easy_perform(curl);
-  curl_easy_cleanup(curl);
+int main(void)
+{
+  CURL *curl = curl_easy_init();
+  if(curl) {
+    CURLcode res;
+    curl_easy_setopt(curl, CURLOPT_URL, "smtp://example.com/");
+    curl_easy_setopt(curl, CURLOPT_SASL_IR, 1L);
+    res = curl_easy_perform(curl);
+    curl_easy_cleanup(curl);
+  }
 }
 .fi
 .SH AVAILABILITY
@@ -66,4 +70,6 @@ Added in 7.31.0
 .SH RETURN VALUE
 Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR CURLOPT_MAIL_AUTH "(3), " CURLOPT_MAIL_FROM "(3), "
+.BR CURLOPT_MAIL_AUTH (3),
+.BR CURLOPT_MAIL_FROM (3),
+.BR CURLOPT_SASL_AUTHZID (3)

@@ -22,7 +22,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_IGNORE_CONTENT_LENGTH 3 "August 22, 2023" "ibcurl 8.3.0" libcurl
+.TH CURLOPT_IGNORE_CONTENT_LENGTH 3 "December 04, 2023" "ibcurl 8.5.0" libcurl
 
 .SH NAME
 CURLOPT_IGNORE_CONTENT_LENGTH \- ignore content length
@@ -52,14 +52,17 @@ Only use this option if strictly necessary.
 HTTP
 .SH EXAMPLE
 .nf
-CURL *curl = curl_easy_init();
-if(curl) {
-  curl_easy_setopt(curl, CURLOPT_URL, "https://example.com");
+int main(void)
+{
+  CURL *curl = curl_easy_init();
+  if(curl) {
+    curl_easy_setopt(curl, CURLOPT_URL, "https://example.com");
 
-  /* we know the server is silly, ignore content-length */
-  curl_easy_setopt(curl, CURLOPT_IGNORE_CONTENT_LENGTH, 1L);
+    /* we know the server is silly, ignore content-length */
+    curl_easy_setopt(curl, CURLOPT_IGNORE_CONTENT_LENGTH, 1L);
 
-  curl_easy_perform(curl);
+    curl_easy_perform(curl);
+  }
 }
 .fi
 .SH AVAILABILITY
@@ -68,4 +71,5 @@ for HTTP when libcurl is built to use the hyper backend.
 .SH RETURN VALUE
 Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR CURLOPT_HTTP_VERSION "(3), " CURLOPT_MAXFILESIZE_LARGE "(3), "
+.BR CURLOPT_HTTP_VERSION (3),
+.BR CURLOPT_MAXFILESIZE_LARGE (3)

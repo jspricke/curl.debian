@@ -22,7 +22,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_RTSP_REQUEST 3 "August 22, 2023" "ibcurl 8.3.0" libcurl
+.TH CURLOPT_RTSP_REQUEST 3 "December 04, 2023" "ibcurl 8.5.0" libcurl
 
 .SH NAME
 CURLOPT_RTSP_REQUEST \- RTSP request
@@ -101,13 +101,17 @@ application a chance to run.
 RTSP
 .SH EXAMPLE
 .nf
-CURL *curl = curl_easy_init();
-if(curl) {
-  curl_easy_setopt(curl, CURLOPT_URL, "rtsp://example.com/");
-  /* ask for options! */
-  curl_easy_setopt(curl, CURLOPT_RTSP_REQUEST, CURL_RTSPREQ_OPTIONS);
-  ret = curl_easy_perform(curl);
-  curl_easy_cleanup(curl);
+int main(void)
+{
+  CURL *curl = curl_easy_init();
+  if(curl) {
+    CURLcode res;
+    curl_easy_setopt(curl, CURLOPT_URL, "rtsp://example.com/");
+    /* ask for options! */
+    curl_easy_setopt(curl, CURLOPT_RTSP_REQUEST, CURL_RTSPREQ_OPTIONS);
+    res = curl_easy_perform(curl);
+    curl_easy_cleanup(curl);
+  }
 }
 .fi
 .SH AVAILABILITY
@@ -115,4 +119,5 @@ Added in 7.20.0
 .SH RETURN VALUE
 Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR CURLOPT_RTSP_SESSION_ID "(3), " CURLOPT_RTSP_STREAM_URI "(3), "
+.BR CURLOPT_RTSP_SESSION_ID (3),
+.BR CURLOPT_RTSP_STREAM_URI (3)

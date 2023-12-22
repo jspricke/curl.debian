@@ -22,7 +22,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_PROGRESSFUNCTION 3 "August 22, 2023" "ibcurl 8.3.0" libcurl
+.TH CURLOPT_PROGRESSFUNCTION 3 "December 04, 2023" "ibcurl 8.5.0" libcurl
 
 .SH NAME
 CURLOPT_PROGRESSFUNCTION \- progress meter callback
@@ -85,35 +85,44 @@ users.
 All
 .SH EXAMPLE
 .nf
- struct progress {
-   char *private;
-   size_t size;
- };
+struct progress {
+  char *private;
+  size_t size;
+};
 
- static size_t progress_callback(void *clientp,
-                                 double dltotal,
-                                 double dlnow,
-                                 double ultotal,
-                                 double ulnow)
- {
-   struct progress *memory = (struct progress *)clientp;
+static size_t progress_callback(void *clientp,
+                                double dltotal,
+                                double dlnow,
+                                double ultotal,
+                                double ulnow)
+{
+  struct progress *memory = clientp;
+  printf("private: %p\\n", memory->private);
 
-   /* use the values */
+  /* use the values */
 
-   return 0; /* all is good */
- }
+  return 0; /* all is good */
+}
 
- struct progress data;
+int main(void)
+{
+  struct progress data;
 
- /* pass struct to callback  */
- curl_easy_setopt(curl_handle, CURLOPT_PROGRESSDATA, &data);
+  CURL *curl = curl_easy_init();
+  if(curl) {
+    /* pass struct to callback  */
+    curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, &data);
+    curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress_callback);
 
- curl_easy_setopt(curl_handle, CURLOPT_PROGRESSFUNCTION, progress_callback);
+    curl_easy_perform(curl);
+  }
+}
 .fi
 .SH AVAILABILITY
 Deprecated since 7.32.0.
 .SH RETURN VALUE
 Returns CURLE_OK.
 .SH "SEE ALSO"
-.BR CURLOPT_VERBOSE "(3), " CURLOPT_NOPROGRESS "(3), "
-.BR CURLOPT_XFERINFOFUNCTION "(3)"
+.BR CURLOPT_VERBOSE (3),
+.BR CURLOPT_NOPROGRESS (3),
+.BR CURLOPT_XFERINFOFUNCTION (3)

@@ -22,7 +22,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLINFO_TLS_SSL_PTR 3 "August 22, 2023" "ibcurl 8.3.0" libcurl
+.TH CURLINFO_TLS_SSL_PTR 3 "December 04, 2023" "ibcurl 8.5.0" libcurl
 
 .SH NAME
 CURLINFO_TLS_SESSION, CURLINFO_TLS_SSL_PTR \- get TLS session info
@@ -89,7 +89,8 @@ as well:
 
 If the \fIinternals\fP pointer is NULL then either the SSL backend is not
 supported, an SSL session has not yet been established or the connection is no
-longer associated with the easy handle (e.g. curl_easy_perform has returned).
+longer associated with the easy handle (e.g. \fIcurl_easy_perform(3)\fP has
+returned).
 .SH LIMITATIONS
 This option has some limitations that could make it unsafe when it comes to
 the manual verification of certificates.
@@ -133,13 +134,13 @@ static size_t wf(void *ptr, size_t size, size_t nmemb, void *stream)
   CURLcode res = curl_easy_getinfo(curl, CURLINFO_TLS_SSL_PTR, &info);
   if(info && !res) {
     if(CURLSSLBACKEND_OPENSSL == info->backend) {
-       printf("OpenSSL ver. %s\\n", SSL_get_version((SSL*)info->internals));
+      printf("OpenSSL ver. %s\\n", SSL_get_version((SSL*)info->internals));
     }
   }
   return size * nmemb;
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
   CURLcode res;
   curl = curl_easy_init();
@@ -160,5 +161,6 @@ This option is exactly the same as that option except in the case of OpenSSL.
 .SH RETURN VALUE
 Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR curl_easy_getinfo "(3), " curl_easy_setopt "(3), "
-.BR CURLINFO_TLS_SESSION "(3), "
+.BR curl_easy_getinfo (3),
+.BR curl_easy_setopt (3),
+.BR CURLINFO_TLS_SESSION (3)

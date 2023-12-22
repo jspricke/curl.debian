@@ -22,7 +22,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLMOPT_CONTENT_LENGTH_PENALTY_SIZE 3 "August 22, 2023" "ibcurl 8.3.0" libcurl
+.TH CURLMOPT_CONTENT_LENGTH_PENALTY_SIZE 3 "December 04, 2023" "ibcurl 8.5.0" libcurl
 
 .SH NAME
 CURLMOPT_CONTENT_LENGTH_PENALTY_SIZE \- size threshold for pipelining penalty
@@ -47,13 +47,17 @@ The default value is 0, which means that the size penalization is inactive.
 HTTP(S)
 .SH EXAMPLE
 .nf
-CURLM *m = curl_multi_init();
-long maxlength = 10000;
-curl_multi_setopt(m, CURLMOPT_CONTENT_LENGTH_PENALTY_SIZE, maxlength);
+int main(void)
+{
+  CURLM *m = curl_multi_init();
+  long maxlength = 10000;
+  curl_multi_setopt(m, CURLMOPT_CONTENT_LENGTH_PENALTY_SIZE, maxlength);
+}
 .fi
 .SH AVAILABILITY
 Added in 7.30.0
 .SH RETURN VALUE
 Returns CURLM_OK if the option is supported, and CURLM_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR CURLMOPT_PIPELINING "(3), " CURLMOPT_CHUNK_LENGTH_PENALTY_SIZE "(3), "
+.BR CURLMOPT_PIPELINING (3),
+.BR CURLMOPT_CHUNK_LENGTH_PENALTY_SIZE (3)

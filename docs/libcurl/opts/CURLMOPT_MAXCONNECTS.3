@@ -22,7 +22,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLMOPT_MAXCONNECTS 3 "August 22, 2023" "ibcurl 8.3.0" libcurl
+.TH CURLMOPT_MAXCONNECTS 3 "December 04, 2023" "ibcurl 8.5.0" libcurl
 
 .SH NAME
 CURLMOPT_MAXCONNECTS \- size of connection cache
@@ -57,14 +57,17 @@ See DESCRIPTION
 All
 .SH EXAMPLE
 .nf
-CURLM *m = curl_multi_init();
-/* only keep 10 connections in the cache */
-curl_multi_setopt(m, CURLMOPT_MAXCONNECTS, 10L);
+int main(void)
+{
+  CURLM *m = curl_multi_init();
+  /* only keep 10 connections in the cache */
+  curl_multi_setopt(m, CURLMOPT_MAXCONNECTS, 10L);
+}
 .fi
 .SH AVAILABILITY
 Added in 7.16.3
 .SH RETURN VALUE
 Returns CURLM_OK if the option is supported, and CURLM_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR CURLMOPT_MAX_HOST_CONNECTIONS "(3), "
-.BR CURLOPT_MAXCONNECTS "(3), "
+.BR CURLMOPT_MAX_HOST_CONNECTIONS (3),
+.BR CURLOPT_MAXCONNECTS (3)

@@ -22,7 +22,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_CONNECT_ONLY 3 "August 22, 2023" "ibcurl 8.3.0" libcurl
+.TH CURLOPT_CONNECT_ONLY 3 "December 04, 2023" "ibcurl 8.5.0" libcurl
 
 .SH NAME
 CURLOPT_CONNECT_ONLY \- stop when connected to target server
@@ -61,14 +61,17 @@ application wants to use it. Once it has been removed with
 HTTP, SMTP, POP3 and IMAP. For WS and WSS starting in 7.86.0.
 .SH EXAMPLE
 .nf
-CURL *curl = curl_easy_init();
-if(curl) {
-  CURLcode ret;
-  curl_easy_setopt(curl, CURLOPT_URL, "https://example.com/");
-  curl_easy_setopt(curl, CURLOPT_CONNECT_ONLY, 1L);
-  ret = curl_easy_perform(curl);
-  if(ret == CURLE_OK) {
-    /* only connected! */
+int main(void)
+{
+  CURL *curl = curl_easy_init();
+  if(curl) {
+    CURLcode ret;
+    curl_easy_setopt(curl, CURLOPT_URL, "https://example.com/");
+    curl_easy_setopt(curl, CURLOPT_CONNECT_ONLY, 1L);
+    ret = curl_easy_perform(curl);
+    if(ret == CURLE_OK) {
+      /* only connected! */
+    }
   }
 }
 .fi
@@ -77,5 +80,7 @@ Added in 7.15.2
 .SH RETURN VALUE
 Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR CURLOPT_VERBOSE "(3), " CURLOPT_HTTPPROXYTUNNEL  "(3), "
-.BR curl_easy_recv "(3), " curl_easy_send "(3) "
+.BR curl_easy_recv (3),
+.BR curl_easy_send (3),
+.BR CURLOPT_HTTPPROXYTUNNEL (3),
+.BR CURLOPT_VERBOSE (3)

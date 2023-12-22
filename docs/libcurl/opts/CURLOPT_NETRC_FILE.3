@@ -22,7 +22,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_NETRC_FILE 3 "August 22, 2023" "ibcurl 8.3.0" libcurl
+.TH CURLOPT_NETRC_FILE 3 "December 04, 2023" "ibcurl 8.5.0" libcurl
 
 .SH NAME
 CURLOPT_NETRC_FILE \- file name to read .netrc info from
@@ -46,13 +46,16 @@ NULL
 All
 .SH EXAMPLE
 .nf
-CURL *curl = curl_easy_init();
-if(curl) {
-  CURLcode ret;
-  curl_easy_setopt(curl, CURLOPT_URL, "ftp://example.com/");
-  curl_easy_setopt(curl, CURLOPT_NETRC, CURL_NETRC_OPTIONAL);
-  curl_easy_setopt(curl, CURLOPT_NETRC_FILE, "/tmp/magic-netrc");
-  ret = curl_easy_perform(curl);
+int main(void)
+{
+  CURL *curl = curl_easy_init();
+  if(curl) {
+    CURLcode ret;
+    curl_easy_setopt(curl, CURLOPT_URL, "ftp://example.com/");
+    curl_easy_setopt(curl, CURLOPT_NETRC, CURL_NETRC_OPTIONAL);
+    curl_easy_setopt(curl, CURLOPT_NETRC_FILE, "/tmp/magic-netrc");
+    ret = curl_easy_perform(curl);
+  }
 }
 .fi
 .SH AVAILABILITY
@@ -61,4 +64,6 @@ Added in 7.10.9
 Returns CURLE_OK if the option is supported, CURLE_UNKNOWN_OPTION if not, or
 CURLE_OUT_OF_MEMORY if there was insufficient heap space.
 .SH "SEE ALSO"
-.BR CURLOPT_NETRC "(3), " CURLOPT_USERNAME "(3), "
+.BR CURLOPT_NETRC (3),
+.BR CURLOPT_PASSWORD (3),
+.BR CURLOPT_USERNAME (3)

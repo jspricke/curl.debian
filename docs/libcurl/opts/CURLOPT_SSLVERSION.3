@@ -22,7 +22,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_SSLVERSION 3 "August 22, 2023" "ibcurl 8.3.0" libcurl
+.TH CURLOPT_SSLVERSION 3 "December 04, 2023" "ibcurl 8.5.0" libcurl
 
 .SH NAME
 CURLOPT_SSLVERSION \- preferred TLS/SSL version
@@ -95,15 +95,18 @@ CURL_SSLVERSION_DEFAULT
 All TLS based protocols: HTTPS, FTPS, IMAPS, POP3S, SMTPS etc.
 .SH EXAMPLE
 .nf
-CURL *curl = curl_easy_init();
-if(curl) {
-  curl_easy_setopt(curl, CURLOPT_URL, "https://example.com");
+int main(void)
+{
+  CURL *curl = curl_easy_init();
+  if(curl) {
+    curl_easy_setopt(curl, CURLOPT_URL, "https://example.com");
 
-  /* ask libcurl to use TLS version 1.0 or later */
-  curl_easy_setopt(curl, CURLOPT_SSLVERSION, (long)CURL_SSLVERSION_TLSv1);
+    /* ask libcurl to use TLS version 1.0 or later */
+    curl_easy_setopt(curl, CURLOPT_SSLVERSION, (long)CURL_SSLVERSION_TLSv1);
 
-  /* Perform the request */
-  curl_easy_perform(curl);
+    /* Perform the request */
+    curl_easy_perform(curl);
+  }
 }
 .fi
 .SH AVAILABILITY
@@ -116,5 +119,7 @@ SSLv3 is disabled by default since 7.39.0.
 .SH RETURN VALUE
 Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR CURLOPT_USE_SSL "(3), " CURLOPT_HTTP_VERSION "(3), "
-.BR CURLOPT_PROXY_SSLVERSION "(3), " CURLOPT_IPRESOLVE "(3) "
+.BR CURLOPT_HTTP_VERSION (3),
+.BR CURLOPT_IPRESOLVE (3),
+.BR CURLOPT_PROXY_SSLVERSION (3),
+.BR CURLOPT_USE_SSL (3)

@@ -22,7 +22,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_HTTP_VERSION 3 "August 22, 2023" "ibcurl 8.3.0" libcurl
+.TH CURLOPT_HTTP_VERSION 3 "December 04, 2023" "ibcurl 8.5.0" libcurl
 
 .SH NAME
 CURLOPT_HTTP_VERSION \- HTTP protocol version to use
@@ -81,15 +81,18 @@ Before that: CURL_HTTP_VERSION_1_1
 HTTP
 .SH EXAMPLE
 .nf
-CURL *curl = curl_easy_init();
-if(curl) {
-  CURLcode ret;
-  curl_easy_setopt(curl, CURLOPT_URL, "https://example.com/");
-  curl_easy_setopt(curl, CURLOPT_HTTP_VERSION,
-                   (long)CURL_HTTP_VERSION_2TLS);
-  ret = curl_easy_perform(curl);
-  if(ret == CURLE_HTTP_RETURNED_ERROR) {
-    /* an HTTP response error problem */
+int main(void)
+{
+  CURL *curl = curl_easy_init();
+  if(curl) {
+    CURLcode ret;
+    curl_easy_setopt(curl, CURLOPT_URL, "https://example.com/");
+    curl_easy_setopt(curl, CURLOPT_HTTP_VERSION,
+                     (long)CURL_HTTP_VERSION_2TLS);
+    ret = curl_easy_perform(curl);
+    if(ret == CURLE_HTTP_RETURNED_ERROR) {
+      /* an HTTP response error problem */
+    }
   }
 }
 .fi
@@ -98,5 +101,7 @@ Along with HTTP
 .SH RETURN VALUE
 Returns CURLE_OK if HTTP is supported, and CURLE_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR CURLOPT_SSLVERSION "(3), " CURLOPT_HTTP200ALIASES "(3), "
-.BR CURLOPT_HTTP09_ALLOWED "(3), " CURLOPT_ALTSVC "(3) "
+.BR CURLOPT_ALTSVC (3),
+.BR CURLOPT_HTTP09_ALLOWED (3),
+.BR CURLOPT_HTTP200ALIASES (3),
+.BR CURLOPT_SSLVERSION (3)

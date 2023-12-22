@@ -1,10 +1,56 @@
-curl (8.3.0-2~exp1) experimental; urgency=medium
+curl (8.5.0-1) unstable; urgency=medium
 
-  * d/patches: Import two upstream patches to try to fix FTBFS on armel/armhf:
+  [ Samuel Henrique ]
+  * New upstream version 8.5.0
+    - Fix CVE-2023-46218: cookie mixed case PSL bypass (closes: #1057646)
+    - Fix CVE-2023-46219: HSTS long file name clears contents (closes: #1057645)
+  * d/rules: Use pkg-info.mk instead of dpkg-parsechangelog for DEB_VERSION
+  * d/p/90_gnutls.patch: Update patch
+  * d/p/dist_add_tests_errorcodes_pl_to_the_tarball.patch: Upstream patch to
+    fix tests
+  * d/p/add_errorcodes_upstream_file.patch: Include missing file from upstream
+    tarball
+
+  [ Carlos Henrique Lima Melara ]
+  * d/control: change Maintainer field to curl packaging team
+  * d/README.Debian: add readme to explain curl's team creation
+  * d/control: add myself to Uploaders
+
+ -- Samuel Henrique <samueloph@debian.org>  Wed, 06 Dec 2023 20:15:49 +0000
+
+curl (8.4.0-2) unstable; urgency=medium
+
+  * d/rules: set CURL_PATCHSTAMP to package's version, so it shows up in
+    "--version" output
+
+ -- Samuel Henrique <samueloph@debian.org>  Sat, 14 Oct 2023 12:19:21 +0100
+
+curl (8.4.0-1) unstable; urgency=medium
+
+  * New upstream version 8.4.0
+  * d/libcurl*.symbols: New symbol curl_multi_get_handles
+  * d/patches:
+    - Remove patches from 8.4.0 release
+    - 90_gnutls.patch: Update patch
+
+ -- Samuel Henrique <samueloph@debian.org>  Fri, 13 Oct 2023 00:53:16 +0100
+
+curl (8.3.0-3) unstable; urgency=high
+
+  * Add patches to fix CVE-2023-38545 and CVE-2023-38546
+
+ -- Samuel Henrique <samueloph@debian.org>  Thu, 05 Oct 2023 22:26:40 +0100
+
+curl (8.3.0-2) unstable; urgency=medium
+
+  * d/rules: Add test 3102 to TESTS_FAILS_ON_IPV6_ONLY_MACHINES
+  * d/patches: Import two upstream patches to try to fix FTBFS on armel/armhf
     - test650_fix_an_end_tag_typo.patch
     - tests_increase_the_default_server_logs_lock_timeout.patch
+  * d/p/lib_use_wrapper_for_curl_mime_data_fseek_callback.patch: New patch to
+    fix armel/armhf FTBFS
 
- -- Samuel Henrique <samueloph@debian.org>  Fri, 29 Sep 2023 21:04:33 +0100
+ -- Samuel Henrique <samueloph@debian.org>  Sun, 01 Oct 2023 15:01:42 +0100
 
 curl (8.3.0-1) unstable; urgency=medium
 

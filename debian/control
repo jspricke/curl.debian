@@ -1,8 +1,9 @@
 Source: curl
 Section: web
 Priority: optional
-Maintainer: Alessandro Ghedini <ghedo@debian.org>
-Uploaders: Samuel Henrique <samueloph@debian.org>,
+Maintainer: Debian Curl Maintainers <team+curl@tracker.debian.org>
+Uploaders: Carlos Henrique Lima Melara <charlesmelara@riseup.net>,
+           Samuel Henrique <samueloph@debian.org>,
            Sergio Durigan Junior <sergiodj@debian.org>
 Build-Depends:
  debhelper-compat (= 13),

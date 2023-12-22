@@ -22,7 +22,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_INTERFACE 3 "August 22, 2023" "ibcurl 8.3.0" libcurl
+.TH CURLOPT_INTERFACE 3 "December 04, 2023" "ibcurl 8.5.0" libcurl
 
 .SH NAME
 CURLOPT_INTERFACE \- source interface for outgoing traffic
@@ -61,15 +61,19 @@ NULL, use whatever the TCP stack finds suitable
 All
 .SH EXAMPLE
 .nf
-CURL *curl = curl_easy_init();
-if(curl) {
-  curl_easy_setopt(curl, CURLOPT_URL, "https://example.com/foo.bin");
+int main(void)
+{
+  CURL *curl = curl_easy_init();
+  if(curl) {
+    CURLcode res;
+    curl_easy_setopt(curl, CURLOPT_URL, "https://example.com/foo.bin");
 
-  curl_easy_setopt(curl, CURLOPT_INTERFACE, "eth0");
+    curl_easy_setopt(curl, CURLOPT_INTERFACE, "eth0");
 
-  ret = curl_easy_perform(curl);
+    res = curl_easy_perform(curl);
 
-  curl_easy_cleanup(curl);
+    curl_easy_cleanup(curl);
+  }
 }
 .fi
 .SH AVAILABILITY
@@ -78,4 +82,5 @@ The "if!" and "host!" syntax was added in 7.24.0.
 Returns CURLE_OK on success or
 CURLE_OUT_OF_MEMORY if there was insufficient heap space.
 .SH "SEE ALSO"
-.BR CURLOPT_SOCKOPTFUNCTION "(3), " CURLOPT_TCP_NODELAY "(3), "
+.BR CURLOPT_SOCKOPTFUNCTION (3),
+.BR CURLOPT_TCP_NODELAY (3)

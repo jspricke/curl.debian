@@ -22,7 +22,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_MAXFILESIZE 3 "August 22, 2023" "ibcurl 8.3.0" libcurl
+.TH CURLOPT_MAXFILESIZE 3 "December 04, 2023" "ibcurl 8.5.0" libcurl
 
 .SH NAME
 CURLOPT_MAXFILESIZE \- maximum file size allowed to download
@@ -42,19 +42,25 @@ transfers this option has no effect - even if the file transfer eventually
 ends up being larger than this given limit.
 
 If you want a limit above 2GB, use \fICURLOPT_MAXFILESIZE_LARGE(3)\fP.
+
+Since 8.4.0, this option also stops ongoing transfers if they reach this
+threshold.
 .SH DEFAULT
 None
 .SH PROTOCOLS
 FTP, HTTP and MQTT
 .SH EXAMPLE
 .nf
-CURL *curl = curl_easy_init();
-if(curl) {
-  CURLcode ret;
-  curl_easy_setopt(curl, CURLOPT_URL, "https://example.com/");
-  /* refuse to download if larger than 1000 bytes! */
-  curl_easy_setopt(curl, CURLOPT_MAXFILESIZE, 1000L);
-  ret = curl_easy_perform(curl);
+int main(void)
+{
+  CURL *curl = curl_easy_init();
+  if(curl) {
+    CURLcode ret;
+    curl_easy_setopt(curl, CURLOPT_URL, "https://example.com/");
+    /* refuse to download if larger than 1000 bytes! */
+    curl_easy_setopt(curl, CURLOPT_MAXFILESIZE, 1000L);
+    ret = curl_easy_perform(curl);
+  }
 }
 .fi
 .SH AVAILABILITY
@@ -62,4 +68,5 @@ Always
 .SH RETURN VALUE
 Returns CURLE_OK
 .SH "SEE ALSO"
-.BR CURLOPT_MAXFILESIZE_LARGE "(3), " CURLOPT_MAX_RECV_SPEED_LARGE "(3), "
+.BR CURLOPT_MAX_RECV_SPEED_LARGE (3),
+.BR CURLOPT_MAXFILESIZE_LARGE (3)

@@ -21,7 +21,7 @@
 .\" * SPDX-License-Identifier: curl
 .\" *
 .\" **************************************************************************
-.TH curl_multi_assign 3 "August 22, 2023" "libcurl 8.3.0" "libcurl"
+.TH curl_multi_assign 3 "December 04, 2023" "libcurl 8.5.0" "libcurl"
 
 .SH NAME
 curl_multi_assign \- set data to associate with an internal socket
@@ -55,8 +55,17 @@ functionality.
 It is acceptable to call this function from your multi callback functions.
 .SH EXAMPLE
 .nf
- /* make our struct pointer associated with socket fd */
- mc = curl_multi_assign(multi_handle, fd, ourstructp);
+int main(void)
+{
+  CURLM *multi = curl_multi_init();
+  void *ourstructp; /* pointer to our data */
+  curl_socket_t fd; /* file descriptor to associate our data with */
+
+  /* make our struct pointer associated with socket fd */
+  CURLMcode mc = curl_multi_assign(multi, fd, ourstructp);
+  if(mc)
+    printf("error: %s\\n", curl_multi_strerror(mc));
+}
 .fi
 .SH AVAILABILITY
 Added in 7.15.5
@@ -72,4 +81,5 @@ another socket to wait for, we can use \fIcurl_multi_assign(3)\fP to point out
 the particular data so that when we get updates about this same socket again,
 we do not have to find the struct associated with this socket by ourselves.
 .SH "SEE ALSO"
-.BR curl_multi_setopt "(3), " curl_multi_socket_action "(3) "
+.BR curl_multi_setopt (3),
+.BR curl_multi_socket_action (3)

@@ -22,7 +22,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_HSTS 3 "August 22, 2023" "ibcurl 8.3.0" libcurl
+.TH CURLOPT_HSTS 3 "December 04, 2023" "ibcurl 8.5.0" libcurl
 
 .SH NAME
 CURLOPT_HSTS \- HSTS cache file name
@@ -65,10 +65,13 @@ NULL, no file name
 HTTPS and HTTP
 .SH EXAMPLE
 .nf
-CURL *curl = curl_easy_init();
-if(curl) {
-  curl_easy_setopt(curl, CURLOPT_HSTS, "/home/user/.hsts-cache");
-  curl_easy_perform(curl);
+int main(void)
+{
+  CURL *curl = curl_easy_init();
+  if(curl) {
+    curl_easy_setopt(curl, CURLOPT_HSTS, "/home/user/.hsts-cache");
+    curl_easy_perform(curl);
+  }
 }
 .fi
 .SH AVAILABILITY
@@ -76,4 +79,6 @@ Added in 7.74.0
 .SH RETURN VALUE
 Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR CURLOPT_HSTS_CTRL "(3), " CURLOPT_ALTSVC "(3), " CURLOPT_RESOLVE "(3), "
+.BR CURLOPT_ALTSVC (3),
+.BR CURLOPT_HSTS_CTRL (3),
+.BR CURLOPT_RESOLVE (3)

@@ -22,7 +22,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_FAILONERROR 3 "August 22, 2023" "ibcurl 8.3.0" libcurl
+.TH CURLOPT_FAILONERROR 3 "December 04, 2023" "ibcurl 8.5.0" libcurl
 
 .SH NAME
 CURLOPT_FAILONERROR \- request failure on HTTP response >= 400
@@ -53,14 +53,17 @@ get closed and \fICURLE_HTTP_RETURNED_ERROR\fP is returned.
 HTTP
 .SH EXAMPLE
 .nf
-CURL *curl = curl_easy_init();
-if(curl) {
-  CURLcode ret;
-  curl_easy_setopt(curl, CURLOPT_URL, "https://example.com/");
-  curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
-  ret = curl_easy_perform(curl);
-  if(ret == CURLE_HTTP_RETURNED_ERROR) {
-    /* an HTTP response error problem */
+int main(void)
+{
+  CURL *curl = curl_easy_init();
+  if(curl) {
+    CURLcode ret;
+    curl_easy_setopt(curl, CURLOPT_URL, "https://example.com/");
+    curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
+    ret = curl_easy_perform(curl);
+    if(ret == CURLE_HTTP_RETURNED_ERROR) {
+      /* an HTTP response error problem */
+    }
   }
 }
 .fi
@@ -69,4 +72,6 @@ Along with HTTP.
 .SH RETURN VALUE
 Returns CURLE_OK if HTTP is enabled, and CURLE_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR CURLOPT_HTTP200ALIASES "(3), " CURLOPT_KEEP_SENDING_ON_ERROR "(3), "
+.BR CURLINFO_RESPONSE_CODE (3),
+.BR CURLOPT_HTTP200ALIASES (3),
+.BR CURLOPT_KEEP_SENDING_ON_ERROR (3)
