@@ -1,3 +1,10 @@
+curl (8.5.0-2) unstable; urgency=medium
+
+  * d/p/openldap_fix_an_LDAP_crash.patch: New patch to fix ldap segfault
+    (closes: #1057855)
+
+ -- Samuel Henrique <samueloph@debian.org>  Fri, 29 Dec 2023 15:34:11 -0300
+
 curl (8.5.0-1) unstable; urgency=medium
 
   [ Samuel Henrique ]
