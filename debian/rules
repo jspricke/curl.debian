@@ -1,10 +1,10 @@
 #! /usr/bin/make -f
 
+# Include pkg-info to make use of DEB_VERSION
+include /usr/share/dpkg/pkg-info.mk
+
 # enable all hardening options (see #763372)
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
-
-# Set CURL_PATCHSTAMP to package's version, so it shows up in "--version" output.
-export CURL_PATCHSTAMP := $(shell dpkg-parsechangelog --show-field Version)
 
 DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
@@ -29,8 +29,8 @@ ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
   MAKEFLAGS += -j$(NUMJOBS)
 endif
 
-export DEB_CFLAGS_MAINT_APPEND = -D_DEB_HOST_ARCH=\"$(DEB_HOST_MULTIARCH)\" -DCURL_PATCHSTAMP=\"$(CURL_PATCHSTAMP)\"
-export DEB_CXXFLAGS_MAINT_APPEND = -D_DEB_HOST_ARCH=\"$(DEB_HOST_MULTIARCH)\" -DCURL_PATCHSTAMP=\"$(CURL_PATCHSTAMP)\"
+export DEB_CFLAGS_MAINT_APPEND = -D_DEB_HOST_ARCH=\"$(DEB_HOST_MULTIARCH)\" -DCURL_PATCHSTAMP=\"$(DEB_VERSION)\"
+export DEB_CXXFLAGS_MAINT_APPEND = -D_DEB_HOST_ARCH=\"$(DEB_HOST_MULTIARCH)\" -DCURL_PATCHSTAMP=\"$(DEB_VERSION)\"
 
 ifneq ($(filter pkg.curl.openssl-only,$(DEB_BUILD_PROFILES)),)
 	DEB_BUILD_PROFILES += pkg.curl.no-gnutls

@@ -5,6 +5,11 @@ build-Divide-mit-krb5-gssapi-link-flags-between-LDFLAGS-a.patch
 11_omit-directories-from-config.patch
 Remove-curl-s-LDFLAGS-from-curl-config-static-libs.patch
 
+# Post 8.5.0 patches.
+dist_add_tests_errorcodes_pl_to_the_tarball.patch
+openldap_fix_an_LDAP_crash.patch
+
 # Do not add patches below.
 # Used to generate packages for the other crypto libraries.
+add_errorcodes_upstream_file.patch
 90_gnutls.patch

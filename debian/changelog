@@ -1,3 +1,30 @@
+curl (8.5.0-2) unstable; urgency=medium
+
+  * d/p/openldap_fix_an_LDAP_crash.patch: New patch to fix ldap segfault
+    (closes: #1057855)
+
+ -- Samuel Henrique <samueloph@debian.org>  Fri, 29 Dec 2023 15:34:11 -0300
+
+curl (8.5.0-1) unstable; urgency=medium
+
+  [ Samuel Henrique ]
+  * New upstream version 8.5.0
+    - Fix CVE-2023-46218: cookie mixed case PSL bypass (closes: #1057646)
+    - Fix CVE-2023-46219: HSTS long file name clears contents (closes: #1057645)
+  * d/rules: Use pkg-info.mk instead of dpkg-parsechangelog for DEB_VERSION
+  * d/p/90_gnutls.patch: Update patch
+  * d/p/dist_add_tests_errorcodes_pl_to_the_tarball.patch: Upstream patch to
+    fix tests
+  * d/p/add_errorcodes_upstream_file.patch: Include missing file from upstream
+    tarball
+
+  [ Carlos Henrique Lima Melara ]
+  * d/control: change Maintainer field to curl packaging team
+  * d/README.Debian: add readme to explain curl's team creation
+  * d/control: add myself to Uploaders
+
+ -- Samuel Henrique <samueloph@debian.org>  Wed, 06 Dec 2023 20:15:49 +0000
+
 curl (8.4.0-2~bpo12+1) bookworm-backports; urgency=medium
 
   * Rebuild for bookworm-backports.
