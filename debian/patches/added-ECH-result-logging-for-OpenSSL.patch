@@ -1,0 +1,69 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Tue, 19 Sep 2023 20:27:44 +0100
+Subject: added ECH result logging for OpenSSL
+
+---
+ lib/vtls/openssl.c | 50 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 50 insertions(+)
+
+diff --git a/lib/vtls/openssl.c b/lib/vtls/openssl.c
+index de16dff..c99e89e 100644
+--- a/lib/vtls/openssl.c
++++ b/lib/vtls/openssl.c
+@@ -4086,6 +4086,56 @@ static CURLcode ossl_connect_step2(struct Curl_cfilter *cf,
+           negotiated_group_name? negotiated_group_name : "[blank]",
+           OBJ_nid2sn(psigtype_nid));
+ 
++#ifdef USE_ECH
++    if(data->set.tls_enable_ech
++       || data->set.tls_enable_ech_hard) {
++      const char *peer = NULL;
++      char *inner = NULL, *outer = NULL;
++      int rv;
++
++      peer = SSL_get0_peername(backend->handle);
++      rv = SSL_ech_get_status(backend->handle, &inner, &outer);
++      infof(data, "ECH: peer is %s, inner is %s, outer is %s",
++             (peer?peer:"NULL"),
++             (inner?inner:"NULL"),
++             (outer?outer:"NULL"));
++      switch(rv) {
++      case SSL_ECH_STATUS_SUCCESS:
++        infof(data, "ECH: Succeeded");
++        break;
++      case SSL_ECH_STATUS_GREASE:
++        infof(data, "ECH: sent GREASE");
++        break;
++      case SSL_ECH_STATUS_NOT_TRIED:
++        infof(data, "ECH: not attempted");
++        break;
++      case SSL_ECH_STATUS_NOT_CONFIGURED:
++        infof(data, "ECH: not configured");
++        break;
++      case SSL_ECH_STATUS_BACKEND:
++        infof(data, "ECH: failed");
++        break;
++      case SSL_ECH_STATUS_FAILED:
++        infof(data, "ECH: failed");
++        break;
++      case SSL_ECH_STATUS_BAD_CALL:
++        infof(data, "ECH: failed");
++        break;
++      case SSL_ECH_STATUS_BAD_NAME:
++        infof(data, "ECH: failed");
++        break;
++      default:
++        infof(data, "ECH: unexpected status %d",rv);
++      }
++      OPENSSL_free(inner);
++      OPENSSL_free(outer);
++      if(rv != SSL_ECH_STATUS_SUCCESS && data->set.tls_enable_ech_hard) {
++        infof(data, "ECH: ech-hard failed");
++        return CURLE_SSL_CONNECT_ERROR;
++      }
++   }
++#endif  /* USE_ECH */
++
+ #ifdef HAS_ALPN
+     /* Sets data and len to negotiated protocol, len is 0 if no protocol was
+      * negotiated

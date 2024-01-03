@@ -1,0 +1,29 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Sat, 16 Sep 2023 02:19:30 +0100
+Subject: fix leak
+
+---
+ lib/hostip.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/lib/hostip.c b/lib/hostip.c
+index 55aba4e..dfaf163 100644
+--- a/lib/hostip.c
++++ b/lib/hostip.c
+@@ -1065,8 +1065,15 @@ static void freednsentry(void *freethis)
+   if(dns->inuse == 0) {
+     Curl_freeaddrinfo(dns->addr);
+ #ifdef USE_HTTPSRR
+-    if(dns->hinfo)
++  if (dns->hinfo) {
++      if (dns->hinfo->target)
++        free(dns->hinfo->target);
++      if (dns->hinfo->echconfiglist)
++        free(dns->hinfo->echconfiglist);
++      if (dns->hinfo->val)
++        free(dns->hinfo->val);
+       free(dns->hinfo);
++  }
+ #endif
+     free(dns);
+   }

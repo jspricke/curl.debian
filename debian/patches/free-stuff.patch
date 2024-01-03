@@ -1,0 +1,23 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Mon, 11 Sep 2023 01:58:32 +0100
+Subject: free stuff
+
+---
+ lib/hostip.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/lib/hostip.c b/lib/hostip.c
+index e7c318a..b1b3cfe 100644
+--- a/lib/hostip.c
++++ b/lib/hostip.c
+@@ -1064,6 +1064,10 @@ static void freednsentry(void *freethis)
+   dns->inuse--;
+   if(dns->inuse == 0) {
+     Curl_freeaddrinfo(dns->addr);
++#ifdef USE_HTTPSRR
++    if(dns->https_rr_val)
++      free(dns->https_rr_val);
++#endif
+     free(dns);
+   }
+ }

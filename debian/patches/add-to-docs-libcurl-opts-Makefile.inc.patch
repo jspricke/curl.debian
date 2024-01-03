@@ -1,0 +1,22 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Wed, 27 Sep 2023 22:00:52 +0100
+Subject: add to docs/libcurl/opts/Makefile.inc
+
+---
+ docs/libcurl/opts/Makefile.inc | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/docs/libcurl/opts/Makefile.inc b/docs/libcurl/opts/Makefile.inc
+index 9fe7806..d210b94 100644
+--- a/docs/libcurl/opts/Makefile.inc
++++ b/docs/libcurl/opts/Makefile.inc
+@@ -164,6 +164,9 @@ man_MANS =                                      \
+   CURLOPT_DOH_SSL_VERIFYPEER.3                  \
+   CURLOPT_DOH_SSL_VERIFYSTATUS.3                \
+   CURLOPT_DOH_URL.3                             \
++  CURLOPT_ECH_CONFIG.3                          \
++  CURLOPT_ECH_PUBLIC.3                          \
++  CURLOPT_ECH_STATUS.3                          \
+   CURLOPT_EGDSOCKET.3                           \
+   CURLOPT_ERRORBUFFER.3                         \
+   CURLOPT_EXPECT_100_TIMEOUT_MS.3               \

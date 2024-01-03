@@ -1,0 +1,71 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Wed, 27 Sep 2023 20:53:23 +0100
+Subject: puzzling error from CI
+
+---
+ docs/libcurl/curl_easy_setopt.3        | 2 ++
+ docs/libcurl/opts/CURLOPT_ECH_CONFIG.3 | 5 +----
+ docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3 | 3 ---
+ 3 files changed, 3 insertions(+), 7 deletions(-)
+
+diff --git a/docs/libcurl/curl_easy_setopt.3 b/docs/libcurl/curl_easy_setopt.3
+index ab749b2..d535555 100644
+--- a/docs/libcurl/curl_easy_setopt.3
++++ b/docs/libcurl/curl_easy_setopt.3
+@@ -727,8 +727,10 @@ Set the CURLECH_ENABLE bit to attempt ECH opportunistically. See \fICURLOPT_ECH_
+ Set the CURLECH_HARD bit to hard-fail if ECH cannot be attempted. (ECH may still fail.)
+ .IP CURLOPT_ECH_CONFIG
+ Supply an ECHConfigList directly, rather than attempt to use DoH to get one via an HTTPS RR.
++See \fICURLOPT_ECH_CONFIG(3)\fP
+ .IP CURLOPT_ECH_PUBLIC
+ Override the public_name field of the ECHConfigList to be used.
++See \fICURLOPT_ECH_PUBLIC(3)\fP
+ .SH AVAILABILITY
+ Always
+ .SH RETURN VALUE
+diff --git a/docs/libcurl/opts/CURLOPT_ECH_CONFIG.3 b/docs/libcurl/opts/CURLOPT_ECH_CONFIG.3
+index 63452d2..36c4009 100644
+--- a/docs/libcurl/opts/CURLOPT_ECH_CONFIG.3
++++ b/docs/libcurl/opts/CURLOPT_ECH_CONFIG.3
+@@ -36,7 +36,6 @@ Pass a string that holds a base64 encoded ECHConfigList.
+ 
+ If ECH is attempted, this value will be used and will
+ override any value retrieved from the DNS.
+-
+ .SH DEFAULT
+ NULL - there is no default config. If this option is not set, and ECH
+ is to be attempted, libcurl uses DoH and attempts to find an ECHConfigList
+@@ -55,8 +54,6 @@ if(curl) {
+ .SH AVAILABILITY
+ Added in 8.4.0
+ .SH RETURN VALUE
+-Returns CURLE_OK on success or CURLE_OUT_OF_MEMORY if there was insufficient
+-heap space.
+-
++Returns CURLE_OK on success or CURLE_OUT_OF_MEMORY if there was insufficient heap space.
+ .SH "SEE ALSO"
+ .BR CURLOPT_ECH_STATUS "(3), " CURLOPT_ECH_PUBLIC "(3), "
+diff --git a/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3 b/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
+index 3fd1483..43fa8ca 100644
+--- a/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
++++ b/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
+@@ -36,12 +36,10 @@ Pass a string that provides an public_name.
+ 
+ If ECH is attempted, this value will be used and will
+ override any value retrieved from the DNS.
+-
+ .SH DEFAULT
+ NULL - there is no default public_name. If this option is not set, and ECH
+ is to be attempted, libcurl uses DoH and attempts to find an ECHConfigList
+ in an HTTPS RR, and will use the public_name found there.
+-
+ .SH PROTOCOLS
+ HTTP, and requires TLSv1.3.
+ .SH EXAMPLE
+@@ -57,6 +55,5 @@ Added in 8.4.0
+ .SH RETURN VALUE
+ Returns CURLE_OK on success or CURLE_OUT_OF_MEMORY if there was insufficient
+ heap space.
+-
+ .SH "SEE ALSO"
+ .BR CURLOPT_ECH_CONFIG "(3), " CURLOPT_ECH_STATUS "(3), "

@@ -1,0 +1,90 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Tue, 10 Oct 2023 22:22:24 +0100
+Subject: getting retry_configs with boring progress
+
+---
+ lib/vtls/openssl.c | 38 +++++++++++++++++++++-----------------
+ 1 file changed, 21 insertions(+), 17 deletions(-)
+
+diff --git a/lib/vtls/openssl.c b/lib/vtls/openssl.c
+index 7d78625..2cc170b 100644
+--- a/lib/vtls/openssl.c
++++ b/lib/vtls/openssl.c
+@@ -3884,7 +3884,7 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+           }
+ #else
+           if(SSL_set1_ech_config_list(backend->handle, ecl, elen) != 1) {
+-            infof(data, "ECH: SSL_set1_ech_ech_config_list failed (boring)");
++            infof(data, "ECH: SSL_set1_ech_config_list failed (boring)");
+             if(data->set.tls_ech == CURLECH_HARD)
+               return CURLE_SSL_CONNECT_ERROR;
+           }
+@@ -4091,35 +4091,35 @@ static CURLcode ossl_connect_step2(struct Curl_cfilter *cf,
+       }
+ #endif
+ #ifdef USE_ECH
+-# ifndef OPENSSL_IS_BORINGSSL
+       else if((lib == ERR_LIB_SSL) &&
++# ifndef OPENSSL_IS_BORINGSSL
+               (reason == SSL_R_ECH_REQUIRED)) {
++# else
++              (reason == SSL_AD_ECH_REQUIRED)) {
++# endif
+         /* If we have retry configs, then trace those out */
+-        unsigned char *rcs = NULL;
+         size_t rcl = 0;
+         int rv = 1;
++        char *inner = NULL;
++# ifndef OPENSSL_IS_BORINGSSL
++        unsigned char *rcs = NULL;
++        char *outer = NULL;
+ 
+         rv = SSL_ech_get_retry_config(backend->handle, &rcs, &rcl);
+ # else
+-      else if((lib == ERR_LIB_SSL) &&
+-              (reason == SSL_R_ECH_REJECTED)) {
+-        /* If we have retry configs, then trace those out */
+         const uint8_t *rcs = NULL;
+-        size_t rcl = 0;
+-        int rv = 1;
+-        const char *out_name = NULL;
++        const char *outer = NULL;
+         size_t out_name_len = 0;
+ 
+-        SSL_get0_ech_name_override(backend->handle, &out_name, &out_name_len);
+-        if(out_name_len > 0)
+-          infof(data, "ECH: outername is %s", out_name);
+-
++        SSL_get0_ech_name_override(backend->handle, &outer, &out_name_len);
+         SSL_get0_ech_retry_configs(backend->handle, &rcs, &rcl);
++        inner = connssl->hostname;
++        rv = rcl;
+ # endif
+ 
+-        if(rv == 1 && rcs) {
++        if(rv && rcs) {
+ # define HEXSTR_MAX 800
+-          char *b64str = NULL, *inner = NULL, *outer = NULL;
++          char *b64str = NULL;
+           size_t blen = 0;
+ 
+           result = Curl_base64_encode((const char *)rcs, rcl,
+@@ -4127,12 +4127,16 @@ static CURLcode ossl_connect_step2(struct Curl_cfilter *cf,
+           if(!result && b64str)
+             infof(data, "ECH: retry_configs %s", b64str);
+           free(b64str);
++# ifndef OPENSSL_IS_BORINGSSL
+           rv = SSL_ech_get_status(backend->handle, &inner, &outer);
++#else
++          rv = SSL_ech_accepted(backend->handle);
++#endif
+           infof(data, "ECH: retry_configs for %s from %s, %d",
+-                inner, outer, rv);
++                inner ? inner : "NULL", outer ? outer : "NULL", rv);
+         }
+         else
+-          infof(data, "ECH: no retry_configs (rv = %d", rv);
++          infof(data, "ECH: no retry_configs (rv = %d)", rv);
+ # ifndef OPENSSL_IS_BORINGSSL
+         OPENSSL_free((void *)rcs);
+ # endif

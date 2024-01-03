@@ -1,0 +1,537 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Thu, 7 Sep 2023 01:51:16 +0100
+Subject: ECH code compiles; not tested at all yet
+
+---
+ include/curl/curl.h | 14 +++++++++
+ lib/Makefile.inc    |  2 ++
+ lib/ech.c           | 88 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ lib/ech.h           | 35 +++++++++++++++++++++
+ lib/setopt.c        | 22 ++++++++++++++
+ lib/urldata.h       |  7 +++++
+ lib/version.c       |  3 ++
+ lib/vtls/openssl.c  | 71 ++++++++++++++++++++++++++++++++++++++++++
+ src/tool_cfgable.c  |  7 +++++
+ src/tool_cfgable.h  |  1 +
+ src/tool_getparam.c | 64 ++++++++++++++++++++++++++++++++++++++
+ src/tool_listhelp.c | 12 ++++++++
+ src/tool_operate.c  | 14 +++++++++
+ 13 files changed, 340 insertions(+)
+ create mode 100644 lib/ech.c
+ create mode 100644 lib/ech.h
+
+diff --git a/include/curl/curl.h b/include/curl/curl.h
+index cc24c05..d214b9a 100644
+--- a/include/curl/curl.h
++++ b/include/curl/curl.h
+@@ -1060,6 +1060,10 @@ typedef CURLSTScode (*curl_hstswrite_callback)(CURL *easy,
+ #define CURLPROTO_GOPHERS (1<<29)
+ #define CURLPROTO_ALL    (~0) /* enable everything */
+ 
++/* CURLECH_ defines are for the CURLOPT_ECH_STATUS option */
++#define CURLECH_ENABLE     (1<<0)
++#define CURLECH_INVALID (~((1<<1) - 1)) /* unused bits */
++
+ /* long may be 32 or 64 bits, but we should never depend on anything else
+    but 32 */
+ #define CURLOPTTYPE_LONG          0
+@@ -2201,6 +2205,15 @@ typedef enum {
+   /* set a specific client IP for HAProxy PROXY protocol header? */
+   CURLOPT(CURLOPT_HAPROXY_CLIENT_IP, CURLOPTTYPE_STRINGPOINT, 323),
+ 
++  /* ECH status: 1L to enable, 0L otherwise */
++  CURLOPT(CURLOPT_ECH_STATUS, CURLOPTTYPE_LONG, 324),
++
++  /* ECH config: as base64 or hex respectively */
++  CURLOPT(CURLOPT_ECH_CONFIG, CURLOPTTYPE_STRINGPOINT, 325),
++
++  /* ECH public name for outer SNI in ECH */
++  CURLOPT(CURLOPT_ECH_PUBLIC, CURLOPTTYPE_STRINGPOINT, 326),
++
+   CURLOPT_LASTENTRY /* the last unused */
+ } CURLoption;
+ 
+@@ -3146,6 +3159,7 @@ typedef struct curl_version_info_data curl_version_info_data;
+ #define CURL_VERSION_HSTS         (1<<28) /* HSTS is supported */
+ #define CURL_VERSION_GSASL        (1<<29) /* libgsasl is supported */
+ #define CURL_VERSION_THREADSAFE   (1<<30) /* libcurl API is thread-safe */
++#define CURL_VERSION_ECH          (1<<31) /* ECH support */
+ 
+  /*
+  * NAME curl_version_info()
+diff --git a/lib/Makefile.inc b/lib/Makefile.inc
+index e568ef9..c54118d 100644
+--- a/lib/Makefile.inc
++++ b/lib/Makefile.inc
+@@ -140,6 +140,7 @@ LIB_CFILES =         \
+   easy.c             \
+   easygetopt.c       \
+   easyoptions.c      \
++  ech.c              \
+   escape.c           \
+   file.c             \
+   fileinfo.c         \
+@@ -284,6 +285,7 @@ LIB_HFILES =         \
+   easy_lock.h        \
+   easyif.h           \
+   easyoptions.h      \
++  ech.h              \
+   escape.h           \
+   file.h             \
+   fileinfo.h         \
+diff --git a/lib/ech.c b/lib/ech.c
+new file mode 100644
+index 0000000..3eab416
+--- /dev/null
++++ b/lib/ech.c
+@@ -0,0 +1,88 @@
++/***************************************************************************
++ *                                  _   _ ____  _
++ *  Project                     ___| | | |  _ \| |
++ *                             / __| | | | |_) | |
++ *                            | (__| |_| |  _ <| |___
++ *                             \___|\___/|_| \_\_____|
++ *
++ * Copyright (C) 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
++ *
++ * This software is licensed as described in the file COPYING, which
++ * you should have received as part of this distribution. The terms
++ * are also available at https://curl.haxx.se/docs/copyright.html.
++ *
++ * You may opt to use, copy, modify, merge, publish, distribute and/or sell
++ * copies of the Software, and permit persons to whom the Software is
++ * furnished to do so, under the terms of the COPYING file.
++ *
++ * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
++ * KIND, either express or implied.
++ *
++ ***************************************************************************/
++
++/***************************************************************************
++ *
++ * Non-backend-specific ECH support code belongs here, such as functions
++ * - to check ECH-related libcurl options
++ *   for correctness and consistency
++ * - to parse and display ECH data
++ *
++ * Backend-specific ECH support code belongs as additional
++ * backend-interface code in one of the existing vlts backend
++ * interface source files or in an ECH-specific source file
++ * associated with one of these existing files.
++ *
++ ***************************************************************************/
++
++#include "curl_setup.h"
++
++#ifdef USE_ECH
++#include <curl/curl.h>
++#include "urldata.h"
++#include "sendf.h"
++#include "vtls/vtls.h"
++#include "ech.h"
++
++/* The last 3 #include files should be in this order */
++#include "curl_printf.h"
++#include "curl_memory.h"
++#include "memdebug.h"
++
++/**
++ * Check completeness of ECH parameter data present in easy handle
++ *
++ * @param data is the Curl_easy handle to inspect
++ * @return TRUE if complete, FALSE otherwise
++ *
++ * TODO: consider whether ECH parameter data needs to be per-connection
++ */
++bool Curl_ech_ready(struct Curl_easy *data)
++{
++  bool ready = TRUE;
++  if(!data)
++    return FALSE;               /* NULL handle: surely not ready! */
++
++  if(data->set.tls_enable_ech) {
++    /* ECH enabled: look for what will be needed */
++    if(!data->set.str[STRING_ECH_CONFIG]) {
++      infof(data, "WARNING: missing value for STRING_ECH_CONFIG\n");
++      ready = FALSE;
++    }
++    else {
++      infof(data, "ECH: found STRING_ECH_CONFIG:\n");
++      infof(data, " %s\n", data->set.str[STRING_ECH_CONFIG]);
++      if(data->set.str[STRING_ECH_PUBLIC]) {
++        /* Optional STRING_ECH_PUBLIC: report if set */
++        infof(data, "ECH: found STRING_ECH_PUBLIC:\n");
++        infof(data, " %s\n", data->set.str[STRING_ECH_PUBLIC]);
++      }
++    }
++
++    /* TODO: review completeness of inspection above */
++  }
++
++  /* Nothing missing, or ECH not required */
++  return ready;
++}
++
++#endif  /* USE_ECH */
+diff --git a/lib/ech.h b/lib/ech.h
+new file mode 100644
+index 0000000..4343f4b
+--- /dev/null
++++ b/lib/ech.h
+@@ -0,0 +1,35 @@
++#ifndef HEADER_CURL_ECH_H
++#define HEADER_CURL_ECH_H
++/***************************************************************************
++ *                                  _   _ ____  _
++ *  Project                     ___| | | |  _ \| |
++ *                             / __| | | | |_) | |
++ *                            | (__| |_| |  _ <| |___
++ *                             \___|\___/|_| \_\_____|
++ *
++ * Copyright (C) 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
++ *
++ * This software is licensed as described in the file COPYING, which
++ * you should have received as part of this distribution. The terms
++ * are also available at https://curl.haxx.se/docs/copyright.html.
++ *
++ * You may opt to use, copy, modify, merge, publish, distribute and/or sell
++ * copies of the Software, and permit persons to whom the Software is
++ * furnished to do so, under the terms of the COPYING file.
++ *
++ * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
++ * KIND, either express or implied.
++ *
++ *
++ ***************************************************************************/
++#include "curl_setup.h"
++
++#ifdef USE_ECH
++# include <curl/curl.h>
++
++bool Curl_ech_ready(struct Curl_easy *data);
++
++#else  /* ECH not in use */
++#endif  /* USE_ECH */
++
++#endif  /* HEADER_CURL_ECH_H */
+diff --git a/lib/setopt.c b/lib/setopt.c
+index a08140c..e6c5fde 100644
+--- a/lib/setopt.c
++++ b/lib/setopt.c
+@@ -3128,6 +3128,28 @@ CURLcode Curl_vsetopt(struct Curl_easy *data, CURLoption option, va_list param)
+     data->set.ws_raw_mode = raw;
+     break;
+   }
++#endif
++#ifdef USE_ECH
++  case CURLOPT_ECH_STATUS:
++    arg = va_arg(param, long);
++    if(arg & CURLECH_INVALID)             /* Unused flag bits */
++      return CURLE_BAD_FUNCTION_ARGUMENT; /* MUST be zero */
++    if(arg & CURLECH_ENABLE) {
++      data->set.tls_enable_ech = TRUE;
++    }
++    break;
++  case CURLOPT_ECH_CONFIG:
++    argptr = va_arg(param, char *);
++    result = Curl_setstropt(&data->set.str[STRING_ECH_CONFIG], argptr);
++    if(result)
++      return result;
++    break;
++  case CURLOPT_ECH_PUBLIC:
++    argptr = va_arg(param, char *);
++    result = Curl_setstropt(&data->set.str[STRING_ECH_PUBLIC], argptr);
++    if(result)
++      return result;
++    break;
+ #endif
+   case CURLOPT_QUICK_EXIT:
+     data->set.quick_exit = (0 != va_arg(param, long)) ? 1L:0L;
+diff --git a/lib/urldata.h b/lib/urldata.h
+index ff66148..5e89918 100644
+--- a/lib/urldata.h
++++ b/lib/urldata.h
+@@ -1628,6 +1628,10 @@ enum dupstring {
+   STRING_SSL_EC_CURVES,
+   STRING_AWS_SIGV4, /* Parameters for V4 signature */
+   STRING_HAPROXY_CLIENT_IP,     /* CURLOPT_HAPROXY_CLIENT_IP */
++  STRING_ECH_CONFIG,            /* CURLOPT_ECH_CONFIG
++                                 * TODO: packages/OS400/chkstring.c
++                                 */
++  STRING_ECH_PUBLIC,            /* CURLOPT_ECH_PUBLIC */
+ 
+   /* -- end of null-terminated strings -- */
+ 
+@@ -1941,6 +1945,9 @@ struct UserDefined {
+ #ifdef USE_WEBSOCKETS
+   BIT(ws_raw_mode);
+ #endif
++#ifdef USE_ECH
++  BIT(tls_enable_ech);     /* TLS ECH extension  */
++#endif
+ };
+ 
+ struct Names {
+diff --git a/lib/version.c b/lib/version.c
+index f957f08..11e25c5 100644
+--- a/lib/version.c
++++ b/lib/version.c
+@@ -455,6 +455,9 @@ static const struct feat features_table[] = {
+ #ifndef CURL_DISABLE_HSTS
+   FEATURE("HSTS",        NULL,                CURL_VERSION_HSTS),
+ #endif
++#ifndef CURL_DISABLE_ECH
++  FEATURE("ECH",         NULL,                CURL_VERSION_ECH),
++#endif
+ #if defined(USE_NGHTTP2)
+   FEATURE("HTTP2",       NULL,                CURL_VERSION_HTTP2),
+ #endif
+diff --git a/lib/vtls/openssl.c b/lib/vtls/openssl.c
+index 8c8f43e..7b51461 100644
+--- a/lib/vtls/openssl.c
++++ b/lib/vtls/openssl.c
+@@ -82,6 +82,11 @@
+ #include <openssl/tls1.h>
+ #include <openssl/evp.h>
+ 
++#ifdef USE_ECH
++#include "ech.h"
++#include <openssl/ech.h>
++#endif /* USE_ECH */
++
+ #if (OPENSSL_VERSION_NUMBER >= 0x0090808fL) && !defined(OPENSSL_NO_OCSP)
+ #include <openssl/ocsp.h>
+ #endif
+@@ -3792,6 +3797,72 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+       return CURLE_SSL_CONNECT_ERROR;
+     }
+   }
++
++#ifdef USE_ECH
++  if(data->set.tls_enable_ech) {
++    char *ech_config = data->set.str[STRING_ECH_CONFIG];
++    char *outername = data->set.str[STRING_ECH_PUBLIC];
++    unsigned char **cfgs = NULL;
++    size_t *cfglens = NULL;
++
++    bool value_error = FALSE;
++    int nechs;
++    int rv, i;
++
++    value_error = !Curl_ech_ready(data);
++    if(value_error)
++      return CURLE_SSL_CONNECT_ERROR;
++
++    if(outername)
++      infof(data,
++            "ECH: will use hostname '%s' as ECH inner name\n"
++            "  ECH: will use string '%s' as ECH outer name\n",
++            hostname,
++            outername);
++    else
++      infof(data,
++            "ECH: will use hostname '%s' as ECH inner name\n"
++            "       and configured ECH.public_name as ECH outer name\n",
++            hostname);
++    rv = SSL_ech_set_server_names(backend->handle,
++                             hostname, /* ech_inner_name (again) */
++                             outername, /* ech_outer_name */
++                             0 /* do send outer */
++                             );
++    infof(data, "ECH: rv %d from SSL_set_ech_server_names()\n", rv);
++
++    rv = ossl_ech_find_echconfigs(&nechs,
++                             &cfgs, &cfglens,
++                             ech_config, strlen(ech_config));
++    if(rv != 1) {
++      infof(data, "ECH: rv %d from ossL_ech_find_echconfigs() [ERROR]\n", rv);
++      return CURLE_SSL_CONNECT_ERROR;
++    }
++    if(nechs == 0) {
++      infof(data, "ECH: nechs %d from ossl_ech_find_echcoinfigs() [ERROR]\n", rv);
++      return CURLE_SSL_CONNECT_ERROR;
++    }
++
++    for (i = 0; i!= nechs; i++) {
++
++        rv = SSL_ech_set1_echconfig(backend->handle, cfgs[i], cfglens[i]);
++        if(rv != 1) {
++            infof(data, "ECH: rv %d from SSL_ech_set1_echconfig() (%d-th config)[ERROR]\n", rv, i);
++            return CURLE_SSL_CONNECT_ERROR;
++        } else {
++            infof(data, "ECH: SSL_ech_set1_echconfig() worked for %d-th config\n", i);
++        }
++    }
++    /* free stuff */
++    OPENSSL_free(cfglens);
++    for (i = 0; i != nechs; i++)
++        OPENSSL_free(cfgs[i]);
++    OPENSSL_free(cfgs);
++
++
++  }
++#endif  /* USE_ECH */
++
+ #endif
+ 
+   SSL_set_app_data(backend->handle, cf);
+diff --git a/src/tool_cfgable.c b/src/tool_cfgable.c
+index 906e23e..354b0c0 100644
+--- a/src/tool_cfgable.c
++++ b/src/tool_cfgable.c
+@@ -175,6 +175,13 @@ static void free_config_fields(struct OperationConfig *config)
+   Curl_safefree(config->aws_sigv4);
+   Curl_safefree(config->proto_str);
+   Curl_safefree(config->proto_redir_str);
++#ifdef USE_ECH
++  Curl_safefree(config->ech_config);
++  config->ech_config = NULL;
++  Curl_safefree(config->ech_public);
++  config->ech_public = NULL;
++  config->ech_status.word = 0;
++#endif
+ }
+ 
+ void config_free(struct OperationConfig *config)
+diff --git a/src/tool_cfgable.h b/src/tool_cfgable.h
+index 18f40d7..bfdb6de 100644
+--- a/src/tool_cfgable.h
++++ b/src/tool_cfgable.h
+@@ -312,6 +312,7 @@ struct OperationConfig {
+     } flags;
+   } ech_status;
+   char *ech_config;               /* Set by --echconfig option */
++  char *ech_public;               /* Set by --echpublic option */
+ #endif
+ 
+ };
+diff --git a/src/tool_getparam.c b/src/tool_getparam.c
+index 5fa1ace..7b039b5 100644
+--- a/src/tool_getparam.c
++++ b/src/tool_getparam.c
+@@ -296,6 +296,13 @@ static const struct LongShort aliases[]= {
+   {"EC", "etag-save",                ARG_FILENAME},
+   {"ED", "etag-compare",             ARG_FILENAME},
+   {"EE", "curves",                   ARG_STRING},
++#ifdef USE_ECH
++  {"EK", "ech",                      ARG_BOOL},
++         /* "EK" is as good a choice of starting point
++          * for ECH-related short names as any. */
++  {"EL", "echconfig",                ARG_FILENAME},
++  {"EM", "echpublic",                ARG_STRING},
++#endif
+   {"f",  "fail",                     ARG_BOOL},
+   {"fa", "fail-early",               ARG_BOOL},
+   {"fb", "styled-output",            ARG_BOOL},
+@@ -2124,6 +2131,63 @@ ParameterError getparameter(const char *flag, /* f or -long-flag */
+         GetStr(&config->ssl_ec_curves, nextarg);
+         break;
+ 
++#ifdef USE_ECH
++      case 'K':
++        /* --ech */
++        if(!config->ech_status.word) {
++          /* No ECH option was parsed yet */
++          config->ech_status.flags.selected = toggle;
++          config->ech_status.flags.disabled = !toggle;
++        }
++        break;
++
++      case 'L':
++        /* --echconfig */
++        /* Allow string data or "@"-escaped filename */
++        if(!config->ech_status.flags.disabled) {
++
++          config->ech_status.flags.selected = TRUE; /* clamp flag up */
++
++          if('@' != *nextarg) {
++            /* Simple case: just a string */
++            GetStr(&config->ech_config, nextarg);
++          }
++
++          else {
++            /* Indirect case: @filename or @- for stdin */
++            FILE *file;
++            nextarg++;        /* skip over '@' */
++
++            if(!strcmp("-", nextarg)) {
++              file = stdin;
++            }
++            else {
++              file = fopen(nextarg, FOPEN_READTEXT);
++            }
++            if(!file) {
++              warnf(global,
++                    "Couldn't read file \"%s\" "
++                    "specified for \"--echconfig\" option",
++                    nextarg);
++              return PARAM_BAD_USE; /*  */
++            }
++
++            err = file2string(&config->ech_config, file);
++            if(file != stdin)
++              fclose(file);
++            if(err)
++              return err;
++          } /* file done */
++        }
++        break;
++
++      case 'M':
++        /* --echpublic */
++        /* String data to over-ride (or fill for missing) ECH.public_name */
++        GetStr(&config->ech_public, nextarg);
++        break;
++#endif
++
+       default: /* unknown flag */
+         err = PARAM_OPTION_UNKNOWN;
+         break;
+diff --git a/src/tool_listhelp.c b/src/tool_listhelp.c
+index 4e7a6dd..a48796b 100644
+--- a/src/tool_listhelp.c
++++ b/src/tool_listhelp.c
+@@ -168,6 +168,18 @@ const struct helptxt helptext[] = {
+   {"-D, --dump-header <filename>",
+    "Write the received headers to <filename>",
+    CURLHELP_HTTP | CURLHELP_FTP},
++#ifdef USE_ECH
++  {"    --ech",
++   "Enable encrypted Client Hello",
++  CURLHELP_TLS},
++  {"    --echconfig <base64/@filename>", /* style: or --ech-config ? */
++   "Pass echconfig data, over-riding DNS",
++  CURLHELP_TLS},
++  {"    --echpublic <host>", /* style: or --ech-public ? */
++   "Pass echpublic data, over-riding echconfig",
++  CURLHELP_TLS},
++#endif
++
+   {"    --egd-file <file>",
+    "EGD socket path for random data",
+    CURLHELP_TLS},
+diff --git a/src/tool_operate.c b/src/tool_operate.c
+index c805b77..fdf5bba 100644
+--- a/src/tool_operate.c
++++ b/src/tool_operate.c
+@@ -2199,6 +2199,20 @@ static CURLcode single_transfer(struct GlobalConfig *global,
+         if(config->hsts)
+           my_setopt_str(curl, CURLOPT_HSTS, config->hsts);
+ 
++#ifdef USE_ECH
++        /* only if enabled in configure */
++        if(config->ech_status.flags.selected) {
++          long flagword = CURLECH_ENABLE;
++
++          my_setopt(curl, CURLOPT_ECH_STATUS, flagword);
++
++          /* ECH options were already checked, so load-data is set */
++          my_setopt_str(curl, CURLOPT_ECH_CONFIG, config->ech_config);
++          if(config->ech_public) /* only if set (optional) */
++            my_setopt_str(curl, CURLOPT_ECH_PUBLIC, config->ech_public);
++        }
++#endif
++
+         /* initialize retry vars for loop below */
+         per->retry_sleep_default = (config->retry_delay) ?
+           config->retry_delay*1000L : RETRY_SLEEP_DEFAULT; /* ms */

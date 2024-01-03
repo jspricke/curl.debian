@@ -1,0 +1,304 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Mon, 11 Sep 2023 14:50:10 +0100
+Subject: added --ech-hard option and made --ech opportunistic
+
+---
+ include/curl/curl.h |  3 +++
+ lib/doh.c           |  3 ++-
+ lib/ech.c           |  4 +--
+ lib/setopt.c        |  8 ++++++
+ lib/urldata.h       |  3 ++-
+ lib/vtls/openssl.c  | 76 +++++++++++++++++++++++++++++------------------------
+ src/tool_cfgable.h  |  2 ++
+ src/tool_getparam.c | 13 ++++++++-
+ src/tool_listhelp.c |  5 +++-
+ src/tool_operate.c  |  9 +++++--
+ 10 files changed, 84 insertions(+), 42 deletions(-)
+
+diff --git a/include/curl/curl.h b/include/curl/curl.h
+index ce4704c..b7b1c29 100644
+--- a/include/curl/curl.h
++++ b/include/curl/curl.h
+@@ -2208,6 +2208,9 @@ typedef enum {
+   /* ECH status: 1L to enable, 0L otherwise */
+   CURLOPT(CURLOPT_ECH_STATUS, CURLOPTTYPE_LONG, 324),
+ 
++  /* ECH hard status: 1L to enable, 0L otherwise */
++  CURLOPT(CURLOPT_ECH_HARD_STATUS, CURLOPTTYPE_LONG, 327),
++
+   /* ECH config: as base64 or hex respectively */
+   CURLOPT(CURLOPT_ECH_CONFIG, CURLOPTTYPE_STRINGPOINT, 325),
+ 
+diff --git a/lib/doh.c b/lib/doh.c
+index 4ca2033..7b7561c 100644
+--- a/lib/doh.c
++++ b/lib/doh.c
+@@ -424,7 +424,8 @@ struct Curl_addrinfo *Curl_doh(struct Curl_easy *data,
+ 
+ #ifdef USE_HTTPSRR
+ # ifdef USE_ECH
+-  if(data->set.tls_enable_ech) {
++  if(data->set.tls_enable_ech
++     || data->set.tls_enable_ech_hard) {
+     /* make a request for an HTTPS RR */
+ 
+     if(port == 443) {
+diff --git a/lib/ech.c b/lib/ech.c
+index 7d65dd3..508b029 100644
+--- a/lib/ech.c
++++ b/lib/ech.c
+@@ -66,7 +66,8 @@ bool Curl_ech_ready(struct Curl_easy *data,
+   if(!data)
+     return FALSE;               /* NULL handle: surely not ready! */
+ 
+-  if(data->set.tls_enable_ech) {
++  if(data->set.tls_enable_ech
++     || data->set.tls_enable_ech_hard) {
+     if(data->set.str[STRING_ECH_CONFIG]) {
+       infof(data, "ECH: ECHConfig set via Command line");
+       if(data->set.str[STRING_ECH_PUBLIC]) {
+@@ -86,7 +87,6 @@ bool Curl_ech_ready(struct Curl_easy *data,
+       }
+     }
+   }
+-  /* TODO: maybe add an opportunistic mode */
+ 
+   /* Nothing missing, or ECH not required */
+   return ready;
+diff --git a/lib/setopt.c b/lib/setopt.c
+index e6c5fde..8f82ea8 100644
+--- a/lib/setopt.c
++++ b/lib/setopt.c
+@@ -3138,6 +3138,14 @@ CURLcode Curl_vsetopt(struct Curl_easy *data, CURLoption option, va_list param)
+       data->set.tls_enable_ech = TRUE;
+     }
+     break;
++  case CURLOPT_ECH_HARD_STATUS:
++    arg = va_arg(param, long);
++    if(arg & CURLECH_INVALID)             /* Unused flag bits */
++      return CURLE_BAD_FUNCTION_ARGUMENT; /* MUST be zero */
++    if(arg & CURLECH_ENABLE) {
++      data->set.tls_enable_ech_hard = TRUE;
++    }
++    break;
+   case CURLOPT_ECH_CONFIG:
+     argptr = va_arg(param, char *);
+     result = Curl_setstropt(&data->set.str[STRING_ECH_CONFIG], argptr);
+diff --git a/lib/urldata.h b/lib/urldata.h
+index 9c37f13..62ee118 100644
+--- a/lib/urldata.h
++++ b/lib/urldata.h
+@@ -1949,7 +1949,8 @@ struct UserDefined {
+   BIT(ws_raw_mode);
+ #endif
+ #ifdef USE_ECH
+-  BIT(tls_enable_ech);     /* TLS ECH extension  */
++  BIT(tls_enable_ech);      /* TLS ECH extension  */
++  BIT(tls_enable_ech_hard); /* TLS ECH extension, with hard-fail  */
+ #endif
+ };
+ 
+diff --git a/lib/vtls/openssl.c b/lib/vtls/openssl.c
+index eb3b254..30968ec 100644
+--- a/lib/vtls/openssl.c
++++ b/lib/vtls/openssl.c
+@@ -3799,7 +3799,8 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+   }
+ 
+ #ifdef USE_ECH
+-  if(data->set.tls_enable_ech) {
++  if(data->set.tls_enable_ech
++     || data->set.tls_enable_ech_hard) {
+     unsigned char *ech_config = NULL;
+     size_t ech_config_len = 0;
+     char *outername = data->set.str[STRING_ECH_PUBLIC];
+@@ -3821,24 +3822,28 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+       dns = Curl_fetch_addr(data, connssl->hostname, connssl->port);
+       if(!dns) {
+         infof(data, "ECH: requested but no ECHConfig available (1)");
+-        return CURLE_SSL_CONNECT_ERROR;
+-      }
+-      ech_config = dns->https_rr_val;
+-      ech_config_len = dns->https_rr_len;
+-      if(ech_config) {
+-        infof(data, "ECH: ECHConfig from DoH HTTPS RR");
++        if(data->set.tls_enable_ech_hard)
++          return CURLE_SSL_CONNECT_ERROR;
+       }
+       else {
+-        infof(data, "ECH: requested but no ECHConfig available (2)");
+-        return CURLE_SSL_CONNECT_ERROR;
++        ech_config = dns->https_rr_val;
++        ech_config_len = dns->https_rr_len;
++        if(ech_config) {
++          infof(data, "ECH: ECHConfig from DoH HTTPS RR");
++        }
++        else {
++          infof(data, "ECH: requested but no ECHConfig available (2)");
++          if(data->set.tls_enable_ech_hard)
++            return CURLE_SSL_CONNECT_ERROR;
++        }
+       }
+     }
+ 
+     value_error = !Curl_ech_ready(data, connssl);
+-    if(value_error)
++    if(value_error && data->set.tls_enable_ech_hard)
+       return CURLE_SSL_CONNECT_ERROR;
+ 
+-    if(outername) {
++    if(!value_error && outername) {
+       infof(data, "ECH: inner: '%s', outer: '%s'",
+             hostname, outername);
+       rv = SSL_ech_set_server_names(backend->handle,
+@@ -3853,20 +3858,20 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+       }
+     }
+ 
++    if(!value_error) {
++      rv = ossl_ech_find_echconfigs(&nechs, &cfgs, &cfglens,
++                                   ech_config, ech_config_len);
++      if(rv != 1) {
++        infof(data, "ECH: rv %d from ossL_ech_find_echconfigs() [ERROR]", rv);
++        return CURLE_SSL_CONNECT_ERROR;
++      }
++      if(nechs == 0 && data->set.tls_enable_ech_hard) {
++        infof(data, "ECH: No ECHConfigs found! [ERROR]",
++              nechs);
++        return CURLE_SSL_CONNECT_ERROR;
++      }
+ 
+-    rv = ossl_ech_find_echconfigs(&nechs, &cfgs, &cfglens,
+-                                  ech_config, ech_config_len);
+-    if(rv != 1) {
+-      infof(data, "ECH: rv %d from ossL_ech_find_echconfigs() [ERROR]", rv);
+-      return CURLE_SSL_CONNECT_ERROR;
+-    }
+-    if(nechs == 0) {
+-      infof(data, "ECH: nechs %d from ossl_ech_find_echcoinfigs() [ERROR]",
+-            rv);
+-      return CURLE_SSL_CONNECT_ERROR;
+-    }
+-
+-    for(i = 0; i!= nechs; i++) {
++      for(i = 0; i!= nechs; i++) {
+ 
+         rv = SSL_ech_set1_echconfig(backend->handle, cfgs[i], cfglens[i]);
+         if(rv != 1) {
+@@ -3883,17 +3888,20 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+           infof(data,
+                 "ECH: %d-th config fine for SSL_ech_set1_echconfig()", i);
+         }
++      }
++      if(nechs>0) {
++        result = ossl_set_ssl_version_min_max(cf, backend->ctx);
++        if(SSL_set_min_proto_version(backend->handle, TLS1_3_VERSION) != 1) {
++          infof(data, "ECH: Can't force TLSv1.3 [ERROR]");
++          return CURLE_SSL_CONNECT_ERROR;
++        }
++      }
++      /* free stuff */
++      OPENSSL_free(cfglens);
++      for(i = 0; i != nechs; i++)
++        OPENSSL_free(cfgs[i]);
++      OPENSSL_free(cfgs);
+     }
+-    result = ossl_set_ssl_version_min_max(cf, backend->ctx);
+-    if(SSL_set_min_proto_version(backend->handle, TLS1_3_VERSION) != 1) {
+-      infof(data, "ECH: Can't force TLSv1.3 [ERROR]");
+-      return CURLE_SSL_CONNECT_ERROR;
+-    }
+-    /* free stuff */
+-    OPENSSL_free(cfglens);
+-    for(i = 0; i != nechs; i++)
+-      OPENSSL_free(cfgs[i]);
+-    OPENSSL_free(cfgs);
+   }
+ #endif  /* USE_ECH */
+ 
+diff --git a/src/tool_cfgable.h b/src/tool_cfgable.h
+index bfdb6de..debd8c5 100644
+--- a/src/tool_cfgable.h
++++ b/src/tool_cfgable.h
+@@ -309,6 +309,8 @@ struct OperationConfig {
+     struct {
+       unsigned int disabled : 1;  /* Set by --no-ech option */
+       unsigned int selected : 1;  /* Set by any other ECH-related option */
++      unsigned int hard_disabled : 1;  /* Set by --no-ech-hard option */
++      unsigned int hard_selected : 1;  /* Set by --ech-hard option */
+     } flags;
+   } ech_status;
+   char *ech_config;               /* Set by --echconfig option */
+diff --git a/src/tool_getparam.c b/src/tool_getparam.c
+index 7b039b5..e8e7b12 100644
+--- a/src/tool_getparam.c
++++ b/src/tool_getparam.c
+@@ -297,11 +297,12 @@ static const struct LongShort aliases[]= {
+   {"ED", "etag-compare",             ARG_FILENAME},
+   {"EE", "curves",                   ARG_STRING},
+ #ifdef USE_ECH
+-  {"EK", "ech",                      ARG_BOOL},
+          /* "EK" is as good a choice of starting point
+           * for ECH-related short names as any. */
++  {"EK", "ech",                      ARG_BOOL},
+   {"EL", "echconfig",                ARG_FILENAME},
+   {"EM", "echpublic",                ARG_STRING},
++  {"EU", "ech-hard",                 ARG_BOOL},
+ #endif
+   {"f",  "fail",                     ARG_BOOL},
+   {"fa", "fail-early",               ARG_BOOL},
+@@ -2141,6 +2142,16 @@ ParameterError getparameter(const char *flag, /* f or -long-flag */
+         }
+         break;
+ 
++      case 'U':
++        /* --ech-hard */
++        if(!config->ech_status.word) {
++          /* No ECH option was parsed yet */
++          config->ech_status.flags.hard_selected = toggle;
++          config->ech_status.flags.hard_disabled = !toggle;
++        }
++        break;
++
++
+       case 'L':
+         /* --echconfig */
+         /* Allow string data or "@"-escaped filename */
+diff --git a/src/tool_listhelp.c b/src/tool_listhelp.c
+index a48796b..c6182c2 100644
+--- a/src/tool_listhelp.c
++++ b/src/tool_listhelp.c
+@@ -170,7 +170,10 @@ const struct helptxt helptext[] = {
+    CURLHELP_HTTP | CURLHELP_FTP},
+ #ifdef USE_ECH
+   {"    --ech",
+-   "Enable encrypted Client Hello",
++   "Enable encrypted Client Hello opportunistically",
++  CURLHELP_TLS},
++  {"    --ech-hard",
++   "Enable encrypted Client Hello and fail if we can't use ECH",
+   CURLHELP_TLS},
+   {"    --echconfig <base64/@filename>", /* style: or --ech-config ? */
+    "Pass echconfig data, over-riding DNS",
+diff --git a/src/tool_operate.c b/src/tool_operate.c
+index fdf5bba..675ae80 100644
+--- a/src/tool_operate.c
++++ b/src/tool_operate.c
+@@ -2201,10 +2201,15 @@ static CURLcode single_transfer(struct GlobalConfig *global,
+ 
+ #ifdef USE_ECH
+         /* only if enabled in configure */
+-        if(config->ech_status.flags.selected) {
++        if(config->ech_status.flags.selected
++           || config->ech_status.flags.hard_selected) {
+           long flagword = CURLECH_ENABLE;
+ 
+-          my_setopt(curl, CURLOPT_ECH_STATUS, flagword);
++
++          if(config->ech_status.flags.selected)
++            my_setopt(curl, CURLOPT_ECH_STATUS, flagword);
++          if(config->ech_status.flags.hard_selected)
++            my_setopt(curl, CURLOPT_ECH_HARD_STATUS, flagword);
+ 
+           /* ECH options were already checked, so load-data is set */
+           my_setopt_str(curl, CURLOPT_ECH_CONFIG, config->ech_config);

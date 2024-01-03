@@ -1,0 +1,76 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Sun, 1 Oct 2023 22:14:21 +0100
+Subject: minor tweak for wolfssl testing
+
+---
+ lib/vtls/wolfssl.c |  3 +--
+ tests/ech_tests.sh | 28 +++++++++++++++++++++++-----
+ 2 files changed, 24 insertions(+), 7 deletions(-)
+
+diff --git a/lib/vtls/wolfssl.c b/lib/vtls/wolfssl.c
+index 88d4fa7..7bdb835 100644
+--- a/lib/vtls/wolfssl.c
++++ b/lib/vtls/wolfssl.c
+@@ -715,8 +715,7 @@ wolfssl_connect_step1(struct Curl_cfilter *cf, struct Curl_easy *data)
+ 
+     if(data->set.str[STRING_ECH_PUBLIC]) {
+       infof(data, "ECH: outername not (yet) supported with WolfSSL");
+-      if(data->set.tls_ech == CURLECH_HARD)
+-        return CURLE_SSL_CONNECT_ERROR;
++      return CURLE_SSL_CONNECT_ERROR;
+     }
+     if(data->set.tls_ech == CURLECH_GREASE) {
+       infof(data, "ECH: GREASE'd ECH not yet supported for wolfSSL");
+diff --git a/tests/ech_tests.sh b/tests/ech_tests.sh
+index aa03b63..9bafdc2 100755
+--- a/tests/ech_tests.sh
++++ b/tests/ech_tests.sh
+@@ -233,7 +233,7 @@ fi
+ wolf_cnt=`$CURL -V 2> /dev/null | grep -c wolfSSL`
+ if ((wolf_cnt == 1))
+ then
+-    using_wolf="yes":
++    using_wolf="yes"
+     # for some reason curl+wolfSSL dislikes certs that are ok
+     # for browsers, so we'll test using "insecure" mode (-k)
+     # but that's ok here as we're only interested in ECH testing
+@@ -310,6 +310,16 @@ allgood="yes"
+ 
+ for targ in "${!ech_targets[@]}"
+ do
++    if [[ "$using_wolf" == "yes" && "$targ" == "draft-13.esni.defo.ie:8414" ]]
++    then
++        echo "Skipping $targ 'till wolf does HRR+ECH"
++        continue
++    fi
++    if [[ "$using_wolf" == "yes" && "$targ" == "tls-ech.dev" ]]
++    then
++        echo "Skipping $targ 'till wolf does HRR+ECH"
++        continue
++    fi
+     host=$(hostport2host $targ)
+     port=$(hostport2port $targ)
+     if [[ "$port" != "443" && "$have_portsblocked" == "yes" ]]
+@@ -411,10 +421,18 @@ then
+     cli_test 1 --ech true
+     cli_test 0 --ech false
+     cli_test 1 --ech false --ech true
+-    cli_test 1 --ech false --ech true --ech pn:foobar
+-    cli_test 1 --ech false --ech pn:foobar --ech true 
+-    echconfiglist=`dig +short https defo.ie | sed -e 's/^.*ech=//' | sed -e 's/ .*//'`
+-    cli_test 1 --ech ecl:$echconfiglist
++    if [[ "$using_ossl" == "yes" ]]
++    then
++      # only OpenSSL builds support pn:
++      cli_test 1 --ech false --ech true --ech pn:foobar
++      cli_test 1 --ech false --ech pn:foobar --ech true 
++    fi
++    if [[ "$using_bssl" != "yes" ]]
++    then
++      # boring doesn't support b64 input
++      echconfiglist=`dig +short https defo.ie | sed -e 's/^.*ech=//' | sed -e 's/ .*//'`
++      cli_test 1 --ech ecl:$echconfiglist
++    fi
+     cli_test 0 --ech ecl:
+ fi
+ 

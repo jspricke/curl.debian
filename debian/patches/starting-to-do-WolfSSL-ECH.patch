@@ -1,0 +1,47 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Wed, 13 Sep 2023 22:17:20 +0100
+Subject: starting to do WolfSSL+ECH
+
+---
+ configure.ac         | 7 ++++++-
+ lib/http_aws_sigv4.c | 9 +++++++++
+ 2 files changed, 15 insertions(+), 1 deletion(-)
+
+diff --git a/configure.ac b/configure.ac
+index 7761af5..b14477a 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -4388,7 +4388,12 @@ if test "x$want_ech" != "xno"; then
+   dnl so more exhaustive checking seems unnecessary for now
+   if test "x$OPENSSL_ENABLED" = "x1"; then
+     AC_CHECK_FUNCS(SSL_ech_set1_echconfig,
+-      ECH_SUPPORT="ECH support available (OpenSSL with SSL_ech_set1_echconfig)"
++      ECH_SUPPORT="ECH support available via OpenSSL with SSL_ech_set1_echconfig"
++      ECH_ENABLED=1)
++
++  elif test "x$WOLFSSL_ENABLED" = "x1"; then
++    AC_CHECK_FUNCS(wolfSSL_CTX_GenerateEchConfig,
++      ECH_SUPPORT="ECH support available via WolfSSL with wolfSSL_CTX_GenerateEchConfig"
+       ECH_ENABLED=1)
+ 
+   dnl add 'elif' chain here for additional implementations
+diff --git a/lib/http_aws_sigv4.c b/lib/http_aws_sigv4.c
+index b673055..5d3d887 100644
+--- a/lib/http_aws_sigv4.c
++++ b/lib/http_aws_sigv4.c
+@@ -59,6 +59,15 @@
+ 
+ #define TIMESTAMP_SIZE 17
+ 
++#ifdef USE_ECH
++/*
++ * This is NOT ECH related but some build issue
++ */
++# ifndef SHA256_DIGEST_LENGTH
++#  define SHA256_DIGEST_LENGTH 32
++# endif
++#endif
++
+ /* hex-encoded with trailing null */
+ #define SHA256_HEX_LENGTH (2 * SHA256_DIGEST_LENGTH + 1)
+ 

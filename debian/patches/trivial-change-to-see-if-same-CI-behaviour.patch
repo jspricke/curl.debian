@@ -1,0 +1,25 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Wed, 27 Sep 2023 11:51:46 +0100
+Subject: trivial change to see if same CI behaviour
+
+---
+ lib/setopt.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/lib/setopt.c b/lib/setopt.c
+index 450ce8c..c8657d0 100644
+--- a/lib/setopt.c
++++ b/lib/setopt.c
+@@ -3134,8 +3134,12 @@ CURLcode Curl_vsetopt(struct Curl_easy *data, CURLoption option, va_list param)
+     arg = va_arg(param, long);
+     if(arg & CURLECH_ENABLE)
+       data->set.tls_enable_ech = TRUE;
++    else
++      data->set.tls_enable_ech = FALSE;
+     if(arg & CURLECH_HARD)
+       data->set.tls_enable_ech_hard = TRUE;
++    else
++      data->set.tls_enable_ech_hard = FALSE;
+     break;
+   case CURLOPT_ECH_CONFIG:
+     argptr = va_arg(param, char *);

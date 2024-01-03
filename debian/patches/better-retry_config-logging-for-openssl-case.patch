@@ -1,0 +1,31 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Sun, 8 Oct 2023 03:02:17 +0100
+Subject: better retry_config logging for openssl case
+
+---
+ lib/vtls/openssl.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/lib/vtls/openssl.c b/lib/vtls/openssl.c
+index 41da90c..7d78625 100644
+--- a/lib/vtls/openssl.c
++++ b/lib/vtls/openssl.c
+@@ -4119,7 +4119,7 @@ static CURLcode ossl_connect_step2(struct Curl_cfilter *cf,
+ 
+         if(rv == 1 && rcs) {
+ # define HEXSTR_MAX 800
+-          char *b64str = NULL;
++          char *b64str = NULL, *inner = NULL, *outer = NULL;
+           size_t blen = 0;
+ 
+           result = Curl_base64_encode((const char *)rcs, rcl,
+@@ -4127,6 +4127,9 @@ static CURLcode ossl_connect_step2(struct Curl_cfilter *cf,
+           if(!result && b64str)
+             infof(data, "ECH: retry_configs %s", b64str);
+           free(b64str);
++          rv = SSL_ech_get_status(backend->handle, &inner, &outer);
++          infof(data, "ECH: retry_configs for %s from %s, %d",
++                inner, outer, rv);
+         }
+         else
+           infof(data, "ECH: no retry_configs (rv = %d", rv);

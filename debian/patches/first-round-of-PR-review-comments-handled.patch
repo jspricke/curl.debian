@@ -1,0 +1,448 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Tue, 26 Sep 2023 01:40:26 +0100
+Subject: first round of PR review comments handled
+
+---
+ include/curl/curl.h |   9 +--
+ lib/doh.c           | 162 +++++++++++++++++++++++++---------------------------
+ lib/doh.h           |   2 +-
+ lib/setopt.c        |  13 +----
+ lib/version.c       |  10 ++--
+ src/tool_operate.c  |   7 +--
+ 6 files changed, 91 insertions(+), 112 deletions(-)
+
+diff --git a/include/curl/curl.h b/include/curl/curl.h
+index b7b1c29..c51814e 100644
+--- a/include/curl/curl.h
++++ b/include/curl/curl.h
+@@ -1062,7 +1062,7 @@ typedef CURLSTScode (*curl_hstswrite_callback)(CURL *easy,
+ 
+ /* CURLECH_ defines are for the CURLOPT_ECH_STATUS option */
+ #define CURLECH_ENABLE     (1<<0)
+-#define CURLECH_INVALID (~((1<<1) - 1)) /* unused bits */
++#define CURLECH_HARD       (1<<1)
+ 
+ /* long may be 32 or 64 bits, but we should never depend on anything else
+    but 32 */
+@@ -2208,9 +2208,6 @@ typedef enum {
+   /* ECH status: 1L to enable, 0L otherwise */
+   CURLOPT(CURLOPT_ECH_STATUS, CURLOPTTYPE_LONG, 324),
+ 
+-  /* ECH hard status: 1L to enable, 0L otherwise */
+-  CURLOPT(CURLOPT_ECH_HARD_STATUS, CURLOPTTYPE_LONG, 327),
+-
+   /* ECH config: as base64 or hex respectively */
+   CURLOPT(CURLOPT_ECH_CONFIG, CURLOPTTYPE_STRINGPOINT, 325),
+ 
+@@ -3070,7 +3067,7 @@ struct curl_version_info_data {
+   const char *version;      /* LIBCURL_VERSION */
+   unsigned int version_num; /* LIBCURL_VERSION_NUM */
+   const char *host;         /* OS/host/cpu/machine when configured */
+-  long features;             /* bitmask, see defines below */
++  int features;             /* bitmask, see defines below */
+   const char *ssl_version;  /* human readable string */
+   long ssl_version_num;     /* not used anymore, always 0 */
+   const char *libz_version; /* human readable string */
+@@ -3162,7 +3159,7 @@ typedef struct curl_version_info_data curl_version_info_data;
+ #define CURL_VERSION_HSTS         (1<<28) /* HSTS is supported */
+ #define CURL_VERSION_GSASL        (1<<29) /* libgsasl is supported */
+ #define CURL_VERSION_THREADSAFE   (1<<30) /* libcurl API is thread-safe */
+-#define CURL_VERSION_ECH          ((long)1<<31) /* ECH support */
++#define CURL_VERSION_ECH          (1<<31) /* ECH support */
+ 
+ /*
+  * NAME curl_version_info()
+diff --git a/lib/doh.c b/lib/doh.c
+index 8032c9f..ff547c2 100644
+--- a/lib/doh.c
++++ b/lib/doh.c
+@@ -46,7 +46,7 @@
+ #define DNS_CLASS_IN 0x01
+ 
+ #ifdef USE_HTTPSRR
+-#define BIN2HEXDIGIT(x) (x < 10 ? (char)(x + '0') : (char)(x - 10 + 'A'))
++#define BIN2HEXDIGIT(x) ((x) < 10 ? (char)((x) + '0') : (char)((x) - 10 + 'A'))
+ #endif
+ 
+ #ifndef CURL_DISABLE_VERBOSE_STRINGS
+@@ -186,29 +186,29 @@ doh_write_cb(const void *contents, size_t size, size_t nmemb, void *userp)
+   return realsize;
+ }
+ 
+-#ifdef USE_HTTPSRR
++#if defined(USE_HTTPSRR) && defined(CURLDEBUG)
+ static void local_print_buf(struct Curl_easy *data,
++                            const char *prefix,
+                             unsigned char *buf, size_t len)
+ {
+   size_t j;
+   char string_buffer[2048], *ptr;
+ 
+-  ptr = string_buffer;
+-  if(len > 1000) {
+-    infof(data, "\t:buffer too long %ld", len);
+-    return;
+-  }
++  if(strlen(prefix) > 2000)
++    infof(data, "prefix value too long: %s", prefix);
++  memcpy(string_buffer, prefix, strlen(prefix));
++  ptr = string_buffer + strlen(prefix);
+   for(j = 0; j < len; j ++) {
+-    *ptr++ = BIN2HEXDIGIT(buf[j] / 16);
+-    *ptr++ = BIN2HEXDIGIT(buf[j] % 16);
++    *ptr++ = BIN2HEXDIGIT(buf[j] >> 4);
++    *ptr++ = BIN2HEXDIGIT(buf[j] & 0x0f);
+     if((ptr - string_buffer) > 2000) {
+       *ptr = '\0';
+-      infof(data, "\t%s - truncated", string_buffer);
++      infof(data, "%s - truncated", string_buffer);
+       return;
+     }
+   }
+   *ptr = '\0';
+-  infof(data, "\t%s", string_buffer);
++  infof(data, "%s", string_buffer);
+   return;
+ }
+ #endif
+@@ -450,19 +450,10 @@ struct Curl_addrinfo *Curl_doh(struct Curl_easy *data,
+ #endif
+ 
+ #ifdef USE_HTTPSRR
+-  if(port == 443) {
++  if(port == 443)
+     qname = strdup(hostname);
+-  }
+-  else {
+-   /* the 16 is the most we get with a 5-digit port */
+-   size_t qnamelen = strlen(hostname) + 16;
+-
+-    qname = (char *)calloc(1, qnamelen);
+-    if(!qname)
+-      goto error;
+-    curl_msnprintf(qname, qnamelen, "_%d._https.%s",
+-                     port % 0xffff, hostname);
+-  }
++  else
++    qname = aprintf("_%d._https.%s", port, hostname);
+   result = dohprobe(data, &dohp->probe[DOH_PROBE_SLOT_HTTPS],
+                     DNS_TYPE_HTTPS, qname, data->set.str[STRING_DOH],
+                     data->multi, dohp->headers);
+@@ -556,7 +547,7 @@ static DOHcode store_aaaa(const unsigned char *doh,
+ static DOHcode store_https(const unsigned char *doh,
+                            int index,
+                            struct dohentry *d,
+-                           size_t len)
++                           uint16_t len)
+ {
+   /* silently ignore RRs over the limit */
+   if(d->numhttps_rrs < DOH_MAX_HTTPS) {
+@@ -859,10 +850,10 @@ static void showdoh(struct Curl_easy *data,
+       infof(data, "%s", buffer);
+     }
+   }
+-#ifdef USE_HTTPSRR
++#if defined(USE_HTTPSRR) && defined(CURLDEBUG)
+   for(i = 0; i < d->numhttps_rrs; i++) {
+-    infof(data, "DoH HTTPS:");
+-    local_print_buf(data, d->https_rrs[i].val, d->https_rrs[i].len);
++    local_print_buf(data, "DoH HTTPS: ",
++                    d->https_rrs[i].val, d->https_rrs[i].len);
+   }
+ #endif
+   for(i = 0; i < d->numcname; i++) {
+@@ -1029,52 +1020,52 @@ UNITTEST void de_cleanup(struct dohentry *d)
+  * just after the end of the DNS name encoding on output. (And
+  * that's why it's an "unsigned char **" :-)
+  */
+-static int local_decode_rdata_name(unsigned char **buf, size_t *remaining,
+-                                   char **dnsname)
++static CURLcode local_decode_rdata_name(unsigned char **buf, size_t *remaining,
++                                        char **dnsname)
+ {
+-    unsigned char *cp = NULL;
+-    size_t rem = 0;
+-    char *thename = NULL, *tp = NULL;
+-    unsigned char clen = 0; /* chunk len */
++  unsigned char *cp = NULL;
++  size_t rem = 0;
++  char *thename = NULL, *tp = NULL;
++  unsigned char clen = 0; /* chunk len */
+ 
+-    if(!buf || !remaining || !dnsname)
+-      return CURLE_OUT_OF_MEMORY;
+-    rem = *remaining;
+-    thename = calloc(1, CURL_MAXLEN_host_name);
+-    if(!thename)
++  if(!buf || !remaining || !dnsname)
++    return CURLE_OUT_OF_MEMORY;
++  rem = *remaining;
++  thename = calloc(1, CURL_MAXLEN_host_name);
++  if(!thename)
++    return CURLE_OUT_OF_MEMORY;
++  cp = *buf;
++  tp = thename;
++  clen = *cp++;
++  if(clen == 0) {
++    /* special case - return "." as name */
++    thename[0] = '.';
++    thename[1] = 0x00;
++  }
++  while(clen) {
++    if(clen > rem) {
++      free(thename);
+       return CURLE_OUT_OF_MEMORY;
+-    cp = *buf;
+-    tp = thename;
+-    clen = *cp++;
+-    if(clen == 0) {
+-      /* special case - return "." as name */
+-      thename[0] = '.';
+-      thename[1] = 0x00;
+     }
+-    while(clen) {
+-      if(clen > rem) {
+-        free(thename);
+-          return CURLE_OUT_OF_MEMORY;
+-      }
+-      if(((tp - thename) + clen) > CURL_MAXLEN_host_name) {
+-        free(thename);
+-        return CURLE_OUT_OF_MEMORY;
+-      }
+-      memcpy(tp, cp, clen);
+-      tp += clen;
+-      *tp++ = '.';
+-      cp += clen;
+-      rem -= (clen + 1);
+-      clen = *cp++;
++    if(((tp - thename) + clen) > CURL_MAXLEN_host_name) {
++      free(thename);
++      return CURLE_OUT_OF_MEMORY;
+     }
+-    *buf = cp;
+-    *remaining = rem - 1;
+-    *dnsname = thename;
+-    return CURLE_OK;
++    memcpy(tp, cp, clen);
++    tp += clen;
++    *tp++ = '.';
++    cp += clen;
++    rem -= (clen + 1);
++    clen = *cp++;
++  }
++  *buf = cp;
++  *remaining = rem - 1;
++  *dnsname = thename;
++  return CURLE_OK;
+ }
+ 
+-static int local_decode_rdata_alpn(unsigned char *rrval, size_t len,
+-                                   char **alpns)
++static CURLcode local_decode_rdata_alpn(unsigned char *rrval, size_t len,
++                                        char **alpns)
+ {
+   /*
+    * spec here is as per draft-ietf-dnsop-svcb-https, section-7.1.1
+@@ -1082,7 +1073,7 @@ static int local_decode_rdata_alpn(unsigned char *rrval, size_t len,
+    * octet length
+    * output is comma-sep list of the strings
+    * implementations may or may not handle quoting of comma within
+-   * string values, so we migth see a comma within the wire format
++   * string values, so we might see a comma within the wire format
+    * version of a string, in which case we'll precede that by a
+    * backslash - same goes for a backslash character
+    */
+@@ -1121,8 +1112,8 @@ err:
+   return CURLE_BAD_CONTENT_ENCODING;
+ }
+ 
+-static int Curl_doh_decode_httpsrr(unsigned char *rrval, size_t len,
+-                                   struct Curl_https_rrinfo **hrr)
++static CURLcode Curl_doh_decode_httpsrr(unsigned char *rrval, size_t len,
++                                        struct Curl_https_rrinfo **hrr)
+ {
+   size_t remaining = len;
+   unsigned char *cp = rrval;
+@@ -1142,7 +1133,7 @@ static int Curl_doh_decode_httpsrr(unsigned char *rrval, size_t len,
+     goto err;
+   lhrr->priority = (uint16_t)((cp[0] << 8) + cp[1]);
+   cp += 2;
+-  remaining -= 2;
++  remaining -= (uint16_t)2;
+   if(local_decode_rdata_name(&cp, &remaining, &dnsname) != CURLE_OK)
+     goto err;
+   lhrr->target = dnsname;
+@@ -1199,6 +1190,7 @@ err:
+   return CURLE_OUT_OF_MEMORY;
+ }
+ 
++# ifdef CURLDEBUG
+ static void local_print_httpsrr(struct Curl_easy *data,
+                                 struct Curl_https_rrinfo *hrr)
+ {
+@@ -1217,26 +1209,26 @@ static void local_print_httpsrr(struct Curl_easy *data,
+   else
+     infof(data, "HTTPS RR: no_def_alpn not set");
+   if(hrr->ipv4hints) {
+-    infof(data, "HTTPS RR: ipv4hints of length %ld", hrr->ipv4hints_len);
+-    local_print_buf(data, hrr->ipv4hints, hrr->ipv4hints_len);
++    local_print_buf(data, "HTTPS RR: ipv4hints: ",
++                    hrr->ipv4hints, hrr->ipv4hints_len);
+   }
+   else
+     infof(data, "HTTPS RR: no ipv4hints");
+   if(hrr->echconfiglist) {
+-    infof(data, "HTTPS RR: ECHConfigList of length %ld",
+-          hrr->echconfiglist_len);
+-    local_print_buf(data, hrr->echconfiglist, hrr->echconfiglist_len);
++    local_print_buf(data, "HTTPS RR: ECHConfigList: ",
++                    hrr->echconfiglist, hrr->echconfiglist_len);
+   }
+   else
+     infof(data, "HTTPS RR: no ECHConfigList");
+   if(hrr->ipv6hints) {
+-    infof(data, "HTTPS RR: ipv6hints of length %ld", hrr->ipv6hints_len);
+-    local_print_buf(data, hrr->ipv6hints, hrr->ipv6hints_len);
++    local_print_buf(data, "HTTPS RR: ipv6hint: ",
++                    hrr->ipv6hints, hrr->ipv6hints_len);
+   }
+   else
+     infof(data, "HTTPS RR: no ipv6hints");
+   return;
+ }
++# endif
+ #endif
+ 
+ CURLcode Curl_doh_is_resolved(struct Curl_easy *data,
+@@ -1279,9 +1271,9 @@ CURLcode Curl_doh_is_resolved(struct Curl_easy *data,
+       if(!p->dnstype)
+         continue;
+       rc[slot] = doh_decode(Curl_dyn_uptr(&p->serverdoh),
+-                              Curl_dyn_len(&p->serverdoh),
+-                              p->dnstype,
+-                              &de);
++                            Curl_dyn_len(&p->serverdoh),
++                            p->dnstype,
++                            &de);
+       Curl_dyn_free(&p->serverdoh);
+ #ifndef CURL_DISABLE_VERBOSE_STRINGS
+       if(rc[slot]) {
+@@ -1329,15 +1321,17 @@ CURLcode Curl_doh_is_resolved(struct Curl_easy *data,
+     /* Now process any build-specific attributes retrieved from DNS */
+ #ifdef USE_HTTPSRR
+     if(de.numhttps_rrs > 0 && result == CURLE_OK && *dnsp) {
+-      int rv;
+       struct Curl_https_rrinfo *hrr = NULL;
+-      rv = Curl_doh_decode_httpsrr(de.https_rrs->val, de.https_rrs->len, &hrr);
+-      if(rv != CURLE_OK) {
++      result = Curl_doh_decode_httpsrr(de.https_rrs->val, de.https_rrs->len,
++                                       &hrr);
++      if(result) {
+         infof(data, "Failed to decode HTTPS RR");
+-        return rv;
++        return result;
+       }
+       infof(data, "Some HTTPS RR to process");
++# ifdef CURLDEBUG
+       local_print_httpsrr(data, hrr);
++# endif
+       (*dnsp)->hinfo = hrr;
+     }
+ #endif
+diff --git a/lib/doh.h b/lib/doh.h
+index 8d21592..1501524 100644
+--- a/lib/doh.h
++++ b/lib/doh.h
+@@ -128,7 +128,7 @@ struct dohaddr {
+ #define BACKSLASH_CHAR                '\\'
+ 
+ struct dohhttps_rr {
+-  size_t len; /* raw encoded length */
++  uint16_t len; /* raw encoded length */
+   unsigned char *val; /* raw encoded octets */
+ };
+ #endif
+diff --git a/lib/setopt.c b/lib/setopt.c
+index 8f82ea8..450ce8c 100644
+--- a/lib/setopt.c
++++ b/lib/setopt.c
+@@ -3132,19 +3132,10 @@ CURLcode Curl_vsetopt(struct Curl_easy *data, CURLoption option, va_list param)
+ #ifdef USE_ECH
+   case CURLOPT_ECH_STATUS:
+     arg = va_arg(param, long);
+-    if(arg & CURLECH_INVALID)             /* Unused flag bits */
+-      return CURLE_BAD_FUNCTION_ARGUMENT; /* MUST be zero */
+-    if(arg & CURLECH_ENABLE) {
++    if(arg & CURLECH_ENABLE)
+       data->set.tls_enable_ech = TRUE;
+-    }
+-    break;
+-  case CURLOPT_ECH_HARD_STATUS:
+-    arg = va_arg(param, long);
+-    if(arg & CURLECH_INVALID)             /* Unused flag bits */
+-      return CURLE_BAD_FUNCTION_ARGUMENT; /* MUST be zero */
+-    if(arg & CURLECH_ENABLE) {
++    if(arg & CURLECH_HARD)
+       data->set.tls_enable_ech_hard = TRUE;
+-    }
+     break;
+   case CURLOPT_ECH_CONFIG:
+     argptr = va_arg(param, char *);
+diff --git a/lib/version.c b/lib/version.c
+index cd73724..ebbdf5c 100644
+--- a/lib/version.c
++++ b/lib/version.c
+@@ -430,7 +430,7 @@ static int https_proxy_present(curl_version_info_data *info)
+ struct feat {
+   const char *name;
+   int        (*present)(curl_version_info_data *info);
+-  long       bitmask;
++  int        bitmask;
+ };
+ 
+ static const struct feat features_table[] = {
+@@ -452,12 +452,12 @@ static const struct feat features_table[] = {
+ #ifdef HAVE_GSSAPI
+   FEATURE("GSS-API",     NULL,                CURL_VERSION_GSSAPI),
+ #endif
+-#ifndef CURL_DISABLE_HSTS
+-  FEATURE("HSTS",        NULL,                CURL_VERSION_HSTS),
+-#endif
+ #ifndef CURL_DISABLE_ECH
+   FEATURE("ECH",         NULL,                CURL_VERSION_ECH),
+ #endif
++#ifndef CURL_DISABLE_HSTS
++  FEATURE("HSTS",        NULL,                CURL_VERSION_HSTS),
++#endif
+ #if defined(USE_NGHTTP2)
+   FEATURE("HTTP2",       NULL,                CURL_VERSION_HTTP2),
+ #endif
+@@ -572,7 +572,7 @@ curl_version_info_data *curl_version_info(CURLversion stamp)
+ {
+   size_t n;
+   const struct feat *p;
+-  long features = 0;
++  int features = 0;
+ 
+ #if defined(USE_SSH)
+   static char ssh_buffer[80];
+diff --git a/src/tool_operate.c b/src/tool_operate.c
+index 7c6d00e..e59876b 100644
+--- a/src/tool_operate.c
++++ b/src/tool_operate.c
+@@ -2202,13 +2202,10 @@ static CURLcode single_transfer(struct GlobalConfig *global,
+ #ifdef USE_ECH
+         /* only if enabled in configure */
+         if(config->ech_selected || config->ech_hard_selected) {
+-          long flagword = CURLECH_ENABLE;
+-
+           if(config->ech_selected)
+-            my_setopt(curl, CURLOPT_ECH_STATUS, flagword);
++            my_setopt(curl, CURLOPT_ECH_STATUS, CURLECH_ENABLE);
+           if(config->ech_hard_selected)
+-            my_setopt(curl, CURLOPT_ECH_HARD_STATUS, flagword);
+-
++            my_setopt(curl, CURLOPT_ECH_STATUS, CURLECH_HARD);
+           /* ECH options were already checked, so load-data is set */
+           my_setopt_str(curl, CURLOPT_ECH_CONFIG, config->ech_config);
+           if(config->ech_public) /* only if set (optional) */

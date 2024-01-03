@@ -1,0 +1,305 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Fri, 15 Sep 2023 23:51:24 +0100
+Subject: wolf working with HTTPS RR
+
+---
+ lib/doh.c          | 136 +++++++++++++++++++++++++++++++++++++++++++++++++++--
+ lib/doh.h          |   4 +-
+ lib/ech.c          |   4 +-
+ lib/hostip.c       |   4 +-
+ lib/hostip.h       |  21 ++++++++-
+ lib/vtls/wolfssl.c |  21 ++++++---
+ 6 files changed, 171 insertions(+), 19 deletions(-)
+
+diff --git a/lib/doh.c b/lib/doh.c
+index 7b7561c..7ebb89c 100644
+--- a/lib/doh.c
++++ b/lib/doh.c
+@@ -845,14 +845,14 @@ static void showdoh(struct Curl_easy *data,
+     ptr = &buffer[11];
+     len = d->https_rrs[i].len;
+     if(len > (1024 - 12)) {
+-      infof(data, "bufer too long %d", len);
++      infof(data, "bufer too long %ld", len);
+       return;
+     }
+     for(j = 0; j < len; j ++) {
+       *ptr++ = BIN2HEXDIGIT(d->https_rrs[i].val[j] / 16);
+       *ptr++ = BIN2HEXDIGIT(d->https_rrs[i].val[j] % 16);
+       if((ptr - buffer) > 2047) {
+-        infof(data, "bufer too long %d", (ptr-buffer));
++        infof(data, "bufer too long %ld", (ptr-buffer));
+         return;
+       }
+     }
+@@ -1003,12 +1003,130 @@ UNITTEST void de_cleanup(struct dohentry *d)
+     Curl_dyn_free(&d->cname[i]);
+   }
+ #ifdef USE_HTTPSRR
+-  /* TODO: find proper memory handler */
+   for(i = 0; i < d->numhttps_rrs; i++)
+     free(d->https_rrs[i].val);
+ #endif
+ }
+ 
++#ifdef USE_HTTPSRR
++/*
++ * @brief decode the DNS name in a binary RRData
++ * @param buf points to the buffer (in/out)
++ * @param remaining points to the remaining buffer length (in/out)
++ * @param dnsname returns the string form name on success
++ * @return is 1 for success, error otherwise
++ *
++ * The encoding here is defined in
++ * https://tools.ietf.org/html/rfc1035#section-3.1
++ *
++ * The input buffer pointer will be modified so it points to
++ * just after the end of the DNS name encoding on output. (And
++ * that's why it's an "unsigned char **" :-)
++ */
++static int local_decode_rdata_name(unsigned char **buf, size_t *remaining,
++                                   char **dnsname)
++{
++    unsigned char *cp = NULL;
++    size_t rem = 0;
++    char *thename = NULL, *tp = NULL;
++    unsigned char clen = 0; /* chunk len */
++
++    if (buf == NULL || remaining == NULL || dnsname == NULL)
++        return 0;
++    rem = *remaining;
++    thename = calloc(1, CURL_MAXLEN_host_name);
++    if (thename == NULL)
++        return 0;
++    cp = *buf;
++    tp = thename;
++    clen = *cp++;
++    if (clen == 0) {
++        /* special case - return "." as name */
++        thename[0] = '.';
++        thename[1] = 0x00;
++    }
++    while (clen != 0) {
++        if (clen > rem) {
++            free(thename);
++            return 0;
++        }
++        if (((tp - thename) + clen) > CURL_MAXLEN_host_name) {
++            free(thename);
++            return 0;
++        }
++        memcpy(tp, cp, clen);
++        tp += clen;
++        *tp++ = '.';
++        cp += clen;
++        rem -= (clen + 1);
++        clen = *cp++;
++    }
++    *buf = cp;
++    *remaining = rem - 1;
++    *dnsname = thename;
++    return 1;
++}
++static int Curl_doh_decode_httpsrr(unsigned char *rrval, size_t len,
++                                   struct Curl_https_rrinfo **hrr)
++{
++  size_t remaining = len, eklen = 0;
++  unsigned char *cp = rrval, *ekval = NULL;
++  uint16_t pcode = 0, plen = 0;
++  int done = 0;
++  struct Curl_https_rrinfo *lhrr = NULL;
++  char *dnsname = NULL;
++  
++  lhrr = calloc(1,sizeof(struct Curl_https_rrinfo));
++  if (!lhrr)
++      return CURLE_OUT_OF_MEMORY;
++  lhrr->val = calloc(1, len);
++  if (!lhrr->val)
++      goto err;
++  lhrr->len = len;
++  memcpy(lhrr->val, rrval, len); 
++  if (remaining <= 2)
++    goto err;
++  lhrr->priority = (uint16_t)cp[0] * 256 + (uint16_t)cp[1];
++  cp += 2;
++  remaining -= 2;
++  if (local_decode_rdata_name(&cp, &remaining, &dnsname) != 1)
++    goto err;
++  lhrr->target = dnsname;
++  while (done != 1 && remaining >= 4) {
++    pcode = (*cp << 8) + (*(cp + 1));
++    cp += 2;
++    plen = (*cp << 8) + (*(cp + 1));
++    cp += 2;
++    remaining -= 4;
++    if (pcode == 0x05) {
++      lhrr->echconfiglist = calloc(1, plen);
++      if (!lhrr->echconfiglist)
++          goto err;
++      lhrr->echconfiglist_len = (size_t)plen;
++      memcpy(lhrr->echconfiglist, cp, plen);
++      done = 1;
++    }
++    if (plen != 0 && plen <= remaining) {
++        cp += plen;
++        remaining -= plen;
++    }
++  }
++  *hrr = lhrr;
++  return CURLE_OK;
++err:
++  if (lhrr) {
++      if (lhrr->target)
++        free(lhrr->target);
++      if (lhrr->echconfiglist)
++        free(lhrr->echconfiglist);
++      if (lhrr->val)
++        free(lhrr->val);
++      free(lhrr);
++  }
++  return CURLE_OUT_OF_MEMORY;
++}
++#endif
++
+ CURLcode Curl_doh_is_resolved(struct Curl_easy *data,
+                               struct Curl_dns_entry **dnsp)
+ {
+@@ -1100,13 +1218,23 @@ CURLcode Curl_doh_is_resolved(struct Curl_easy *data,
+ #ifdef USE_HTTPSRR
+     if(de.numhttps_rrs > 0 && result == CURLE_OK && *dnsp) {
+       /* TODO: just use first for now */
++#ifdef OLDWAY
+       infof(data, "Some HTTPS RRs to process");
+-      (*dnsp)->https_rr_val = malloc(de.https_rrs->len);
++      (*dnsp)->https_rr_val = calloc(1, de.https_rrs->len);
+       if(!(*dnsp)->https_rr_val)
+         return CURLE_OUT_OF_MEMORY;
+       memcpy((*dnsp)->https_rr_val, de.https_rrs->val,
+              de.https_rrs->len);
+       (*dnsp)->https_rr_len = de.https_rrs->len;
++#else
++      int rv;
++      struct Curl_https_rrinfo *hrr = NULL;
++      infof(data, "Some HTTPS RRs to process");
++      rv = Curl_doh_decode_httpsrr(de.https_rrs->val, de.https_rrs->len, &hrr);
++      if (rv != CURLE_OK)
++        return rv; 
++      (*dnsp)->hinfo = hrr;
++#endif
+     }
+ #endif
+ 
+diff --git a/lib/doh.h b/lib/doh.h
+index 79012f7..e9e857e 100644
+--- a/lib/doh.h
++++ b/lib/doh.h
+@@ -107,8 +107,8 @@ struct dohaddr {
+ 
+ #ifdef USE_HTTPSRR
+ struct dohhttps_rr {
+-  size_t len;
+-  unsigned char *val;
++  size_t len; /* raw encoded length */
++  unsigned char *val; /* raw encoded octets */
+ };
+ #endif
+ 
+diff --git a/lib/ech.c b/lib/ech.c
+index 508b029..4acfacf 100644
+--- a/lib/ech.c
++++ b/lib/ech.c
+@@ -81,8 +81,8 @@ bool Curl_ech_ready(struct Curl_easy *data,
+       struct Curl_dns_entry *dns = NULL;
+ 
+       dns = Curl_fetch_addr(data, connssl->hostname, connssl->port);
+-      if(dns && dns->https_rr_val) {
+-        infof(data, "ECH: ECHConfig rom DoH HTTPS RR");
++      if(dns && dns->hinfo) {
++        infof(data, "ECH: ECHConfig from DoH HTTPS RR");
+         ready = TRUE;
+       }
+     }
+diff --git a/lib/hostip.c b/lib/hostip.c
+index b1b3cfe..55aba4e 100644
+--- a/lib/hostip.c
++++ b/lib/hostip.c
+@@ -1065,8 +1065,8 @@ static void freednsentry(void *freethis)
+   if(dns->inuse == 0) {
+     Curl_freeaddrinfo(dns->addr);
+ #ifdef USE_HTTPSRR
+-    if(dns->https_rr_val)
+-      free(dns->https_rr_val);
++    if(dns->hinfo)
++      free(dns->hinfo);
+ #endif
+     free(dns);
+   }
+diff --git a/lib/hostip.h b/lib/hostip.h
+index d97be13..4a95fa8 100644
+--- a/lib/hostip.h
++++ b/lib/hostip.h
+@@ -58,11 +58,28 @@ struct connectdata;
+  */
+ struct Curl_hash *Curl_global_host_cache_init(void);
+ 
++#ifdef USE_HTTPSRR
++
++#define CURL_MAXLEN_host_name 253
++
++struct Curl_https_rrinfo {
++  size_t len; /* raw encoded length */
++  unsigned char *val; /* raw encoded octets */
++  /* fields from HTTPS RR */
++  uint16_t priority;
++  char *target;
++  char *alpns;
++  unsigned char *echconfiglist;
++  size_t echconfiglist_len;
++  char *ipv4hints;
++  char *ipv6hints;
++};
++#endif
++
+ struct Curl_dns_entry {
+   struct Curl_addrinfo *addr;
+ #ifdef USE_HTTPSRR
+-  unsigned char *https_rr_val;
+-  size_t https_rr_len;
++  struct Curl_https_rrinfo *hinfo;
+ #endif
+   /* timestamp == 0 -- permanent CURLOPT_RESOLVE entry (doesn't time out) */
+   time_t timestamp;
+diff --git a/lib/vtls/wolfssl.c b/lib/vtls/wolfssl.c
+index d99bdf7..c5c111c 100644
+--- a/lib/vtls/wolfssl.c
++++ b/lib/vtls/wolfssl.c
+@@ -743,15 +743,22 @@ wolfssl_connect_step1(struct Curl_cfilter *cf, struct Curl_easy *data)
+           return CURLE_SSL_CONNECT_ERROR;
+       }
+       else {
+-        unsigned char *rrval = NULL;
+-        size_t rrlen = 0;
++        struct Curl_https_rrinfo *rinfo = NULL;
++
++        rinfo = dns->hinfo;
++        if(rinfo && rinfo->echconfiglist) {
++          unsigned char *ecl = rinfo->echconfiglist;
++          size_t elen = rinfo->echconfiglist_len;
+ 
+-        rrval = dns->https_rr_val;
+-        rrlen = dns->https_rr_len;
+-        if(rrval) {
+           infof(data, "ECH: ECHConfig from DoH HTTPS RR");
+-          /* Parse out the ECHConfig and pass onto WolfSSL */
+-          /* TBD */
++          if (wolfSSL_SetEchConfigs(backend->handle, ecl, elen) !=
++                WOLFSSL_SUCCESS) {
++            infof(data, "ECH: wolfSSL_SetEchConfigs failed");
++            if(data->set.tls_enable_ech_hard)
++              return CURLE_SSL_CONNECT_ERROR;
++          } else {
++            infof(data, "ECH: imported ECHConfigList of length %ld", elen);
++          }
+         }
+         else {
+           infof(data, "ECH: requested but no ECHConfig available (2)");

@@ -1,0 +1,23 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Wed, 27 Sep 2023 01:57:38 +0100
+Subject: ifdef out otherwise unused var
+
+---
+ lib/doh.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/lib/doh.c b/lib/doh.c
+index 85b7c2d..9bf8279 100644
+--- a/lib/doh.c
++++ b/lib/doh.c
+@@ -406,7 +406,10 @@ struct Curl_addrinfo *Curl_doh(struct Curl_easy *data,
+   struct dohdata *dohp;
+   struct connectdata *conn = data->conn;
+ #ifdef USE_HTTPSRR
++  /* for now, this is only used when ECH is enabled */
++# ifdef USE_ECH
+   char *qname = NULL;
++# endif
+ #endif
+   *waitp = FALSE;
+   (void)hostname;

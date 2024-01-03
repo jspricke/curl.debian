@@ -1,0 +1,45 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Thu, 14 Sep 2023 00:23:11 +0100
+Subject: trivial diffs
+
+---
+ lib/http_aws_sigv4.c | 9 ---------
+ src/tool_cfgable.h   | 5 -----
+ 2 files changed, 14 deletions(-)
+
+diff --git a/lib/http_aws_sigv4.c b/lib/http_aws_sigv4.c
+index 5d3d887..b673055 100644
+--- a/lib/http_aws_sigv4.c
++++ b/lib/http_aws_sigv4.c
+@@ -59,15 +59,6 @@
+ 
+ #define TIMESTAMP_SIZE 17
+ 
+-#ifdef USE_ECH
+-/*
+- * This is NOT ECH related but some build issue
+- */
+-# ifndef SHA256_DIGEST_LENGTH
+-#  define SHA256_DIGEST_LENGTH 32
+-# endif
+-#endif
+-
+ /* hex-encoded with trailing null */
+ #define SHA256_HEX_LENGTH (2 * SHA256_DIGEST_LENGTH + 1)
+ 
+diff --git a/src/tool_cfgable.h b/src/tool_cfgable.h
+index debd8c5..59bd6d9 100644
+--- a/src/tool_cfgable.h
++++ b/src/tool_cfgable.h
+@@ -28,11 +28,6 @@
+ #include "tool_urlglob.h"
+ #include "var.h"
+ 
+-#ifdef USE_ECH
+-# include <openssl/ech.h>
+-#endif
+-
+-
+ struct GlobalConfig;
+ 
+ struct State {

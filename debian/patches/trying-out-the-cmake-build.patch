@@ -1,0 +1,162 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Thu, 12 Oct 2023 21:06:01 +0100
+Subject: trying out the cmake build
+
+---
+ CMakeLists.txt          | 34 ++++++++++++++++++++++++++++++++++
+ docs/ECH.md             | 43 ++++++++++++++++++++++++++++++++++++++++++-
+ lib/curl_config.h.cmake |  7 +++++++
+ 3 files changed, 83 insertions(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index a54c2ff..70c4081 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -54,6 +54,7 @@
+ #   HAVE_GNUTLS_SRP: `gnutls_srp_verifier` present in GnuTLS
+ #   HAVE_SSL_CTX_SET_QUIC_METHOD: `SSL_CTX_set_quic_method` present in OpenSSL/wolfSSL
+ #   HAVE_QUICHE_CONN_SET_QLOG_FD: `quiche_conn_set_qlog_fd` present in QUICHE
++#   HAVE_ECH: ECH API checks for OpenSSL, boriingssl or wolfSSL
+ #
+ # For each of the above variables, if the variable is DEFINED (either
+ # to ON or OFF), the symbol detection will be skipped.  If the
+@@ -211,6 +212,8 @@ option(CURL_DISABLE_DICT "disables DICT" OFF)
+ mark_as_advanced(CURL_DISABLE_DICT)
+ option(CURL_DISABLE_DOH "disables DNS-over-HTTPS" OFF)
+ mark_as_advanced(CURL_DISABLE_DOH)
++option(CURL_DISABLE_ECH "disables Encrypted Client Hello" ON)
++mark_as_advanced(CURL_DISABLE_ECH)
+ option(CURL_DISABLE_FILE "disables FILE" OFF)
+ mark_as_advanced(CURL_DISABLE_FILE)
+ cmake_dependent_option(CURL_DISABLE_FORM_API "disables form api" OFF
+@@ -671,6 +674,35 @@ if(USE_OPENSSL OR USE_WOLFSSL)
+   endif()
+ endif()
+ 
++if(NOT CURL_DISABLE_ECH)
++  option(HAVE_ECH "Support Encrypted Client Hello" ON)
++  if(USE_OPENSSL)
++    if(NOT DEFINED HAVE_ECH)
++      message(STATUS "Checking ECH for OpenSSL")
++      openssl_check_symbol_existss(SSL_ech_set1_echconfig "openssl/ech.h" HAVE_ECH)
++    endif()
++  endif()
++  if(USE_WOLFSSL)
++    if(NOT DEFINED HAVE_ECH)
++      message(STATUS "Checking ECH for wolfSSL")
++      openssl_check_symbol_existss(wolfSSL_CTX_GenerateEchConfig "openssl/ssl.h" HAVE_ECH)
++    endif()
++  endif()
++  if(HAVE_BORINGSSL)
++    if(NOT DEFINED HAVE_ECH)
++      message(STATUS "Checking ECH for boringssl")
++      openssl_check_symbol_existss(SSL_set1_ech_config_list "openssl/ssl.h" HAVE_ECH)
++    endif()
++  endif()
++  if(HAVE_ECH)
++      message(STATUS "Enabling ECH")
++      set(USE_HTTPSRR ON CACHE BOOL "" FORCE)
++      set(USE_ECH ON CACHE BOOL "" FORCE)
++  endif()
++else()
++  message(STATUS "Not enabling ECH")
++endif()
++
+ option(USE_NGHTTP2 "Use nghttp2 library" OFF)
+ if(USE_NGHTTP2)
+   find_package(NGHTTP2 REQUIRED)
+@@ -1590,6 +1622,8 @@ if(NOT CURL_DISABLE_INSTALL)
+   set(_items)
+   _add_if("HTTP"          NOT CURL_DISABLE_HTTP)
+   _add_if("HTTPS"         NOT CURL_DISABLE_HTTP AND SSL_ENABLED)
++  _add_if("ECH"           HAVE_ECH)
++  _add_if("HTTPSRR"       HAVE_ECH)
+   _add_if("FTP"           NOT CURL_DISABLE_FTP)
+   _add_if("FTPS"          NOT CURL_DISABLE_FTP AND SSL_ENABLED)
+   _add_if("FILE"          NOT CURL_DISABLE_FILE)
+diff --git a/docs/ECH.md b/docs/ECH.md
+index acf59ea..e119e3f 100644
+--- a/docs/ECH.md
++++ b/docs/ECH.md
+@@ -48,6 +48,47 @@ isn't enabled, so go back some steps and re-do whatever needs re-doing:-) If you
+ want to debug curl then you should add ``--enable-debug`` to the ``configure``
+ command.
+ 
++## Building with cmake
++
++Not quite working yet, but to build with cmake:
++
++```bash
++    cd $HOME/code/curl
++    mkdir build
++    cd build
++    cmake -DOPENSSL_ROOT_DIR=$HOME/code/openssl -DCURL_DISABLE_ECH=false -DUSE_MANUAL=true ..
++    ...
++    make
++    ...
++```
++
++There were some quirks in this build:
++
++- For some reason, I had to re-run the ``configure`` script in the parent
++directory of ``build`` with an additional configure option:
++
++```bash
++    LDFLAGS="-L$HOME/code/openssl" ./configure --with-ssl=$HOME/code/openssl --enable-ech --enable-httpsrr --without-brotli
++    ...
++```
++
++- The additional ``USE_MANUAL`` above avoids what seems an odd error with ``tool_hugehelp.c``
++
++- The build still fails when trying to make ``docs/curl.1`` so I did that 
++manually, from the build directory:
++
++```bash
++
++    cd docs/cmdline-opts
++    ../../../docs/cmdline-opts/gen.pl mainpage ../../../docs/cmdline-opts/*.d >../curl.1
++    cd ../..
++    make
++    ...
++    [100%] Built target curl
++```
++
++So we finally get a binary, and our ``tests/ech_test.sh`` script seems happy.
++
+ ## Using ECH and DoH
+ 
+ Curl supports using DoH for A/AAAA lookups so it was relatively easy to add
+@@ -140,7 +181,7 @@ the verbose output, e.g.:
+ ```
+ 
+ At that point, you could copy the base64 encoded value above and try again.
+-For now, this only works for the openssl and boringssl builds.
++For now, this only works for the OpenSSL and boringssl builds.
+ 
+ ## Default settings
+ 
+diff --git a/lib/curl_config.h.cmake b/lib/curl_config.h.cmake
+index 339358e..0faa1e0 100644
+--- a/lib/curl_config.h.cmake
++++ b/lib/curl_config.h.cmake
+@@ -689,9 +689,15 @@ ${SIZEOF_TIME_T_CODE}
+ /* Define if you want to enable WIN32 threaded DNS lookup */
+ #cmakedefine USE_THREADS_WIN32 1
+ 
++/* if ECH support is available */
++#cmakedefine USE_ECH 1
++
+ /* if GnuTLS is enabled */
+ #cmakedefine USE_GNUTLS 1
+ 
++/* Define to 1 to query for HTTPSRR when using DoH */
++#cmakedefine USE_HTTPSRR 1
++
+ /* if Secure Transport is enabled */
+ #cmakedefine USE_SECTRANSP 1
+ 
+@@ -811,3 +817,4 @@ ${SIZEOF_TIME_T_CODE}
+ 
+ /* Define to 1 to enable TLS-SRP support. */
+ #cmakedefine USE_TLS_SRP 1
++

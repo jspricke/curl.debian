@@ -1,0 +1,189 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Sat, 16 Sep 2023 00:11:45 +0100
+Subject: remove no longer needed ech.[ch]
+
+---
+ lib/Makefile.inc   |  2 --
+ lib/ech.c          | 95 ------------------------------------------------------
+ lib/ech.h          | 37 ---------------------
+ lib/vtls/openssl.c |  1 -
+ 4 files changed, 135 deletions(-)
+ delete mode 100644 lib/ech.c
+ delete mode 100644 lib/ech.h
+
+diff --git a/lib/Makefile.inc b/lib/Makefile.inc
+index c54118d..e568ef9 100644
+--- a/lib/Makefile.inc
++++ b/lib/Makefile.inc
+@@ -140,7 +140,6 @@ LIB_CFILES =         \
+   easy.c             \
+   easygetopt.c       \
+   easyoptions.c      \
+-  ech.c              \
+   escape.c           \
+   file.c             \
+   fileinfo.c         \
+@@ -285,7 +284,6 @@ LIB_HFILES =         \
+   easy_lock.h        \
+   easyif.h           \
+   easyoptions.h      \
+-  ech.h              \
+   escape.h           \
+   file.h             \
+   fileinfo.h         \
+diff --git a/lib/ech.c b/lib/ech.c
+deleted file mode 100644
+index 4acfacf..0000000
+--- a/lib/ech.c
++++ /dev/null
+@@ -1,95 +0,0 @@
+-/***************************************************************************
+- *                                  _   _ ____  _
+- *  Project                     ___| | | |  _ \| |
+- *                             / __| | | | |_) | |
+- *                            | (__| |_| |  _ <| |___
+- *                             \___|\___/|_| \_\_____|
+- *
+- * Copyright (C) 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+- *
+- * This software is licensed as described in the file COPYING, which
+- * you should have received as part of this distribution. The terms
+- * are also available at https://curl.haxx.se/docs/copyright.html.
+- *
+- * You may opt to use, copy, modify, merge, publish, distribute and/or sell
+- * copies of the Software, and permit persons to whom the Software is
+- * furnished to do so, under the terms of the COPYING file.
+- *
+- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
+- * KIND, either express or implied.
+- *
+- ***************************************************************************/
+-
+-/***************************************************************************
+- *
+- * Non-backend-specific ECH support code belongs here, such as functions
+- * - to check ECH-related libcurl options
+- *   for correctness and consistency
+- * - to parse and display ECH data
+- *
+- * Backend-specific ECH support code belongs as additional
+- * backend-interface code in one of the existing vlts backend
+- * interface source files or in an ECH-specific source file
+- * associated with one of these existing files.
+- *
+- ***************************************************************************/
+-
+-#include "curl_setup.h"
+-
+-#ifdef USE_ECH
+-#include <curl/curl.h>
+-#include "urldata.h"
+-#include "sendf.h"
+-#include "vtls/vtls.h"
+-#include "ech.h"
+-
+-/* The last 3 #include files should be in this order */
+-#include "curl_printf.h"
+-#include "curl_memory.h"
+-#include "memdebug.h"
+-
+-/**
+- * Check completeness of ECH parameter data present in easy handle
+- *
+- * @param data is the Curl_easy handle to inspect
+- * @return TRUE if complete, FALSE otherwise
+- *
+- * If ECH is desired and we don't have an ECHConfig from the
+- * command line or acquired via DoH, we'll fail for now but
+- * could later add a DNS lookup.
+- */
+-bool Curl_ech_ready(struct Curl_easy *data,
+-                    struct ssl_connect_data *connssl)
+-{
+-  bool ready = FALSE;
+-
+-  if(!data)
+-    return FALSE;               /* NULL handle: surely not ready! */
+-
+-  if(data->set.tls_enable_ech
+-     || data->set.tls_enable_ech_hard) {
+-    if(data->set.str[STRING_ECH_CONFIG]) {
+-      infof(data, "ECH: ECHConfig set via Command line");
+-      if(data->set.str[STRING_ECH_PUBLIC]) {
+-        /* Optional STRING_ECH_PUBLIC: report if set */
+-        infof(data, "ECH: public-name via Command line:  %s",
+-              data->set.str[STRING_ECH_PUBLIC]);
+-      }
+-      ready = TRUE;
+-    }
+-    else {
+-      struct Curl_dns_entry *dns = NULL;
+-
+-      dns = Curl_fetch_addr(data, connssl->hostname, connssl->port);
+-      if(dns && dns->hinfo) {
+-        infof(data, "ECH: ECHConfig from DoH HTTPS RR");
+-        ready = TRUE;
+-      }
+-    }
+-  }
+-
+-  /* Nothing missing, or ECH not required */
+-  return ready;
+-}
+-
+-#endif  /* USE_ECH */
+diff --git a/lib/ech.h b/lib/ech.h
+deleted file mode 100644
+index 45cb439..0000000
+--- a/lib/ech.h
++++ /dev/null
+@@ -1,37 +0,0 @@
+-#ifndef HEADER_CURL_ECH_H
+-#define HEADER_CURL_ECH_H
+-/***************************************************************************
+- *                                  _   _ ____  _
+- *  Project                     ___| | | |  _ \| |
+- *                             / __| | | | |_) | |
+- *                            | (__| |_| |  _ <| |___
+- *                             \___|\___/|_| \_\_____|
+- *
+- * Copyright (C) 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+- *
+- * This software is licensed as described in the file COPYING, which
+- * you should have received as part of this distribution. The terms
+- * are also available at https://curl.haxx.se/docs/copyright.html.
+- *
+- * You may opt to use, copy, modify, merge, publish, distribute and/or sell
+- * copies of the Software, and permit persons to whom the Software is
+- * furnished to do so, under the terms of the COPYING file.
+- *
+- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
+- * KIND, either express or implied.
+- *
+- *
+- ***************************************************************************/
+-#include "curl_setup.h"
+-
+-#ifdef USE_ECH
+-# include <curl/curl.h>
+-# include <vtls/vtls_int.h>
+-
+-bool Curl_ech_ready(struct Curl_easy *data,
+-                    struct ssl_connect_data *connssl);
+-
+-#else  /* ECH not in use */
+-#endif  /* USE_ECH */
+-
+-#endif  /* HEADER_CURL_ECH_H */
+diff --git a/lib/vtls/openssl.c b/lib/vtls/openssl.c
+index fb927ce..b77a0fb 100644
+--- a/lib/vtls/openssl.c
++++ b/lib/vtls/openssl.c
+@@ -83,7 +83,6 @@
+ #include <openssl/evp.h>
+ 
+ #ifdef USE_ECH
+-#include "ech.h"
+ #include <openssl/ech.h>
+ #endif /* USE_ECH */
+ 

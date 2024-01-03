@@ -1,0 +1,38 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Wed, 18 Oct 2023 19:49:50 +0100
+Subject: typo-fix
+
+---
+ tests/ech_tests.sh | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/tests/ech_tests.sh b/tests/ech_tests.sh
+index 4e8b328..7b7cf60 100755
+--- a/tests/ech_tests.sh
++++ b/tests/ech_tests.sh
+@@ -58,15 +58,13 @@ declare -A ech_targets=(
+ 
+ # Targets we expect not to be ECH-enabled servers
+ # but for which an HTTPS RR is published.
+-# TODO: add a test for these
+ declare -A httpsrr_targets=(
+     [ietf.org]=""
+     [rte.ie]=""
+ )
+ 
+ # Targets we expect not to be ECH-enabled servers
+-# but for which an HTTPS RR is published.
+-# TODO: add a test for these
++# and for which no HTTPS RR is published.
+ declare -A neither_targets=(
+     [tcd.ie]=""
+     [jell.ie]=""
+@@ -376,7 +374,7 @@ do
+     echo "PN override check for $turl"
+     echo "" >>$logfile
+     echo "PN override check for $turl" >>$logfile
+-    timeout $tout $CURL --ech pn:override--ech hard $turl >>$logfile 2>&1
++    timeout $tout $CURL --ech pn:override --ech hard $turl >>$logfile 2>&1
+     eres=$?
+     if [[ "$eres" == "124" ]] 
+     then

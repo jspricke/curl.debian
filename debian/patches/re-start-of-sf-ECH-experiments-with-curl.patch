@@ -1,0 +1,58 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Wed, 6 Sep 2023 23:15:09 +0100
+Subject: re-start of sf ECH experiments with curl
+
+---
+ configure.ac       |  4 ++--
+ src/tool_cfgable.h | 16 ++++++++++++++++
+ 2 files changed, 18 insertions(+), 2 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index 160f881..ae07014 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -4387,8 +4387,8 @@ if test "x$want_ech" != "xno"; then
+   dnl OpenSSL with a chosen ECH function should be enough
+   dnl so more exhaustive checking seems unnecessary for now
+   if test "x$OPENSSL_ENABLED" = "x1"; then
+-    AC_CHECK_FUNCS(SSL_get_ech_status,
+-      ECH_SUPPORT="ECH support available (OpenSSL with SSL_get_ech_status)"
++    AC_CHECK_FUNCS(SSL_ech_set1_echconfig,
++      ECH_SUPPORT="ECH support available (OpenSSL with SSL_ech_set1_echconfig)"
+       ECH_ENABLED=1)
+ 
+   dnl add 'elif' chain here for additional implementations
+diff --git a/src/tool_cfgable.h b/src/tool_cfgable.h
+index 57e8fce..18f40d7 100644
+--- a/src/tool_cfgable.h
++++ b/src/tool_cfgable.h
+@@ -28,6 +28,11 @@
+ #include "tool_urlglob.h"
+ #include "var.h"
+ 
++#ifdef USE_ECH
++# include <openssl/ech.h>
++#endif
++
++
+ struct GlobalConfig;
+ 
+ struct State {
+@@ -298,6 +303,17 @@ struct OperationConfig {
+   struct State state;             /* for create_transfer() */
+   bool rm_partial;                /* on error, remove partially written output
+                                      files */
++#ifdef USE_ECH
++  union {
++    unsigned long word;
++    struct {
++      unsigned int disabled : 1;  /* Set by --no-ech option */
++      unsigned int selected : 1;  /* Set by any other ECH-related option */
++    } flags;
++  } ech_status;
++  char *ech_config;               /* Set by --echconfig option */
++#endif
++
+ };
+ 
+ struct GlobalConfig {

@@ -1,0 +1,148 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Wed, 4 Oct 2023 00:15:01 +0100
+Subject: tweak
+
+---
+ docs/ECH.md         | 18 +++++++++++++-----
+ include/curl/curl.h |  3 +++
+ lib/strerror.c      |  5 +++++
+ lib/vtls/openssl.c  | 40 ++++++++++++++++++++++++++++++++++------
+ 4 files changed, 55 insertions(+), 11 deletions(-)
+
+diff --git a/docs/ECH.md b/docs/ECH.md
+index 061b0de..c19a618 100644
+--- a/docs/ECH.md
++++ b/docs/ECH.md
+@@ -338,9 +338,14 @@ Then there are some functional code changes:
+ - tweak to ``configure.ac`` to check if WolfSSL has ECH or not
+ - added code to ``lib/vtls/wolfssl.c`` mirroring what's done in the
+   OpenSSL equivalent above.
+-- WolfSSL doesn't support ``--ech grease`` or the ``--ech pn:`` command line
++- WolfSSL doesn't support ``--ech false`` or the ``--ech pn:`` command line
+   argument.
+ 
++The lack of support for ``--ech false`` is because wolfSSL has decided to
++always at least GREASE if built to support ECH. In other words, GREASE is
++a compile time choice for wolfSSL, but a run-time choice for OpenSSL or
++boringssl. (Both are reasonanble.)
++
+ There's also a current
+ [bug/issue](https://github.com/wolfSSL/wolfssl/issues/6802) that the wolfSSL
+ client support for ECH seems to not correctly support HelloRetryRequest.
+@@ -411,13 +416,16 @@ Our current conclusion is that doing the above is likely best left until we
+ have some experience with the "using DoH" stuff, so we're going to punt on
+ this for now.
+ 
+-## Also not supported so far...
++## Not supported so far...
+ 
+ As of now we have not:
+ 
+-- added support for ``retry_config`` handling in the application - for a
++- added support for using ``retry_config`` handling in the application - for a
+   command line tool, one can just use ``dig`` (or ``kdig``) to get the HTTPS
+   RR and pass the ECHConfigList from that on the command line, if needed
+-- if we did add the above, we'd also need to do a better job on 
+-  authenticating the ``public_name`` for the connection
++- if we did add the above, we'd also need to do a better job on authenticating
++  the outer name
++
++Both our OpenSSL fork and boringssl have APIs for both controlling GREASE and
++accessing ``retry_configs``, it seems WolfSSL has neither.
+ 
+diff --git a/include/curl/curl.h b/include/curl/curl.h
+index 6dbdf1e..b72beca 100644
+--- a/include/curl/curl.h
++++ b/include/curl/curl.h
+@@ -631,6 +631,9 @@ typedef enum {
+   CURLE_PROXY,                   /* 97 - proxy handshake error */
+   CURLE_SSL_CLIENTCERT,          /* 98 - client-side certificate required */
+   CURLE_UNRECOVERABLE_POLL,      /* 99 - poll/select returned fatal error */
++#ifdef USE_ECH
++  CURLE_ECH_REQUIRED      ,      /* 100 - ECH tried but failed */
++#endif
+   CURL_LAST /* never use! */
+ } CURLcode;
+ 
+diff --git a/lib/strerror.c b/lib/strerror.c
+index 0d5f927..2321163 100644
+--- a/lib/strerror.c
++++ b/lib/strerror.c
+@@ -319,6 +319,11 @@ curl_easy_strerror(CURLcode error)
+   case CURLE_UNRECOVERABLE_POLL:
+     return "Unrecoverable error in select/poll";
+ 
++#ifdef USE_ECH
++  case CURLE_ECH_REQUIRED:
++    return "ECH attempted but failed";
++#endif
++
+     /* error codes not used by current libcurl */
+   case CURLE_OBSOLETE20:
+   case CURLE_OBSOLETE24:
+diff --git a/lib/vtls/openssl.c b/lib/vtls/openssl.c
+index 92c6c8a..1872efb 100644
+--- a/lib/vtls/openssl.c
++++ b/lib/vtls/openssl.c
+@@ -85,9 +85,8 @@
+ #ifdef USE_ECH
+ # ifndef OPENSSL_IS_BORINGSSL
+ #  include <openssl/ech.h>
+-# else
+-#  include "curl_base64.h"
+ # endif
++# include "curl_base64.h"
+ #endif /* USE_ECH */
+ 
+ #if (OPENSSL_VERSION_NUMBER >= 0x0090808fL) && !defined(OPENSSL_NO_OCSP)
+@@ -3914,10 +3913,8 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+       infof(data, "ECH: inner: '%s', outer: '%s'",
+             hostname, outername);
+       rv = SSL_ech_set_server_names(backend->handle,
+-                             hostname, /* ech_inner_name (again) */
+-                             outername, /* ech_outer_name */
+-                             0 /* do send outer */
+-                             );
++                                    hostname, outername,
++                                    0 /* do send outer */);
+       if(rv != 1) {
+         infof(data, "ECH: rv failed to set server name(s) %d [ERROR]", rv);
+         return CURLE_SSL_CONNECT_ERROR;
+@@ -4092,6 +4089,37 @@ static CURLcode ossl_connect_step2(struct Curl_cfilter *cf,
+         result = CURLE_SSL_CLIENTCERT;
+         ossl_strerror(errdetail, error_buffer, sizeof(error_buffer));
+       }
++#endif
++#ifdef USE_ECH
++      else if((lib == ERR_LIB_SSL) &&
++              (reason == SSL_R_ECH_REQUIRED)) {
++        /* If we have retry configs, then trace those out */
++        unsigned char *rcs = NULL;
++        size_t rcl = 0;
++        int rv = 1;
++
++# ifndef OPENSSL_IS_BORINGSSL
++        rv = SSL_ech_get_retry_config(backend->handle, &rcs, &rcl);
++# else
++        rv = SSL_get0_ech_retry_configs(backend->handle, &rcs, &rcl);
++# endif
++        if(rv == 1 && rcs) {
++# define HEXSTR_MAX 800
++          char *b64str = NULL;
++          size_t blen = 0;
++
++          result = Curl_base64_encode((const char *)rcs, rcl,
++                                      &b64str, &blen);
++          if(!result && b64str)
++            infof(data, "ECH: retry_configs %s", b64str);
++          free(b64str);
++        }
++        else
++          infof(data, "ECH: no retry_configs (rv = %d", rv);
++        OPENSSL_free(rcs);
++        result = CURLE_ECH_REQUIRED;
++        ossl_strerror(errdetail, error_buffer, sizeof(error_buffer));
++      }
+ #endif
+       else {
+         result = CURLE_SSL_CONNECT_ERROR;

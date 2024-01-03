@@ -1,0 +1,142 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Tue, 24 Oct 2023 15:04:24 +0100
+Subject: dynbuf approach to alpn decode
+
+---
+ docs/ECH.md |  8 +++++++
+ lib/doh.c   | 78 ++++++++++++++++++++++++++++++++++++++++++++++---------------
+ 2 files changed, 67 insertions(+), 19 deletions(-)
+
+diff --git a/docs/ECH.md b/docs/ECH.md
+index dfb5bb4..d56f77f 100644
+--- a/docs/ECH.md
++++ b/docs/ECH.md
+@@ -463,6 +463,14 @@ Our current conclusion is that doing the above is likely best left until we
+ have some experience with the "using DoH" stuff, so we're going to punt on
+ this for now.
+ 
++## Debugging
++
++Just a note to self as remembering this is a nuisance:
++
++```bash
++LD_LIBRARY_PATH=$HOME/code/openssl:./lib/.libs gdb ./src/.libs/curl
++```
++
+ ## Not supported so far...
+ 
+ As of now we have not:
+diff --git a/lib/doh.c b/lib/doh.c
+index e8578d4..aa6724a 100644
+--- a/lib/doh.c
++++ b/lib/doh.c
+@@ -1089,43 +1089,78 @@ static CURLcode local_decode_rdata_alpn(unsigned char *rrval, size_t len,
+    * implementations may or may not handle quoting of comma within
+    * string values, so we might see a comma within the wire format
+    * version of a string, in which case we'll precede that by a
+-   * backslash - same goes for a backslash character
++   * backslash - same goes for a backslash character, and of course
++   * we need to use two backslashes in strings when we mean one;-)
+    */
+   int remaining = (int) len;
+-  char *oval, *op;
++  char *oval;
++  size_t olen = 0, i;
+   unsigned char *cp = rrval;
++  struct dynbuf dval;
+ 
+   if(!alpns)
+     return CURLE_OUT_OF_MEMORY;
+-  /* allow space to quote possibly every single character :-) */
+-  oval = calloc(1, 2 * len);
+-  if(!oval)
+-    return CURLE_OUT_OF_MEMORY;
+-  op = oval;
++  Curl_dyn_init(&dval, DYN_DOH_RESPONSE);
++  remaining = (int)len;
++  cp = rrval;
+   while(remaining > 0) {
+     size_t tlen = (size_t) *cp++;
+-    remaining--;
+-    if(tlen > (size_t)remaining || tlen > (size_t)((2 * len) - (op - oval)))
++
++    /* if not 1st time, add comma */
++    if(remaining != (int)len && Curl_dyn_addn(&dval, ",", 1))
+       goto err;
+-    memcpy(op, cp, tlen);
+-    op += tlen;
+-    if((size_t)(op - oval) >= ((size_t)2 * len))
++    remaining--;
++    if(tlen > (size_t)remaining)
+       goto err;
+-    *op++ = COMMA_CHAR;
+-    cp += tlen;
++    /* add escape char if needed, clunky but easier to read */
++    for(i = 0; i != tlen; i++) {
++      if('\\' == *cp || ',' == *cp) {
++        if(Curl_dyn_addn(&dval, "\\", 1))
++          goto err;
++      }
++      if(Curl_dyn_addn(&dval, cp++, 1))
++        goto err;
++    }
+     remaining -= (int)tlen;
+   }
+-  oval[strlen(oval) - 1] = '\0';
+-  /* TODO: handle escaping */
+-
++  olen = Curl_dyn_len(&dval);
++  /* I think the + 1 here is ok but it could trigger a read error */
++  oval = (char *)Curl_memdup(Curl_dyn_ptr(&dval), olen + 1);
++  if(!oval)
++    goto err;
++  Curl_dyn_free(&dval);
++  oval[olen]='\0';
+   *alpns = oval;
+   return CURLE_OK;
+ err:
+-  if(oval)
+-    free(oval);
++  Curl_dyn_free(&dval);
+   return CURLE_BAD_CONTENT_ENCODING;
+ }
+ 
++#ifdef CURLDEBUG
++static CURLcode test_alpn_escapes(void)
++{
++  /* we'll use an example from draft-ietf-dnsop-svcb, figure 10 */
++  static unsigned char example[] = {
++    0x08,                                           /* length 8 */
++    0x66, 0x5c, 0x6f, 0x6f, 0x2c, 0x62, 0x61, 0x72, /* value "f\\oo,bar" */
++    0x02,                                           /* length 2 */
++    0x68, 0x32                                      /* value "h2" */
++  };
++  size_t example_len = sizeof(example);
++  char *aval = NULL;
++  static const char *expected = "f\\\\oo\\,bar,h2";
++
++  if(local_decode_rdata_alpn(example, example_len, &aval) != CURLE_OK)
++    return CURLE_BAD_CONTENT_ENCODING;
++  if(strlen(aval) != strlen(expected))
++    return CURLE_BAD_CONTENT_ENCODING;
++  if(memcmp(aval, expected, strlen(aval)))
++    return CURLE_BAD_CONTENT_ENCODING;
++  return CURLE_OK;
++}
++#endif
++
+ static CURLcode Curl_doh_decode_httpsrr(unsigned char *rrval, size_t len,
+                                         struct Curl_https_rrinfo **hrr)
+ {
+@@ -1135,6 +1170,11 @@ static CURLcode Curl_doh_decode_httpsrr(unsigned char *rrval, size_t len,
+   struct Curl_https_rrinfo *lhrr = NULL;
+   char *dnsname = NULL;
+ 
++#ifdef CURLDEBUG
++  /* a few tests of escaping, shouldn't be here but ok for now */
++  if(test_alpn_escapes() != CURLE_OK)
++    return CURLE_OUT_OF_MEMORY;
++#endif
+   lhrr = calloc(1, sizeof(struct Curl_https_rrinfo));
+   if(!lhrr)
+     return CURLE_OUT_OF_MEMORY;

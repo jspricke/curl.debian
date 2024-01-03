@@ -1,0 +1,119 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Mon, 2 Oct 2023 00:35:13 +0100
+Subject: use Curl_hexencode instead of local equiv
+
+---
+ lib/doh.c          | 43 ++++++++++++++++++++-----------------------
+ tests/ech_tests.sh |  4 ++--
+ 2 files changed, 22 insertions(+), 25 deletions(-)
+
+diff --git a/lib/doh.c b/lib/doh.c
+index 498c8bb..4edc17a 100644
+--- a/lib/doh.c
++++ b/lib/doh.c
+@@ -42,11 +42,15 @@
+ #include "curl_printf.h"
+ #include "curl_memory.h"
+ #include "memdebug.h"
++#ifdef USE_HTTPSRR
++# include "escape.h"
++#endif
+ 
+ #define DNS_CLASS_IN 0x01
+ 
+ #ifdef USE_HTTPSRR
+-#define BIN2HEXDIGIT(x) ((x) < 10 ? (char)((x) + '0') : (char)((x) - 10 + 'A'))
++/* local_print_buf truncates if the hex string will be more than this */
++# define LOCAL_PB_HEXMAX 400
+ #endif
+ 
+ #ifndef CURL_DISABLE_VERBOSE_STRINGS
+@@ -191,24 +195,17 @@ static void local_print_buf(struct Curl_easy *data,
+                             const char *prefix,
+                             unsigned char *buf, size_t len)
+ {
+-  size_t j;
+-  char string_buffer[2048], *ptr;
+-
+-  if(strlen(prefix) > 2000)
+-    infof(data, "prefix value too long: %s", prefix);
+-  memcpy(string_buffer, prefix, strlen(prefix));
+-  ptr = string_buffer + strlen(prefix);
+-  for(j = 0; j < len; j ++) {
+-    *ptr++ = BIN2HEXDIGIT(buf[j] >> 4);
+-    *ptr++ = BIN2HEXDIGIT(buf[j] & 0x0f);
+-    if((ptr - string_buffer) > 2000) {
+-      *ptr = '\0';
+-      infof(data, "%s - truncated", string_buffer);
+-      return;
+-    }
+-  }
+-  *ptr = '\0';
+-  infof(data, "%s", string_buffer);
++  unsigned char hexstr[LOCAL_PB_HEXMAX];
++  size_t hlen = LOCAL_PB_HEXMAX;
++  bool truncated = false;
++
++  if(len > (LOCAL_PB_HEXMAX / 2))
++    truncated = true;
++  Curl_hexencode(buf, len, hexstr, hlen);
++  if(!truncated)
++    infof(data, "%s: len=%d, val=%s", prefix, len, hexstr);
++  else
++    infof(data, "%s: len=%d (truncated)val=%s", prefix, len, hexstr);
+   return;
+ }
+ #endif
+@@ -873,7 +870,7 @@ static void showdoh(struct Curl_easy *data,
+ #ifdef USE_HTTPSRR
+   for(i = 0; i < d->numhttps_rrs; i++) {
+ # ifdef CURLDEBUG
+-    local_print_buf(data, "DoH HTTPS: ",
++    local_print_buf(data, "DoH HTTPS",
+                     d->https_rrs[i].val, d->https_rrs[i].len);
+ # else
+     infof(data, "DoH HTTPS RR: length %d", d->https_rrs[i].len);
+@@ -1233,19 +1230,19 @@ static void local_print_httpsrr(struct Curl_easy *data,
+   else
+     infof(data, "HTTPS RR: no_def_alpn not set");
+   if(hrr->ipv4hints) {
+-    local_print_buf(data, "HTTPS RR: ipv4hints: ",
++    local_print_buf(data, "HTTPS RR: ipv4hints",
+                     hrr->ipv4hints, hrr->ipv4hints_len);
+   }
+   else
+     infof(data, "HTTPS RR: no ipv4hints");
+   if(hrr->echconfiglist) {
+-    local_print_buf(data, "HTTPS RR: ECHConfigList: ",
++    local_print_buf(data, "HTTPS RR: ECHConfigList",
+                     hrr->echconfiglist, hrr->echconfiglist_len);
+   }
+   else
+     infof(data, "HTTPS RR: no ECHConfigList");
+   if(hrr->ipv6hints) {
+-    local_print_buf(data, "HTTPS RR: ipv6hint: ",
++    local_print_buf(data, "HTTPS RR: ipv6hint",
+                     hrr->ipv6hints, hrr->ipv6hints_len);
+   }
+   else
+diff --git a/tests/ech_tests.sh b/tests/ech_tests.sh
+index 9bafdc2..45344a2 100755
+--- a/tests/ech_tests.sh
++++ b/tests/ech_tests.sh
+@@ -219,14 +219,14 @@ fi
+ ossl_cnt=`LD_LIBRARY_PATH=$OSSL $CURL -V 2> /dev/null | grep -c OpenSSL`
+ if ((ossl_cnt == 1))
+ then
+-    using_ossl="yes":
++    using_ossl="yes"
+     # setup access to our .so
+     export LD_LIBRARY_PATH=$OSSL
+ fi
+ bssl_cnt=`LD_LIBRARY_PATH=$BSSL $CURL -V 2> /dev/null | grep -c BoringSSL`
+ if ((bssl_cnt == 1))
+ then
+-    using_bssl="yes":
++    using_bssl="yes"
+     # setup access to our .so
+     export LD_LIBRARY_PATH=$BSSL
+ fi

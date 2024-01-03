@@ -1,0 +1,93 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Thu, 14 Sep 2023 01:54:21 +0100
+Subject: curl+wolf+ECH works with ECHConfig from command line for CF but not
+ DEfO, no HTTPS RR use yet
+
+---
+ lib/vtls/openssl.c |  1 -
+ lib/vtls/wolfssl.c | 60 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 60 insertions(+), 1 deletion(-)
+
+diff --git a/lib/vtls/openssl.c b/lib/vtls/openssl.c
+index 30968ec..a0ac6d5 100644
+--- a/lib/vtls/openssl.c
++++ b/lib/vtls/openssl.c
+@@ -3806,7 +3806,6 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+     char *outername = data->set.str[STRING_ECH_PUBLIC];
+     unsigned char **cfgs = NULL;
+     size_t *cfglens = NULL;
+-
+     bool value_error = FALSE;
+     int nechs;
+     int rv, i;
+diff --git a/lib/vtls/wolfssl.c b/lib/vtls/wolfssl.c
+index 5890bb6..d99bdf7 100644
+--- a/lib/vtls/wolfssl.c
++++ b/lib/vtls/wolfssl.c
+@@ -709,6 +709,66 @@ wolfssl_connect_step1(struct Curl_cfilter *cf, struct Curl_easy *data)
+     Curl_ssl_sessionid_unlock(data);
+   }
+ 
++#ifdef USE_ECH
++  if(data->set.tls_enable_ech
++     || data->set.tls_enable_ech_hard) {
++
++    if(data->set.str[STRING_ECH_PUBLIC]) {
++      infof(data, "ECH: outername not (yet) supported with WolfSSL");
++      return CURLE_SSL_CONNECT_ERROR;
++    }
++
++    if(data->set.str[STRING_ECH_CONFIG]) {
++      char *b64val = data->set.str[STRING_ECH_CONFIG];
++      word32 b64len = 0;
++
++      b64len = (word32) strlen(b64val);
++      if(b64len
++         && wolfSSL_SetEchConfigsBase64(backend->handle, b64val, b64len)
++              != WOLFSSL_SUCCESS) {
++        if(data->set.tls_enable_ech_hard)
++          return CURLE_SSL_CONNECT_ERROR;
++      }
++      else {
++       infof(data, "ECH: ECHConfig set from command line: %s", b64val);
++      }
++    }
++    else {
++      struct Curl_dns_entry *dns = NULL;
++
++      dns = Curl_fetch_addr(data, connssl->hostname, connssl->port);
++      if(!dns) {
++        infof(data, "ECH: requested but no ECHConfig available (1)");
++        if(data->set.tls_enable_ech_hard)
++          return CURLE_SSL_CONNECT_ERROR;
++      }
++      else {
++        unsigned char *rrval = NULL;
++        size_t rrlen = 0;
++
++        rrval = dns->https_rr_val;
++        rrlen = dns->https_rr_len;
++        if(rrval) {
++          infof(data, "ECH: ECHConfig from DoH HTTPS RR");
++          /* Parse out the ECHConfig and pass onto WolfSSL */
++          /* TBD */
++        }
++        else {
++          infof(data, "ECH: requested but no ECHConfig available (2)");
++          if(data->set.tls_enable_ech_hard)
++            return CURLE_SSL_CONNECT_ERROR;
++        }
++      }
++    }
++
++    if(SSL_set_min_proto_version(backend->handle, TLS1_3_VERSION) != 1) {
++      infof(data, "ECH: Can't force TLSv1.3 [ERROR]");
++      return CURLE_SSL_CONNECT_ERROR;
++    }
++
++  }
++#endif  /* USE_ECH */
++
+ #ifdef USE_BIO_CHAIN
+   {
+     WOLFSSL_BIO *bio;

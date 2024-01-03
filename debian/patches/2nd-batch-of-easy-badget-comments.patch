@@ -1,0 +1,129 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Tue, 24 Oct 2023 10:51:00 +0100
+Subject: 2nd batch of easy @badget comments
+
+---
+ lib/doh.c | 32 ++++++++++++--------------------
+ lib/doh.h |  6 ------
+ 2 files changed, 12 insertions(+), 26 deletions(-)
+
+diff --git a/lib/doh.c b/lib/doh.c
+index 87367e0..e8578d4 100644
+--- a/lib/doh.c
++++ b/lib/doh.c
+@@ -565,10 +565,9 @@ static DOHcode store_https(const unsigned char *doh,
+   /* silently ignore RRs over the limit */
+   if(d->numhttps_rrs < DOH_MAX_HTTPS) {
+     struct dohhttps_rr *h = &d->https_rrs[d->numhttps_rrs];
+-    h->val = malloc(len);
++    h->val = Curl_memdup(&doh[index], len);
+     if(!h->val)
+       return DOH_OUT_OF_MEM;
+-    memcpy(h->val, &doh[index], len);
+     h->len = len;
+     d->numhttps_rrs++;
+   }
+@@ -992,20 +991,18 @@ static CURLcode doh2ai(const struct dohentry *de, const char *hostname,
+ #ifndef CURL_DISABLE_VERBOSE_STRINGS
+ static const char *type2name(DNStype dnstype)
+ {
+-#ifndef USE_HTTPSRR
+-  return (dnstype == DNS_TYPE_A)?"A":"AAAA";
+-#else
+   switch(dnstype) {
+     case DNS_TYPE_A:
+       return "A";
+     case DNS_TYPE_AAAA:
+       return "AAAA";
++#ifdef USE_HTTPSRR
+     case DNS_TYPE_HTTPS:
+       return "HTTPS";
++#endif
+     default:
+        return "unknown";
+   }
+-#endif
+ }
+ #endif
+ 
+@@ -1166,32 +1163,30 @@ static CURLcode Curl_doh_decode_httpsrr(unsigned char *rrval, size_t len,
+     }
+     if(pcode == HTTPS_RR_CODE_NO_DEF_ALPN)
+       lhrr->no_def_alpn = TRUE;
+-    if(pcode == HTTPS_RR_CODE_IPV4) {
+-      lhrr->ipv4hints = calloc(1, plen);
++    else if(pcode == HTTPS_RR_CODE_IPV4) {
++      lhrr->ipv4hints = Curl_memdup(cp, plen);
+       if(!lhrr->ipv4hints)
+         goto err;
+       lhrr->ipv4hints_len = (size_t)plen;
+-      memcpy(lhrr->ipv4hints, cp, plen);
+     }
+-    if(pcode == HTTPS_RR_CODE_ECH) {
+-      lhrr->echconfiglist = calloc(1, plen);
++    else if(pcode == HTTPS_RR_CODE_ECH) {
++      lhrr->echconfiglist = Curl_memdup(cp, plen);
+       if(!lhrr->echconfiglist)
+         goto err;
+       lhrr->echconfiglist_len = (size_t)plen;
+-      memcpy(lhrr->echconfiglist, cp, plen);
+     }
+-    if(pcode == HTTPS_RR_CODE_IPV6) {
+-      lhrr->ipv6hints = calloc(1, plen);
++    else if(pcode == HTTPS_RR_CODE_IPV6) {
++      lhrr->ipv6hints = Curl_memdup(cp, plen);
+       if(!lhrr->ipv6hints)
+         goto err;
+       lhrr->ipv6hints_len = (size_t)plen;
+-      memcpy(lhrr->ipv6hints, cp, plen);
+     }
+     if(plen > 0 && plen <= remaining) {
+       cp += plen;
+       remaining -= plen;
+     }
+   }
++  DEBUGASSERT(!remaining);
+   *hrr = lhrr;
+   return CURLE_OK;
+ err:
+@@ -1211,11 +1206,8 @@ err:
+ static void local_print_httpsrr(struct Curl_easy *data,
+                                 struct Curl_https_rrinfo *hrr)
+ {
+-  if(!hrr) {
+-    infof(data, "NULL HTTPS_RR provided!");
+-    return;
+-  }
+-  infof(data, "HTTPS_RR: priority %d, target: %s",
++  DEBUGASSERT(hrr);
++  infof(data, "HTTPS RR: priority %d, target: %s",
+         hrr->priority, hrr->target);
+   if(hrr->alpns)
+     infof(data, "HTTPS RR: alpns %s", hrr->alpns);
+diff --git a/lib/doh.h b/lib/doh.h
+index 91d64d4..b8e9063 100644
+--- a/lib/doh.h
++++ b/lib/doh.h
+@@ -54,12 +54,8 @@ typedef enum {
+   DNS_TYPE_NS = 2,
+   DNS_TYPE_CNAME = 5,
+   DNS_TYPE_AAAA = 28,
+-#ifdef USE_HTTPSRR
+   DNS_TYPE_DNAME = 39,           /* RFC6672 */
+   DNS_TYPE_HTTPS = 65
+-#else
+-  DNS_TYPE_DNAME = 39           /* RFC6672 */
+-#endif
+ } DNStype;
+ 
+ /* one of these for each DoH request */
+@@ -96,9 +92,7 @@ int Curl_doh_getsock(struct connectdata *conn, curl_socket_t *socks);
+ 
+ #define DOH_MAX_ADDR 24
+ #define DOH_MAX_CNAME 4
+-#ifdef USE_HTTPSRR
+ #define DOH_MAX_HTTPS 4
+-#endif
+ 
+ struct dohaddr {
+   int type;

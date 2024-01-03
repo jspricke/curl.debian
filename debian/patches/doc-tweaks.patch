@@ -1,0 +1,97 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Tue, 3 Oct 2023 01:31:53 +0100
+Subject: doc tweaks
+
+---
+ docs/ECH.md | 25 +++++++++++--------------
+ 1 file changed, 11 insertions(+), 14 deletions(-)
+
+diff --git a/docs/ECH.md b/docs/ECH.md
+index 2e43492..061b0de 100644
+--- a/docs/ECH.md
++++ b/docs/ECH.md
+@@ -73,7 +73,7 @@ The above works for these test sites:
+     https://tls-ech.dev
+ ```
+ 
+-So we seem to have the basic thing functioning now. That list has 4 different 
++So we seem to have the basic thing functioning now. That list has 4 different
+ server technologies, implemented by 3 different parties, and includes a case
+ (the port 8414 server) where HelloRetryRequest (HRR) is forced.
+ 
+@@ -85,7 +85,7 @@ We currently support the following new curl command line arguments/options:
+     - ``grease`` if attempting ECH is not possible, then send a GREASE ECH extension
+     - ``hard`` hard-fail the connection if ECH cannot be attempted
+     - ``ecl:<b64value>`` a base64 encoded ECHConfigList, rather than one accessed from the DNS
+-    - ``pn:<name>`` over-ride the ``public_name`` from an ECHConfigList 
++    - ``pn:<name>`` over-ride the ``public_name`` from an ECHConfigList
+ 
+ Note that in the above "attempt ECH" means the client emitting a TLS
+ ClientHello with a "real" ECH extension, but that does not mean that the
+@@ -105,7 +105,7 @@ cut-and-paste, e.g.:
+ Then paste the base64 encoded ECHConfigList onto the curl command line:
+ 
+ ```bash
+-    LD_LIBRARY_PATH=$HOME/code/openssl ./src/curl --ech AED+DQA8PAAgACD8WhlS7VwEt5bf3lekhHvXrQBGDrZh03n/LsNtAodbUAAEAAEAAQANY292ZXIuZGVmby5pZQAA https://defo.ie/ech-check.php
++    LD_LIBRARY_PATH=$HOME/code/openssl ./src/curl --ech ecl:AED+DQA8PAAgACD8WhlS7VwEt5bf3lekhHvXrQBGDrZh03n/LsNtAodbUAAEAAEAAQANY292ZXIuZGVmby5pZQAA https://defo.ie/ech-check.php
+     ...
+     SSL_ECH_STATUS: success <img src="greentick-small.png" alt="good" /> <br/>
+     ...
+@@ -117,7 +117,7 @@ If you paste in the wrong ECHConfigList (it changes hourly for ``defo.ie``) you'
+ get an error like this:
+ 
+ ```bash
+-    LD_LIBRARY_PATH=$HOME/code/openssl ./src/curl -vvv --ech AED+DQA8yAAgACDRMQo+qYNsNRNj+vfuQfFIkrrUFmM4vogucxKj/4nzYgAEAAEAAQANY292ZXIuZGVmby5pZQAA https://defo.ie/ech-check.php
++    LD_LIBRARY_PATH=$HOME/code/openssl ./src/curl -vvv --ech ecl:AED+DQA8yAAgACDRMQo+qYNsNRNj+vfuQfFIkrrUFmM4vogucxKj/4nzYgAEAAEAAQANY292ZXIuZGVmby5pZQAA https://defo.ie/ech-check.php
+     ...
+     * OpenSSL/3.2.0: error:0A00054B:SSL routines::ech required
+     ...
+@@ -318,7 +318,7 @@ In another window:
+ 
+ ```bash
+     cd $HOME/code/curl-wo/
+-    ./src/curl -vvv --insecure  --connect-to foo.example.com:8443:localhost:8443  https://foo.example.com:8443 --ech AD7+DQA6uwAgACBix2B78sX+EQhEbxMspDOc8Z3xVS5aQpYP0Cxpc2AWPAAEAAEAAQALZXhhbXBsZS5jb20AAA==
++    ./src/curl -vvv --insecure  --connect-to foo.example.com:8443:localhost:8443  https://foo.example.com:8443/stats --ech ecl:AD7+DQA6uwAgACBix2B78sX+EQhEbxMspDOc8Z3xVS5aQpYP0Cxpc2AWPAAEAAEAAQALZXhhbXBsZS5jb20AAA==
+ ```
+ 
+ ### Changes to support WolfSSL
+@@ -344,10 +344,12 @@ Then there are some functional code changes:
+ There's also a current
+ [bug/issue](https://github.com/wolfSSL/wolfssl/issues/6802) that the wolfSSL
+ client support for ECH seems to not correctly support HelloRetryRequest.
++WolfSSL also seems to send a GREASE ECH extension regardless of the
++``--ech false`` setting as of now.
+ 
+ ## boringssl build
+ 
+-The boringssl APIs do not support the the ``--ech pn:`` command line variant as
++The boringssl APIs do not support the ``--ech pn:`` command line variant as
+ of now.
+ 
+ BoringSSL is also supported by curl and also supports ECH, so to build
+@@ -363,7 +365,7 @@ one of those:
+     make install
+ ```
+ 
+-Then: 
++Then:
+ 
+ ```bash
+     cd $HOME/code
+@@ -413,14 +415,9 @@ this for now.
+ 
+ As of now we have not:
+ 
+-- added support for GREASEing ECH - our fork of the OpenSSL library has APIs
+-  for that, but, on the basis that any benefits from GREASE will be realized
+-  if much more commonly used clients (i.e. browsers) GREASE, it seems fine
+-  that curl not bother adding support for GREASEing ECH for now
+ - added support for ``retry_config`` handling in the application - for a
+   command line tool, one can just use ``dig`` (or ``kdig``) to get the HTTPS
+   RR and pass the ECHConfigList from that on the command line, if needed
+-
+-Also, though our OpenSSL fork has APIs for both GREASE and ``retry_configs``,
+-it seems WolfSSL has neither.
++- if we did add the above, we'd also need to do a better job on 
++  authenticating the ``public_name`` for the connection
+ 

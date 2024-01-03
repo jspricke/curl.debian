@@ -1,0 +1,134 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Fri, 29 Sep 2023 23:15:33 +0100
+Subject: minor tweaks for CI
+
+---
+ docs/ECH.md                            |  2 +-
+ docs/cmdline-opts/ech.d                |  3 ++-
+ docs/cmdline-opts/echpublic.d          |  5 +++--
+ docs/libcurl/opts/CURLOPT_ECH_CONFIG.3 |  3 ++-
+ docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3 |  3 ++-
+ docs/libcurl/opts/CURLOPT_ECH_STATUS.3 |  3 ++-
+ docs/libcurl/symbols-in-versions       | 10 +++++-----
+ lib/doh.c                              |  2 ++
+ 8 files changed, 19 insertions(+), 12 deletions(-)
+
+diff --git a/docs/ECH.md b/docs/ECH.md
+index 48e5d6c..03323b3 100644
+--- a/docs/ECH.md
++++ b/docs/ECH.md
+@@ -38,7 +38,7 @@ To build our ECH-enabled curl fork, making use of the above:
+     export LD_LIBRARY_PATH=$HOME/code/openssl
+     LDFLAGS="-L$HOME/code/openssl" ./configure --with-ssl=$HOME/code/openssl --enable-ech --enable-httpsrr
+     ...lots of output...
+-    WARNING: ech ECH HTTPSRR enabled but marked EXPERIMENTAL. Use with caution!
++    WARNING: ech ECH HTTPSRR enabled but marked EXPERIMENTAL...
+     make
+     ...lots more output...
+ ```
+diff --git a/docs/cmdline-opts/ech.d b/docs/cmdline-opts/ech.d
+index d373e8a..4d12c8c 100644
+--- a/docs/cmdline-opts/ech.d
++++ b/docs/cmdline-opts/ech.d
+@@ -12,4 +12,5 @@ Multi: single
+ Enable Encrypted Client Hello (ECH) for use with the TLS session, if
+ pssible, i.e. this is opportunistic.
+ 
+-This option only works with TLS 1.3.
++This option only works with TLS 1.3. This option also requires using
++DoH or else providing an ECHConfiglList on the command line.
+diff --git a/docs/cmdline-opts/echpublic.d b/docs/cmdline-opts/echpublic.d
+index 2d029c1..101199c 100644
+--- a/docs/cmdline-opts/echpublic.d
++++ b/docs/cmdline-opts/echpublic.d
+@@ -5,7 +5,7 @@ Arg: <name>
+ Help: TLS Encrypted Client Hello (ECH)
+ Added: x.xx.x
+ Category: tls ECH
+-Example: --echpubli $PUBLIC_NAME $URL
++Example: --ech-public $PUBLIC_NAME $URL
+ See-also: ech echconfig ech-hard doh-url
+ Multi: single
+ ---
+@@ -13,4 +13,5 @@ When doing Encrypted Client Hello (ECH), over-ride the public_name
+ from the relevant ECHConfigList in the outer ClientHello server name
+ indication extension.
+ 
+-This option only works with TLS 1.3.
++This option only works with TLS 1.3. This option also requires using
++DoH or else providing an ECHConfiglList on the command line.
+diff --git a/docs/libcurl/opts/CURLOPT_ECH_CONFIG.3 b/docs/libcurl/opts/CURLOPT_ECH_CONFIG.3
+index a622df8..1769ca0 100644
+--- a/docs/libcurl/opts/CURLOPT_ECH_CONFIG.3
++++ b/docs/libcurl/opts/CURLOPT_ECH_CONFIG.3
+@@ -59,5 +59,6 @@ Added in 8.4.0
+ .SH RETURN VALUE
+ Returns CURLE_OK on success or CURLE_OUT_OF_MEMORY if there was insufficient heap space.
+ .SH "SEE ALSO"
+-.BR CURLOPT_ECH_STATUS "(3), " CURLOPT_ECH_PUBLIC "(3), "
++.BR CURLOPT_ECH_STATUS (3),
++.BR CURLOPT_ECH_PUBLIC (3)
+ 
+diff --git a/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3 b/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
+index 266d71c..14adcfa 100644
+--- a/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
++++ b/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
+@@ -58,4 +58,5 @@ Added in 8.4.0
+ Returns CURLE_OK on success or CURLE_OUT_OF_MEMORY if there was insufficient
+ heap space.
+ .SH "SEE ALSO"
+-.BR CURLOPT_ECH_CONFIG "(3), " CURLOPT_ECH_STATUS "(3), "
++.BR CURLOPT_ECH_CONFIG (3),
++.BR CURLOPT_ECH_STATUS (3)
+diff --git a/docs/libcurl/opts/CURLOPT_ECH_STATUS.3 b/docs/libcurl/opts/CURLOPT_ECH_STATUS.3
+index 4f84595..d1f956a 100644
+--- a/docs/libcurl/opts/CURLOPT_ECH_STATUS.3
++++ b/docs/libcurl/opts/CURLOPT_ECH_STATUS.3
+@@ -64,4 +64,5 @@ Added in 8.4.0
+ .SH RETURN VALUE
+ Returns CURLE_OK on success or CURLE_OUT_OF_MEMORY if there was insufficient heap space.
+ .SH "SEE ALSO"
+-.BR CURLOPT_ECH_CONFIG "(3), " CURLOPT_ECH_PUBLIC "(3), "
++.BR CURLOPT_ECH_CONFIG (3),
++.BR CURLOPT_ECH_PUBLIC (3)
+diff --git a/docs/libcurl/symbols-in-versions b/docs/libcurl/symbols-in-versions
+index 02f871e..8fc3700 100644
+--- a/docs/libcurl/symbols-in-versions
++++ b/docs/libcurl/symbols-in-versions
+@@ -339,8 +339,8 @@ CURLE_URL_MALFORMAT_USER        7.1           7.17.0
+ CURLE_USE_SSL_FAILED            7.17.0
+ CURLE_WEIRD_SERVER_REPLY        7.51.0
+ CURLE_WRITE_ERROR               7.1
+-CURLECH_ENABLE                  8.4.0-DEV
+-CURLECH_HARD                    8.4.0-DEV
++CURLECH_ENABLE                  8.4.0
++CURLECH_HARD                    8.4.0
+ CURLFILETYPE_DEVICE_BLOCK       7.21.0
+ CURLFILETYPE_DEVICE_CHAR        7.21.0
+ CURLFILETYPE_DIRECTORY          7.21.0
+@@ -616,9 +616,9 @@ CURLOPT_DOH_SSL_VERIFYHOST      7.76.0
+ CURLOPT_DOH_SSL_VERIFYPEER      7.76.0
+ CURLOPT_DOH_SSL_VERIFYSTATUS    7.76.0
+ CURLOPT_DOH_URL                 7.62.0
+-CURLOPT_ECH_CONFIG              8.4.0-DEV
+-CURLOPT_ECH_PUBLIC              8.4.0-DEV
+-CURLOPT_ECH_STATUS              8.4.0-DEV
++CURLOPT_ECH_CONFIG              8.4.0
++CURLOPT_ECH_PUBLIC              8.4.0
++CURLOPT_ECH_STATUS              8.4.0
+ CURLOPT_EGDSOCKET               7.7           7.84.0
+ CURLOPT_ENCODING                7.10          7.21.6
+ CURLOPT_ERRORBUFFER             7.1
+diff --git a/lib/doh.c b/lib/doh.c
+index 9bf8279..e334da5 100644
+--- a/lib/doh.c
++++ b/lib/doh.c
+@@ -470,6 +470,8 @@ struct Curl_addrinfo *Curl_doh(struct Curl_easy *data,
+       qname = strdup(hostname);
+     else
+       qname = aprintf("_%d._https.%s", port, hostname);
++    if(!qname)
++      goto error;
+     result = dohprobe(data, &dohp->probe[DOH_PROBE_SLOT_HTTPS],
+                       DNS_TYPE_HTTPS, qname, data->set.str[STRING_DOH],
+                       data->multi, dohp->headers);

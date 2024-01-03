@@ -1,0 +1,28 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Thu, 21 Sep 2023 21:15:50 +0100
+Subject: moar test tweak
+
+---
+ tests/ech_tests.sh | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/tests/ech_tests.sh b/tests/ech_tests.sh
+index c43c819..8dd640b 100755
+--- a/tests/ech_tests.sh
++++ b/tests/ech_tests.sh
+@@ -147,12 +147,12 @@ if [ -f $WSSL/lib/libwolfssl.so ]
+ then
+     have_wolf="yes"
+ fi
+-CURL=$CTOP/src/curl
+-if [ -f $CURL ]
++CURL="$CTOP/src/curl -vvv"
++if [ -f $CTOP/src/curl ]
+ then
+     have_curl="yes"
+ fi
+-ossl_cnt=`$CURL -V 2> /dev/null | grep -c OpenSSL`
++ossl_cnt=`LD_LIBRARY_PATH=$OSSL $CURL -V 2> /dev/null | grep -c OpenSSL`
+ if ((ossl_cnt == 1))
+ then
+     using_ossl="yes":

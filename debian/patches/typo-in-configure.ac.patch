@@ -1,0 +1,21 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Tue, 10 Oct 2023 17:50:39 +0100
+Subject: typo in configure.ac
+
+---
+ configure.ac | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configure.ac b/configure.ac
+index 81a462a..021e516 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -4406,7 +4406,7 @@ if test "x$want_ech" != "xno"; then
+   dnl check for boringssl equivalent
+   if test "x$OPENSSL_ENABLED" = "x1"; then
+     AC_CHECK_FUNCS(SSL_set1_ech_config_list,
+-      ECH_SUPPORT="ECH support available via boringssl with SSL_set1_ech_ech_config_list"
++      ECH_SUPPORT="ECH support available via boringssl with SSL_set1_ech_config_list"
+       ECH_ENABLED=1)
+   fi
+   if test "x$WOLFSSL_ENABLED" = "x1"; then

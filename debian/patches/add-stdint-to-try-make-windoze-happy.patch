@@ -1,0 +1,173 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Wed, 27 Sep 2023 03:11:34 +0100
+Subject: add stdint to try make windoze happy
+
+---
+ docs/ECH.md                            | 38 ++++++++++++++++++----------------
+ docs/libcurl/opts/CURLOPT_ECH_CONFIG.3 |  8 +++----
+ lib/doh.h                              |  3 +++
+ lib/hostip.h                           |  4 ++++
+ 4 files changed, 31 insertions(+), 22 deletions(-)
+
+diff --git a/docs/ECH.md b/docs/ECH.md
+index 294d0b8..b13348c 100644
+--- a/docs/ECH.md
++++ b/docs/ECH.md
+@@ -63,14 +63,17 @@ retrieval of HTTPS RRs in that situation. To use ECH and DoH together:
+ 
+ The output snippet above is within the HTML for the web page, when things work.
+ 
+-The above works for
+-[https://defo.ie/ech-check.php](https://defo.ie/ech-check.php), 
+-[https://draft-13.esni.defo.ie:8413/stats](https://draft-13.esni.defo.ie:8413/stats),
+-[https://draft-13.esni.defo.ie:8414/stats](https://draft-13.esni.defo.ie:8414/stats),
+-[https://crypto.cloudflare.com/cdn-cgi/trace](https://crypto.cloudflare.com/cdn-cgi/trace),
+-and
+-[https://tls-ech.dev](https://tls-ech.dev)
+-so we seem to have the basic thing functioning now. That list has 4 different 
++The above works for these test sites:
++
++```bash
++    https://defo.ie/ech-check.php
++    https://draft-13.esni.defo.ie:8413/stats
++    https://draft-13.esni.defo.ie:8414/stats
++    https://crypto.cloudflare.com/cdn-cgi/trace
++    https://tls-ech.dev
++```
++
++So we seem to have the basic thing functioning now. That list has 4 different 
+ server technologies, implemented by 3 different parties, and includes a case
+ (the port 8414 server) where HelloRetryRequest (HRR) is forced.
+ 
+@@ -125,8 +128,8 @@ get an error like this:
+ ```
+ 
+ There is a reason to keep this command line option - for use before publishing
+-the ECHConfigList in the DNS (e.g. see
+-[draft-ietf-tls-wkech](https://datatracker.ietf.org/doc/draft-ietf-tls-wkech/)).
++the ECHConfigList in the DNS (e.g. as per the Internet-draft
++[A well-known URI for publishing ECHConfigList values](https://datatracker.ietf.org/doc/draft-ietf-tls-wkech/).
+ 
+ ## Default settings
+ 
+@@ -217,7 +220,7 @@ function
+ a new field in the ``dohentry`` structure.
+ 
+ The qname for the DoH query is modified if the port number is not 443, as
+-defined in the SCVB specification.
++defined in the SVCB specification.
+ ([here](https://github.com/sftcd/curl/blob/ECH-experimental/lib/doh.c#L418))
+ 
+ When the DoH process has worked, ``Curl_doh_is_resolved()`` now also returns
+@@ -259,7 +262,7 @@ recently.)
+ tool.
+ 
+ - We have not yet implemented tests as part of the usual curl test harness.
+-  For now, we only have an [``ech_tests.sh``](../tests/ech_test.sh) script that
++  For now, we only have a ``$TOP/tests/ech_test.sh`` script that
+ attempts ECH with various test servers. While that is a useful test and does
+ find issues (e.g. with the wolfSSL build), it's nowhere near comprehensive and
+ we're not (as yet) sure what would be the right level of coverage.
+@@ -303,7 +306,7 @@ Let's use that to build curl...
+ ```
+ 
+ Right now, this works almost the same as the OpenSSL variant, but not with
+-[https://tls-ech.dev](https://tls-ech.dev), (see [same
++[this web site](https://tls-ech.dev), (see [same
+ issue](https://github.com/wolfSSL/wolfssl/issues/6774), and for some reason
+ ``--insecure`` is needed.
+ 
+@@ -330,10 +333,9 @@ There are what seem like oddball differences:
+   "one.one.one.one" for WolfSSL. The latter works for both, so OK, we'll change
+   to that.
+ - There seems to be some difference in CA databases too - the WolfSSL version
+-  doesn't like defo.ie, whereas the system and OpenSSL ones do. We can ignore
++  doesn't like ``defo.ie``, whereas the system and OpenSSL ones do. We can ignore
+   that for our purposes via ``--insecure``/``-k`` but would need to fix for a
+-  real setup. (Browsers do like the certificates from
+-  [https://defo.ie](https://defo.ie) though.)
++  real setup. (Browsers do like those certificates though.)
+ 
+ Then there are some functional code changes:
+ 
+@@ -342,7 +344,7 @@ Then there are some functional code changes:
+   OpenSSL equivalent above.
+ 
+ There's also a current
+-[bug/issue](https://github.com/wolfSSL/wolfssl/issues/6802) that wolfSSL's
++[bug/issue](https://github.com/wolfSSL/wolfssl/issues/6802) that the wolfSSL
+ client support for ECH seems to not correctly support HelloRetryRequest.
+ 
+ ## Supporting ECH without DoH
+@@ -354,7 +356,7 @@ sense for curl to support ECH without curl itself using DoH. The author for
+ example uses a combination of stubby+unbound as the system resolver listening
+ on localhost:53, so would fit this use-case. That said, it's unclear if
+ this is a niche that's worth trying to address. (The author is just as happy to
+-let curl use DoH to talk to the same public recursives that stubby might use:-)
++let curl use DoH to talk to the same public recursive that stubby might use:-)
+ 
+ Assuming for the moment this is a use-case we'd like to support, then
+ if DoH is not being used by curl, it's not clear at this time how to provide
+diff --git a/docs/libcurl/opts/CURLOPT_ECH_CONFIG.3 b/docs/libcurl/opts/CURLOPT_ECH_CONFIG.3
+index ba31bb4..63452d2 100644
+--- a/docs/libcurl/opts/CURLOPT_ECH_CONFIG.3
++++ b/docs/libcurl/opts/CURLOPT_ECH_CONFIG.3
+@@ -29,7 +29,7 @@ CURLOPT_ECH_CONFIG \- provide an ECHConfigList
+ .nf
+ #include <curl/curl.h>
+ 
+-CURLcode curl_easy_setopt(CURL *handle, CURLOPT_ECH_CONFIG, char *echconfig);
++CURLcode curl_easy_setopt(CURL *handle, CURLOPT_ECH_CONFIG, char *config);
+ .fi
+ .SH DESCRIPTION
+ Pass a string that holds a base64 encoded ECHConfigList.
+@@ -38,7 +38,7 @@ If ECH is attempted, this value will be used and will
+ override any value retrieved from the DNS.
+ 
+ .SH DEFAULT
+-NULL - there is no default echconfig. If this option is not set, and ECH
++NULL - there is no default config. If this option is not set, and ECH
+ is to be attempted, libcurl uses DoH and attempts to find an ECHConfigList
+ in an HTTPS RR.
+ .SH PROTOCOLS
+@@ -46,9 +46,9 @@ HTTP, and requires TLSv1.3.
+ .SH EXAMPLE
+ .nf
+ CURL *curl = curl_easy_init();
+-const char *echconfig ="AED+DQA87wAgACB/RuzUCsW3uBbSFI7mzD63TUXpI8sGDTnFTbFCDpa+CAAEAAEAAQANY292ZXIuZGVmby5pZQAA";
++const char *config ="AED+DQA87wAgACB/RuzUCsW3uBbSFI7mzD63TUXpI8sGDTnFTbFCDpa+CAAEAAEAAQANY292ZXIuZGVmby5pZQAA";
+ if(curl) {
+-  curl_easy_setopt(curl, CURLOPT_ECH_CONFIG, echconfig);
++  curl_easy_setopt(curl, CURLOPT_ECH_CONFIG, config);
+   curl_easy_perform(curl);
+ }
+ .fi
+diff --git a/lib/doh.h b/lib/doh.h
+index 1501524..91d64d4 100644
+--- a/lib/doh.h
++++ b/lib/doh.h
+@@ -26,6 +26,9 @@
+ 
+ #include "urldata.h"
+ #include "curl_addrinfo.h"
++#ifdef USE_HTTPSRR
++# include <stdint.h>
++#endif
+ 
+ #ifndef CURL_DISABLE_DOH
+ 
+diff --git a/lib/hostip.h b/lib/hostip.h
+index b0dde7e..66a57cc 100644
+--- a/lib/hostip.h
++++ b/lib/hostip.h
+@@ -32,6 +32,10 @@
+ 
+ #include <setjmp.h>
+ 
++#ifdef USE_HTTPSRR
++# include <stdint.h>
++#endif
++
+ /* Allocate enough memory to hold the full name information structs and
+  * everything. OSF1 is known to require at least 8872 bytes. The buffer
+  * required for storing all possible aliases and IP numbers is according to

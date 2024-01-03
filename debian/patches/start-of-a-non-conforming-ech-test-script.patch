@@ -1,0 +1,385 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Thu, 21 Sep 2023 02:29:08 +0100
+Subject: start of a (non-conforming) ech test script
+
+---
+ lib/vtls/openssl.c |  28 ++---
+ tests/ech_tests.sh | 306 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 320 insertions(+), 14 deletions(-)
+ create mode 100755 tests/ech_tests.sh
+
+diff --git a/lib/vtls/openssl.c b/lib/vtls/openssl.c
+index c99e89e..5dde913 100644
+--- a/lib/vtls/openssl.c
++++ b/lib/vtls/openssl.c
+@@ -4089,44 +4089,44 @@ static CURLcode ossl_connect_step2(struct Curl_cfilter *cf,
+ #ifdef USE_ECH
+     if(data->set.tls_enable_ech
+        || data->set.tls_enable_ech_hard) {
+-      const char *peer = NULL;
+       char *inner = NULL, *outer = NULL;
++      const char *status = NULL;
+       int rv;
+ 
+-      peer = SSL_get0_peername(backend->handle);
+       rv = SSL_ech_get_status(backend->handle, &inner, &outer);
+-      infof(data, "ECH: peer is %s, inner is %s, outer is %s",
+-             (peer?peer:"NULL"),
+-             (inner?inner:"NULL"),
+-             (outer?outer:"NULL"));
+       switch(rv) {
+       case SSL_ECH_STATUS_SUCCESS:
+-        infof(data, "ECH: Succeeded");
++        status = "Succeeded";
+         break;
+       case SSL_ECH_STATUS_GREASE:
+-        infof(data, "ECH: sent GREASE");
++        status = "sent GREASE";
+         break;
+       case SSL_ECH_STATUS_NOT_TRIED:
+-        infof(data, "ECH: not attempted");
++        status = "not attempted";
+         break;
+       case SSL_ECH_STATUS_NOT_CONFIGURED:
+-        infof(data, "ECH: not configured");
++        status = "not configured";
+         break;
+       case SSL_ECH_STATUS_BACKEND:
+-        infof(data, "ECH: failed");
++        status = "backend (unexpected)";
+         break;
+       case SSL_ECH_STATUS_FAILED:
+-        infof(data, "ECH: failed");
++        status = "failed";
+         break;
+       case SSL_ECH_STATUS_BAD_CALL:
+-        infof(data, "ECH: failed");
++        status = "bad call (unexpected)";
+         break;
+       case SSL_ECH_STATUS_BAD_NAME:
+-        infof(data, "ECH: failed");
++        status = "bad name (unexpected)";
+         break;
+       default:
++        status = "unexpected status";
+         infof(data, "ECH: unexpected status %d",rv);
+       }
++      infof(data, "ECH: result: status is %s, inner is %s, outer is %s",
++             (status?status:"NULL"),
++             (inner?inner:"NULL"),
++             (outer?outer:"NULL"));
+       OPENSSL_free(inner);
+       OPENSSL_free(outer);
+       if(rv != SSL_ECH_STATUS_SUCCESS && data->set.tls_enable_ech_hard) {
+diff --git a/tests/ech_tests.sh b/tests/ech_tests.sh
+new file mode 100755
+index 0000000..cb44917
+--- /dev/null
++++ b/tests/ech_tests.sh
+@@ -0,0 +1,306 @@
++#!/bin/bash
++
++# Run some tests against servers we know to support ECH (CF, defo.ie, etc.).
++# as well as some we know don't do ECH but have an HTTPS RR, and finally some
++# for which neither is the case.
++
++# TODO: Translate this into something that approximates a valid curl test:-)
++# Should be useful though even before such translation and a pile less work
++# to do this than that.  The pile of work required would include making an
++# ECH-enabled server and a DoH server. For now, this is just run manually.
++
++# set -x
++
++# Targets we expect to be ECH-enabled servers
++# for which an HTTPS RR is published.
++# structure is host:port mapped to pathname
++# TODO: add negative tests for these
++declare -A ech_targets=(
++    [my-own.net]="ech-check.php"
++    [my-own.net:8443]="ech-check.php"
++    [defo.ie]="ech-check.php"
++    [cover.defo.ie]=""
++    [draft-13.esni.defo.ie:8413]="stats"
++    [draft-13.esni.defo.ie:8414]="stats"
++    [draft-13.esni.defo.ie:9413]=""
++    [draft-13.esni.defo.ie:10413]=""
++    [draft-13.esni.defo.ie:11413]=""
++    [draft-13.esni.defo.ie:12413]=""
++    [draft-13.esni.defo.ie:12414]=""
++    [crypto.cloudflare.com]="cdn-cgi/trace"
++    [tls-ech.dev]=""
++    [epochbelt.com]=""
++)
++
++# Targets we expect not to be ECH-enabled servers
++# but for which an HTTPS RR is published.
++# TODO: add a test for these
++declare -A httpsrr_targets=(
++    [rte.ie]=""
++)
++
++# Targets we expect not to be ECH-enabled servers
++# but for which an HTTPS RR is published.
++# TODO: add a test for these
++declare -A neither_targets=(
++    [tcd.ie]=""
++)
++
++#
++# Variables that can be over-ridden from environment
++#
++
++# Top of curl test tree
++: ${CTOP:="$HOME/code/curl"}
++
++# Plase to put test log output
++: ${LTOP:="$CTOP/tests/ech-log/"}
++
++# place to stash outputs when things go wrong
++: ${BTOP:="$LTOP"}
++
++# time to wait for a remote access to work, 10 seconds
++: ${tout:="10s"}
++
++# Where we find OpenSSL .so's
++: ${OSSL:="$HOME/code/openssl"}
++
++# Where we find WolfSSL .so's
++: ${WSSL:="$HOME/code/wolfssl/inst"}
++
++# Where we send DoH queries when using kdig or curl
++: ${DOHSERVER:="one.one.one.one"}
++: ${DOHPATH:="dns-query"}
++
++# Whether to send mail when bad things happen (mostly for cronjob)
++: ${DOMAIL:="no"}
++
++# Misc vars and functions
++
++DEFPORT=443
++
++function whenisitagain()
++{
++    /bin/date -u +%Y%m%d-%H%M%S
++}
++
++function fileage()
++{
++    echo $(($(date +%s) - $(date +%s -r "$1")))
++}
++
++function hostport2host()
++{
++    case $1 in
++      *:*) host=${1%:*} port=${1##*:};;
++        *) host=$1      port=$DEFPORT;;
++    esac
++    echo $host
++}
++
++function hostport2port()
++{
++    case $1 in
++      *:*) host=${1%:*} port=${1##*:};;
++        *) host=$1      port=$DEFPORT;;
++    esac
++    echo $port
++}
++
++# start of main script
++
++# start by assuming we have nothing we need...
++have_ossl="no"
++have_wolf="no"
++using_ossl="no"
++using_wolf="no"
++have_curl="no"
++have_dig="no"
++have_kdig="no"
++have_presout="no"
++
++# setup logging
++NOW=$(whenisitagain)
++BINNAME=`basename $0 .sh`
++if [ ! -d $LTOP ]
++then
++    mkdir -p $LTOP
++fi
++if [ ! -d $LTOP ]
++then
++    echo "Can't see $LTOP for logs - exiting"
++    exit 1
++fi
++logfile=$LTOP/$BINNAME_$NOW.log
++
++echo "-----" >$logfile
++echo "Running $0 at $NOW"  >>$logfile
++echo "Running $0 at $NOW"
++
++# check we have the binaries needed and which TLS library we'll be using
++if [ -f $OSSL/libssl.so ] 
++then
++    have_ossl="yes"
++fi
++if [ -f $WSSL/lib/libwolfssl.so ]
++then
++    have_wolf="yes"
++fi
++CURL=$CTOP/src/curl
++if [ -f $CURL ]
++then
++    have_curl="yes"
++fi
++ossl_cnt=`$CURL -V 2> /dev/null | grep -c OpenSSL`
++if ((ossl_cnt == 1))
++then
++    using_ossl="yes":
++fi
++wolf_cnt=`$CURL -V 2> /dev/null | grep -c WolfSSL`
++if ((wolf_cnt == 1))
++then
++    using_wolf="yes":
++fi
++# check if we have dig and it knows https or not
++digcmd="dig +short"
++wdig=`which dig`
++if [[ "$wdig" != "" ]]
++then
++    have_dig="yes"
++fi
++wkdig=`which kdig`
++if [[ "$wkdig" != "" ]]
++then
++    have_kdig="yes"
++    digcmd="kdig @$DOHSERVER +https +short"
++fi
++# see if our dig version knows HTTPS 
++echo "using |$digcmd|as dig command"
++dout=`$digcmd https defo.ie`
++if [[ $dout != "1 . "* ]]
++then
++    dout=`$digcmd -t TYPE65 defo.ie`
++    if [[ $dout == "1 . "* ]]
++    then
++        # we're good
++        have_presout="yes"
++    elif [[ $dout == "\\# [0-9]"* ]]
++    then
++        have_presout="no"
++    else
++        have_presout="no"
++    fi
++else
++    have_presout="yes"
++fi
++
++echo "have_ossl: $have_ossl" >>$logfile
++echo "have_wolf: $have_wolf" >>$logfile
++echo "using_ossl: $using_ossl" >>$logfile
++echo "using_wolf: $using_wolf" >>$logfile
++echo "have_curl: $have_curl" >>$logfile
++echo "have_dig: $have_dig" >>$logfile
++echo "have_kdig: $have_kdig" >>$logfile
++echo "have_presout: $have_presout" >>$logfile
++
++echo "have_ossl: $have_ossl" 
++echo "have_wolf: $have_wolf" 
++echo "using_ossl: $using_ossl" 
++echo "using_wolf: $using_wolf" 
++echo "have_curl: $have_curl" 
++echo "have_dig: $have_dig" 
++echo "have_kdig: $have_kdig" 
++echo "have_presout: $have_presout" 
++
++allgood="yes"
++for targ in "${!ech_targets[@]}"
++do
++    host=$(hostport2host $targ)
++    port=$(hostport2port $targ)
++    path=${ech_targets[$targ]}
++    turl="https://$host:$port/$path"
++    echo "Basic check for $turl"
++    echo "" >>$logfile
++    echo "Basic check for $turl" >>$logfile
++    timeout $tout $CURL -vvv --ech-hard $turl >>$logfile
++    eres=$?
++    if [[ "$eres" == "124" ]] 
++    then
++        allgood="no"
++        echo "Timeout running echcli.sh for $host:$port/$path" >>$logfile
++    fi
++    if [[ "$eres" != "0" ]] 
++    then
++        allgood="no"
++        echo "Error ($eres) from echcli.sh for $host:$port/$path" >>$logfile
++    fi
++    echo "" >>$logfile
++done
++
++END=$(whenisitagain)
++echo "Finished $0 at $END"  >>$logfile
++echo "-----" >>$logfile
++cd -
++
++if [[ "$allgood" == "yes" ]]
++then
++    echo "Finished $0 at $END"
++    echo "All good, log in $logfile"
++    exit 0
++fi
++
++# send a mail to root (will be fwd'd) but just once every 24 hours
++# 'cause we only really need "new" news
++itsnews="yes"
++age_of_news=0
++if [ -f $LTOP/bad_runs ]
++then
++    age_of_news=$(fileage $LTOP/bad_runs)
++    # only consider news "new" if we haven't mailed today
++    if ((age_of_news < 24*3600))
++    then
++        itsnews="no"
++    fi
++fi
++if [[ "$DOMAIL" == "yes" && "$itsnews" == "yes" ]]
++then
++    echo "ECH badness at $NOW" | mail -s "ECH badness at $NOW" root
++fi
++# add to list of bad runs (updating file age)
++echo "ECH badness at $NOW" >>$LTOP/bad_runs
++exit 2
++
++# non port 443 stuff below for handy re-use
++        if [[ "$port" != "$DEFPORT" ]]
++        then
++            qname="_$port._https.$host"
++        fi
++        echo "Checking $host:$port/$path and $wkurl" >>$logfile
++        # get wkurl
++        if [[ "$host" != "crypto.cloudflare.com" && "$host" != "tls-ech.dev" ]]
++        then
++            timeout $tout curl -o $host.$port.json -s $wkurl
++            cres=$?
++            if [[ "$cres" == "124" ]] 
++            then
++                allgood="no"
++                echo "Timeout getting $wkurl" >>$logfile
++            fi
++        else
++            echo "{ \"No .well-known for $host \"}" >$host.$port.json
++        fi
++        # grab DNS
++        $digcmd $qname >$host.$port.dig 2>&1
++        # try ECH 
++        timeout $tout $echcli -H $host -p $port $pathstr -d >$host.$port.echcli.log
++        eres=$?
++        if [[ "$eres" == "124" ]] 
++        then
++            allgood="no"
++            echo "Timeout running echcli.sh for $host:$port/$path" >>$logfile
++        fi
++        if [[ "$eres" != "0" ]] 
++        then
++            allgood="no"
++            echo "Error ($eres) from echcli.sh for $host:$port/$path" >>$logfile
++        fi

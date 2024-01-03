@@ -1,0 +1,47 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Thu, 28 Sep 2023 00:39:21 +0100
+Subject: tweak man pages to find clues to CI intransigence
+
+---
+ docs/libcurl/opts/CURLOPT_ECH_CONFIG.3 | 3 +++
+ docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3 | 2 +-
+ docs/libcurl/opts/CURLOPT_ECH_STATUS.3 | 4 +---
+ 3 files changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/docs/libcurl/opts/CURLOPT_ECH_CONFIG.3 b/docs/libcurl/opts/CURLOPT_ECH_CONFIG.3
+index 36c4009..efc1237 100644
+--- a/docs/libcurl/opts/CURLOPT_ECH_CONFIG.3
++++ b/docs/libcurl/opts/CURLOPT_ECH_CONFIG.3
+@@ -55,5 +55,8 @@ if(curl) {
+ Added in 8.4.0
+ .SH RETURN VALUE
+ Returns CURLE_OK on success or CURLE_OUT_OF_MEMORY if there was insufficient heap space.
++
+ .SH "SEE ALSO"
++
+ .BR CURLOPT_ECH_STATUS "(3), " CURLOPT_ECH_PUBLIC "(3), "
++
+diff --git a/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3 b/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
+index 43fa8ca..220b497 100644
+--- a/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
++++ b/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
+@@ -56,4 +56,4 @@ Added in 8.4.0
+ Returns CURLE_OK on success or CURLE_OUT_OF_MEMORY if there was insufficient
+ heap space.
+ .SH "SEE ALSO"
+-.BR CURLOPT_ECH_CONFIG "(3), " CURLOPT_ECH_STATUS "(3), "
++.BR CURLOPT_ECH_CONFIG "(3), " CURLOPT_ECH_STATUS "(3)"
+diff --git a/docs/libcurl/opts/CURLOPT_ECH_STATUS.3 b/docs/libcurl/opts/CURLOPT_ECH_STATUS.3
+index 49ab830..4f84595 100644
+--- a/docs/libcurl/opts/CURLOPT_ECH_STATUS.3
++++ b/docs/libcurl/opts/CURLOPT_ECH_STATUS.3
+@@ -62,8 +62,6 @@ if(curl) {
+ .SH AVAILABILITY
+ Added in 8.4.0
+ .SH RETURN VALUE
+-Returns CURLE_OK on success or CURLE_OUT_OF_MEMORY if there was insufficient
+-heap space.
+-
++Returns CURLE_OK on success or CURLE_OUT_OF_MEMORY if there was insufficient heap space.
+ .SH "SEE ALSO"
+ .BR CURLOPT_ECH_CONFIG "(3), " CURLOPT_ECH_PUBLIC "(3), "

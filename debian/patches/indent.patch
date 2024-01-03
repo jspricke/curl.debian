@@ -1,0 +1,21 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Tue, 26 Sep 2023 20:50:56 +0100
+Subject: indent
+
+---
+ lib/doh.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/doh.c b/lib/doh.c
+index 665a369..49e4c12 100644
+--- a/lib/doh.c
++++ b/lib/doh.c
+@@ -459,7 +459,7 @@ struct Curl_addrinfo *Curl_doh(struct Curl_easy *data,
+                     data->multi, dohp->headers);
+   free(qname);
+   if(result)
+-  goto error;
++    goto error;
+   dohp->pending++;
+ #endif
+   *waitp = TRUE; /* this never returns synchronously */

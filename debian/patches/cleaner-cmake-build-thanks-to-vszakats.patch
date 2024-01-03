@@ -1,0 +1,159 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Sat, 14 Oct 2023 22:48:02 +0100
+Subject: cleaner cmake build thanks to @vszakats
+
+---
+ CMakeLists.txt          | 43 ++++++++++++++++++-------------------------
+ docs/ECH.md             | 33 ++++++++++++---------------------
+ lib/curl_config.h.cmake | 11 +++++------
+ 3 files changed, 35 insertions(+), 52 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 70c4081..5bbdec9 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -212,8 +212,6 @@ option(CURL_DISABLE_DICT "disables DICT" OFF)
+ mark_as_advanced(CURL_DISABLE_DICT)
+ option(CURL_DISABLE_DOH "disables DNS-over-HTTPS" OFF)
+ mark_as_advanced(CURL_DISABLE_DOH)
+-option(CURL_DISABLE_ECH "disables Encrypted Client Hello" ON)
+-mark_as_advanced(CURL_DISABLE_ECH)
+ option(CURL_DISABLE_FILE "disables FILE" OFF)
+ mark_as_advanced(CURL_DISABLE_FILE)
+ cmake_dependent_option(CURL_DISABLE_FORM_API "disables form api" OFF
+@@ -674,33 +672,28 @@ if(USE_OPENSSL OR USE_WOLFSSL)
+   endif()
+ endif()
+ 
+-if(NOT CURL_DISABLE_ECH)
+-  option(HAVE_ECH "Support Encrypted Client Hello" ON)
+-  if(USE_OPENSSL)
+-    if(NOT DEFINED HAVE_ECH)
+-      message(STATUS "Checking ECH for OpenSSL")
+-      openssl_check_symbol_existss(SSL_ech_set1_echconfig "openssl/ech.h" HAVE_ECH)
+-    endif()
+-  endif()
+-  if(USE_WOLFSSL)
++option(USE_HTTPSRR "Enable HTTPS RR support for ECH (experimental)" OFF)
++option(USE_ECH "Enable ECH support" OFF)
++if(USE_ECH)
++  if(USE_OPENSSL OR USE_WOLFSSL)
++    # Be sure that the OpenSSL/wolfSSL library actually supports ECH.
+     if(NOT DEFINED HAVE_ECH)
+-      message(STATUS "Checking ECH for wolfSSL")
+-      openssl_check_symbol_existss(wolfSSL_CTX_GenerateEchConfig "openssl/ssl.h" HAVE_ECH)
++      if(USE_OPENSSL AND HAVE_BORINGSSL)
++        openssl_check_symbol_exists(SSL_set1_ech_config_list "openssl/ssl.h" HAVE_ECH)
++      elseif(USE_OPENSSL)
++        openssl_check_symbol_exists(SSL_ech_set1_echconfig "openssl/ech.h" HAVE_ECH)
++      elseif(USE_WOLFSSL)
++        openssl_check_symbol_exists(wolfSSL_CTX_GenerateEchConfig "wolfssl/options.h;wolfssl/ssl.h" HAVE_ECH)
++      endif()
+     endif()
+-  endif()
+-  if(HAVE_BORINGSSL)
+-    if(NOT DEFINED HAVE_ECH)
+-      message(STATUS "Checking ECH for boringssl")
+-      openssl_check_symbol_existss(SSL_set1_ech_config_list "openssl/ssl.h" HAVE_ECH)
++    if(NOT HAVE_ECH)
++      message(FATAL_ERROR "ECH support missing in OpenSSL/BoringSSL/wolfSSL")
++    else()
++      message("ECH enabled.")
+     endif()
++  else()
++    message(FATAL_ERROR "ECH requires ECH-enablded OpenSSL, BoringSSL or wolfSSL")
+   endif()
+-  if(HAVE_ECH)
+-      message(STATUS "Enabling ECH")
+-      set(USE_HTTPSRR ON CACHE BOOL "" FORCE)
+-      set(USE_ECH ON CACHE BOOL "" FORCE)
+-  endif()
+-else()
+-  message(STATUS "Not enabling ECH")
+ endif()
+ 
+ option(USE_NGHTTP2 "Use nghttp2 library" OFF)
+diff --git a/docs/ECH.md b/docs/ECH.md
+index e119e3f..dfb5bb4 100644
+--- a/docs/ECH.md
++++ b/docs/ECH.md
+@@ -50,38 +50,29 @@ command.
+ 
+ ## Building with cmake
+ 
+-Not quite working yet, but to build with cmake:
++This is not working cleanly yet, but to build with cmake:
+ 
+ ```bash
+-    cd $HOME/code/curl
++    cd $HOME/code
++    git clone https://github.com/sftcd/curl
++    cd curl
+     mkdir build
+     cd build
+-    cmake -DOPENSSL_ROOT_DIR=$HOME/code/openssl -DCURL_DISABLE_ECH=false -DUSE_MANUAL=true ..
++    cmake -DOPENSSL_ROOT_DIR=$HOME/code/openssl -DUSE_ECH=1 -DUSE_HTTPSRR=1 -DUSE_MANUAL=1 ..
+     ...
+     make
+     ...
++    [85%] Generating ../curl.1
++    .../code/curl/docs/cmdline-opts::1:ERROR: unrecognized Multi: ''
+ ```
+ 
+-There were some quirks in this build:
+-
+-- For some reason, I had to re-run the ``configure`` script in the parent
+-directory of ``build`` with an additional configure option:
+-
+-```bash
+-    LDFLAGS="-L$HOME/code/openssl" ./configure --with-ssl=$HOME/code/openssl --enable-ech --enable-httpsrr --without-brotli
+-    ...
+-```
+-
+-- The additional ``USE_MANUAL`` above avoids what seems an odd error with ``tool_hugehelp.c``
+-
+-- The build still fails when trying to make ``docs/curl.1`` so I did that 
+-manually, from the build directory:
++The ``USE_MANUAL`` above avoids what seems an odd error with
++``tool_hugehelp.c`` The build still however fails when trying to make
++``docs/curl.1`` so I fixed that manually for now:
+ 
+ ```bash
+-
+-    cd docs/cmdline-opts
+-    ../../../docs/cmdline-opts/gen.pl mainpage ../../../docs/cmdline-opts/*.d >../curl.1
+-    cd ../..
++    cd $HOME/code/curl/build
++    $HOME/code/curl/docs/cmdline-opts/gen.pl mainpage $HOME/code/ $HOME/code/curl/docs/cmdline-opts/*.d >docs/curl.1
+     make
+     ...
+     [100%] Built target curl
+diff --git a/lib/curl_config.h.cmake b/lib/curl_config.h.cmake
+index 0faa1e0..9a2605c 100644
+--- a/lib/curl_config.h.cmake
++++ b/lib/curl_config.h.cmake
+@@ -689,15 +689,9 @@ ${SIZEOF_TIME_T_CODE}
+ /* Define if you want to enable WIN32 threaded DNS lookup */
+ #cmakedefine USE_THREADS_WIN32 1
+ 
+-/* if ECH support is available */
+-#cmakedefine USE_ECH 1
+-
+ /* if GnuTLS is enabled */
+ #cmakedefine USE_GNUTLS 1
+ 
+-/* Define to 1 to query for HTTPSRR when using DoH */
+-#cmakedefine USE_HTTPSRR 1
+-
+ /* if Secure Transport is enabled */
+ #cmakedefine USE_SECTRANSP 1
+ 
+@@ -818,3 +812,8 @@ ${SIZEOF_TIME_T_CODE}
+ /* Define to 1 to enable TLS-SRP support. */
+ #cmakedefine USE_TLS_SRP 1
+ 
++/* Define to 1 to query for HTTPSRR when using DoH */
++#cmakedefine USE_HTTPSRR 1
++
++/* if ECH support is available */
++#cmakedefine USE_ECH 1

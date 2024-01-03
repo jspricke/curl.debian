@@ -1,0 +1,166 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Mon, 18 Sep 2023 02:29:32 +0100
+Subject: fixed leak (tidied up some in the process)
+
+---
+ lib/doh.c          | 60 +++++++++++++++++++++---------------------------------
+ lib/hostip.c       | 30 +++++++++++++--------------
+ lib/vtls/openssl.c |  1 +
+ 3 files changed, 39 insertions(+), 52 deletions(-)
+
+diff --git a/lib/doh.c b/lib/doh.c
+index b57393b..8032c9f 100644
+--- a/lib/doh.c
++++ b/lib/doh.c
+@@ -450,34 +450,26 @@ struct Curl_addrinfo *Curl_doh(struct Curl_easy *data,
+ #endif
+ 
+ #ifdef USE_HTTPSRR
+-# ifdef USE_ECH
+-  if(data->set.tls_enable_ech
+-     || data->set.tls_enable_ech_hard) {
+-    /* make a request for an HTTPS RR */
++  if(port == 443) {
++    qname = strdup(hostname);
++  }
++  else {
++   /* the 16 is the most we get with a 5-digit port */
++   size_t qnamelen = strlen(hostname) + 16;
+ 
+-    if(port == 443) {
+-      qname = strdup(hostname);
+-    }
+-    else {
+-      /* the 16 is the most we get with a 5-digit port */
+-      size_t qnamelen = strlen(hostname) + 16;
+-
+-      /* TODO: find the proper memory handler */
+-      qname = (char *)malloc(qnamelen);
+-      if(!qname)
+-        goto error;
+-      curl_msnprintf(qname, qnamelen, "_%d._https.%s",
+-                       port, hostname);
+-    }
+-    result = dohprobe(data, &dohp->probe[DOH_PROBE_SLOT_HTTPS],
+-                      DNS_TYPE_HTTPS, qname, data->set.str[STRING_DOH],
+-                      data->multi, dohp->headers);
+-    free(qname);
+-    if(result)
++    qname = (char *)calloc(1, qnamelen);
++    if(!qname)
+       goto error;
+-    dohp->pending++;
++    curl_msnprintf(qname, qnamelen, "_%d._https.%s",
++                     port % 0xffff, hostname);
+   }
+-# endif
++  result = dohprobe(data, &dohp->probe[DOH_PROBE_SLOT_HTTPS],
++                    DNS_TYPE_HTTPS, qname, data->set.str[STRING_DOH],
++                    data->multi, dohp->headers);
++  free(qname);
++  if(result)
++    goto error;
++  dohp->pending++;
+ #endif
+   *waitp = TRUE; /* this never returns synchronously */
+   return NULL;
+@@ -642,7 +634,8 @@ static DOHcode rdata(const unsigned char *doh,
+   /* RDATA
+      - A (TYPE 1):  4 bytes
+      - AAAA (TYPE 28): 16 bytes
+-     - NS (TYPE 2): N bytes */
++     - NS (TYPE 2): N bytes
++     - HTTPS (TYPE 65): N bytes */
+   DOHcode rc;
+ 
+   switch(type) {
+@@ -823,7 +816,11 @@ UNITTEST DOHcode doh_decode(const unsigned char *doh,
+   if(index != dohlen)
+     return DOH_DNS_MALFORMAT; /* something is wrong */
+ 
++#ifdef USE_HTTTPS
++  if((type != DNS_TYPE_NS) && !d->numcname && !d->numaddr && !d->numhttps_rrs)
++#else
+   if((type != DNS_TYPE_NS) && !d->numcname && !d->numaddr)
++#endif
+     /* nothing stored! */
+     return DOH_NO_CONTENT;
+ 
+@@ -1332,16 +1329,6 @@ CURLcode Curl_doh_is_resolved(struct Curl_easy *data,
+     /* Now process any build-specific attributes retrieved from DNS */
+ #ifdef USE_HTTPSRR
+     if(de.numhttps_rrs > 0 && result == CURLE_OK && *dnsp) {
+-      /* TODO: just use first for now */
+-#ifdef OLDWAY
+-      infof(data, "Some HTTPS RRs to process");
+-      (*dnsp)->https_rr_val = calloc(1, de.https_rrs->len);
+-      if(!(*dnsp)->https_rr_val)
+-        return CURLE_OUT_OF_MEMORY;
+-      memcpy((*dnsp)->https_rr_val, de.https_rrs->val,
+-             de.https_rrs->len);
+-      (*dnsp)->https_rr_len = de.https_rrs->len;
+-#else
+       int rv;
+       struct Curl_https_rrinfo *hrr = NULL;
+       rv = Curl_doh_decode_httpsrr(de.https_rrs->val, de.https_rrs->len, &hrr);
+@@ -1352,7 +1339,6 @@ CURLcode Curl_doh_is_resolved(struct Curl_easy *data,
+       infof(data, "Some HTTPS RR to process");
+       local_print_httpsrr(data, hrr);
+       (*dnsp)->hinfo = hrr;
+-#endif
+     }
+ #endif
+ 
+diff --git a/lib/hostip.c b/lib/hostip.c
+index 9337f35..b070d92 100644
+--- a/lib/hostip.c
++++ b/lib/hostip.c
+@@ -1065,21 +1065,21 @@ static void freednsentry(void *freethis)
+   if(dns->inuse == 0) {
+     Curl_freeaddrinfo(dns->addr);
+ #ifdef USE_HTTPSRR
+-  if(dns->hinfo) {
+-    if(dns->hinfo->target)
+-      free(dns->hinfo->target);
+-    if(dns->hinfo->alpns)
+-      free(dns->hinfo->alpns);
+-    if(dns->hinfo->ipv4hints)
+-      free(dns->hinfo->ipv4hints);
+-    if(dns->hinfo->echconfiglist)
+-      free(dns->hinfo->echconfiglist);
+-    if(dns->hinfo->ipv6hints)
+-      free(dns->hinfo->ipv6hints);
+-    if(dns->hinfo->val)
+-      free(dns->hinfo->val);
+-    free(dns->hinfo);
+-  }
++    if(dns->hinfo) {
++      if(dns->hinfo->target)
++        free(dns->hinfo->target);
++      if(dns->hinfo->alpns)
++        free(dns->hinfo->alpns);
++      if(dns->hinfo->ipv4hints)
++        free(dns->hinfo->ipv4hints);
++      if(dns->hinfo->echconfiglist)
++        free(dns->hinfo->echconfiglist);
++      if(dns->hinfo->ipv6hints)
++        free(dns->hinfo->ipv6hints);
++      if(dns->hinfo->val)
++        free(dns->hinfo->val);
++      free(dns->hinfo);
++    }
+ #endif
+     free(dns);
+   }
+diff --git a/lib/vtls/openssl.c b/lib/vtls/openssl.c
+index 5cf4b04..de16dff 100644
+--- a/lib/vtls/openssl.c
++++ b/lib/vtls/openssl.c
+@@ -3848,6 +3848,7 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+           if(data->set.tls_enable_ech_hard)
+             return CURLE_SSL_CONNECT_ERROR;
+         }
++        Curl_resolv_unlock(data, dns);
+       }
+     }
+ 

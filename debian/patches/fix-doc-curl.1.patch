@@ -1,0 +1,51 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Sat, 30 Sep 2023 14:53:02 +0100
+Subject: fix doc curl.1
+
+---
+ docs/cmdline-opts/ech.d | 8 ++++++--
+ src/tool_listhelp.c     | 2 +-
+ 2 files changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/docs/cmdline-opts/ech.d b/docs/cmdline-opts/ech.d
+index 61b3328..552ea58 100644
+--- a/docs/cmdline-opts/ech.d
++++ b/docs/cmdline-opts/ech.d
+@@ -5,18 +5,22 @@ Arg: <name>
+ Help: TLS Encrypted Client Hello (ECH)
+ Added: x.xx.x
+ Category: tls ECH
+-Example: --ech <echoption> $URL
++Example: --ech <config> $URL
+ See-also: echpublic doh-url
+ Multi: single
+ ---
+ Configure Encrypted Client Hello (ECH) for use with the TLS session.
+ 
+-Possible values for <echconfig> are:
++Possible values for <config> are:
+ 
+ - "false": do not attempt ECH
++
+ - "grease": send a GREASE'd ECH extension
++
+ - "true": attempt ECH if possible, but don't fail if not
++
+ - "hard": attempt ECH and fail if that's not possible
++
+ - a base64 encoded ECHConfigList that will be used for ECH
+ 
+ ECH only works with TLS 1.3 and also requires using
+diff --git a/src/tool_listhelp.c b/src/tool_listhelp.c
+index 1c68b8f..d646e45 100644
+--- a/src/tool_listhelp.c
++++ b/src/tool_listhelp.c
+@@ -169,7 +169,7 @@ const struct helptxt helptext[] = {
+    "Write the received headers to <filename>",
+    CURLHELP_HTTP | CURLHELP_FTP},
+ #ifdef USE_ECH
+-  {"    --ech <echconfig>",
++  {"    --ech <config>",
+    "Encrypted Client Hello controls",
+   CURLHELP_TLS},
+   {"    --echpublic <host>",

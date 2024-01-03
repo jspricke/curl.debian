@@ -1,0 +1,70 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Wed, 27 Sep 2023 01:47:07 +0100
+Subject: only do HTTPS RR lookup if ECH enabled and wanted
+
+---
+ include/curl/typecheck-gcc.h |  2 ++
+ lib/doh.c                    | 37 ++++++++++++++++++++++++++-----------
+ 2 files changed, 28 insertions(+), 11 deletions(-)
+
+diff --git a/include/curl/typecheck-gcc.h b/include/curl/typecheck-gcc.h
+index b880f3d..30664c0 100644
+--- a/include/curl/typecheck-gcc.h
++++ b/include/curl/typecheck-gcc.h
+@@ -275,6 +275,8 @@ CURLWARNING(_curl_easy_getinfo_err_curl_off_t,
+    (option) == CURLOPT_DNS_LOCAL_IP6 ||                                       \
+    (option) == CURLOPT_DNS_SERVERS ||                                         \
+    (option) == CURLOPT_DOH_URL ||                                             \
++   (option) == CURLOPT_ECH_CONFIG ||                                          \
++   (option) == CURLOPT_ECH_PUBLIC ||                                          \
+    (option) == CURLOPT_EGDSOCKET ||                                           \
+    (option) == CURLOPT_FTP_ACCOUNT ||                                         \
+    (option) == CURLOPT_FTP_ALTERNATIVE_TO_USER ||                             \
+diff --git a/lib/doh.c b/lib/doh.c
+index 49e4c12..85b7c2d 100644
+--- a/lib/doh.c
++++ b/lib/doh.c
+@@ -450,17 +450,32 @@ struct Curl_addrinfo *Curl_doh(struct Curl_easy *data,
+ #endif
+ 
+ #ifdef USE_HTTPSRR
+-  if(port == 443)
+-    qname = strdup(hostname);
+-  else
+-    qname = aprintf("_%d._https.%s", port, hostname);
+-  result = dohprobe(data, &dohp->probe[DOH_PROBE_SLOT_HTTPS],
+-                    DNS_TYPE_HTTPS, qname, data->set.str[STRING_DOH],
+-                    data->multi, dohp->headers);
+-  free(qname);
+-  if(result)
+-    goto error;
+-  dohp->pending++;
++  /*
++   * TODO: Figure out the conditions under which we want to make
++   * a request for an HTTPS RR when we are not doing ECH. For now,
++   * making this request breaks a bunch of DoH tests, e.g. test2100,
++   * where the addiitonal request doesn't match the pre-cooked data
++   * files, so there's a bit of work attached to making the request
++   * in a non-ECH use-case. For the present, we'll only make the
++   * request when ECH is enabled in the build and is being used for
++   * the curl operation.
++   */
++# ifdef USE_ECH
++  if(data->set.tls_enable_ech
++     || data->set.tls_enable_ech_hard) {
++    if(port == 443)
++      qname = strdup(hostname);
++    else
++      qname = aprintf("_%d._https.%s", port, hostname);
++    result = dohprobe(data, &dohp->probe[DOH_PROBE_SLOT_HTTPS],
++                      DNS_TYPE_HTTPS, qname, data->set.str[STRING_DOH],
++                      data->multi, dohp->headers);
++    free(qname);
++    if(result)
++      goto error;
++    dohp->pending++;
++  }
++# endif
+ #endif
+   *waitp = TRUE; /* this never returns synchronously */
+   return NULL;

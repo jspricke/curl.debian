@@ -1,0 +1,43 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Wed, 11 Oct 2023 18:23:32 +0100
+Subject: fix doc
+
+---
+ docs/ECH.md | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/docs/ECH.md b/docs/ECH.md
+index bde302a..a9bec26 100644
+--- a/docs/ECH.md
++++ b/docs/ECH.md
+@@ -55,7 +55,7 @@ retrieval of HTTPS RRs in that situation. To use ECH and DoH together:
+ 
+ ```bash
+     cd $HOME/code/curl
+-    LD_LIBRARY_PATH=$HOME/code/openssl ./src/curl --ech --doh-url https://1.1.1.1/dns-query https://defo.ie/ech-check.php
++    LD_LIBRARY_PATH=$HOME/code/openssl ./src/curl --ech true --doh-url https://1.1.1.1/dns-query https://defo.ie/ech-check.php
+     ...
+     SSL_ECH_STATUS: success <img src="greentick-small.png" alt="good" /> <br/>
+     ...
+@@ -172,8 +172,8 @@ With all that setup as above the command line gets simpler:
+     ...
+ ```
+ 
+-The ``--ech`` option is opportunistic, so will try to do ECH but won't fail if
+-the client for example can't find any ECHConfig values. The ``--ech-hard``
++The ``--ech true`` option is opportunistic, so will try to do ECH but won't fail if
++the client for example can't find any ECHConfig values. The ``--ech hard``
+ option hard-fails if there is no ECHConfig found in DNS, so for now, that's not
+ a good option to set as a default.
+ 
+@@ -204,8 +204,8 @@ The main functional change, as you'd expect, is in ``lib/vtls/openssl.c``
+ ([here](https://github.com/sftcd/curl/blob/ECH-experimental/lib/vtls/openssl.c#L3768))
+ where an ECHConfig, if available from command line or DNS cache, is fed into
+ the OpenSSL library via the new APIs implemented in our OpenSSL fork for that
+-purpose. This code also implements the opportunistic (``--ech``) or hard-fail
+-(``--ech-hard``) logic.
++purpose. This code also implements the opportunistic (``--ech true``) or hard-fail
++(``--ech hard``) logic.
+ 
+ Other than that, the main additions are in ``lib/doh.c``
+ ([here](https://github.com/sftcd/curl/blob/ECH-experimental/lib/doh.c#L418))

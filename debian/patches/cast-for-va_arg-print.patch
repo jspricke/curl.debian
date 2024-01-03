@@ -1,0 +1,24 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Mon, 2 Oct 2023 01:22:56 +0100
+Subject: cast for va_arg print
+
+---
+ lib/doh.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/lib/doh.c b/lib/doh.c
+index 4edc17a..bf53e54 100644
+--- a/lib/doh.c
++++ b/lib/doh.c
+@@ -203,9 +203,9 @@ static void local_print_buf(struct Curl_easy *data,
+     truncated = true;
+   Curl_hexencode(buf, len, hexstr, hlen);
+   if(!truncated)
+-    infof(data, "%s: len=%d, val=%s", prefix, len, hexstr);
++    infof(data, "%s: len=%d, val=%s", prefix, (int)len, hexstr);
+   else
+-    infof(data, "%s: len=%d (truncated)val=%s", prefix, len, hexstr);
++    infof(data, "%s: len=%d (truncated)val=%s", prefix, (int)len, hexstr);
+   return;
+ }
+ #endif

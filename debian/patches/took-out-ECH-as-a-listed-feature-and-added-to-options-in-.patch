@@ -1,0 +1,76 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Tue, 26 Sep 2023 13:50:55 +0100
+Subject: took out ECH as a listed "feature" and added to options-in-versions
+ and symbols-in-versions
+
+---
+ docs/libcurl/symbols-in-versions | 5 +++++
+ docs/options-in-versions         | 4 ++++
+ include/curl/curl.h              | 1 -
+ lib/version.c                    | 3 ---
+ 4 files changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/docs/libcurl/symbols-in-versions b/docs/libcurl/symbols-in-versions
+index dc0e062..02f871e 100644
+--- a/docs/libcurl/symbols-in-versions
++++ b/docs/libcurl/symbols-in-versions
+@@ -339,6 +339,8 @@ CURLE_URL_MALFORMAT_USER        7.1           7.17.0
+ CURLE_USE_SSL_FAILED            7.17.0
+ CURLE_WEIRD_SERVER_REPLY        7.51.0
+ CURLE_WRITE_ERROR               7.1
++CURLECH_ENABLE                  8.4.0-DEV
++CURLECH_HARD                    8.4.0-DEV
+ CURLFILETYPE_DEVICE_BLOCK       7.21.0
+ CURLFILETYPE_DEVICE_CHAR        7.21.0
+ CURLFILETYPE_DIRECTORY          7.21.0
+@@ -614,6 +616,9 @@ CURLOPT_DOH_SSL_VERIFYHOST      7.76.0
+ CURLOPT_DOH_SSL_VERIFYPEER      7.76.0
+ CURLOPT_DOH_SSL_VERIFYSTATUS    7.76.0
+ CURLOPT_DOH_URL                 7.62.0
++CURLOPT_ECH_CONFIG              8.4.0-DEV
++CURLOPT_ECH_PUBLIC              8.4.0-DEV
++CURLOPT_ECH_STATUS              8.4.0-DEV
+ CURLOPT_EGDSOCKET               7.7           7.84.0
+ CURLOPT_ENCODING                7.10          7.21.6
+ CURLOPT_ERRORBUFFER             7.1
+diff --git a/docs/options-in-versions b/docs/options-in-versions
+index 0905809..2be5464 100644
+--- a/docs/options-in-versions
++++ b/docs/options-in-versions
+@@ -55,6 +55,10 @@
+ --doh-insecure                       7.76.0
+ --doh-url                            7.62.0
+ --dump-header (-D)                   5.7
++--ech                                8.4.0-DEV
++--ech-hard                           8.4.0-DEV
++--echconfig                          8.4.0-DEV
++--echpublic                          8.4.0-DEV
+ --egd-file                           7.7
+ --engine                             7.9.3
+ --etag-compare                       7.68.0
+diff --git a/include/curl/curl.h b/include/curl/curl.h
+index c51814e..c604636 100644
+--- a/include/curl/curl.h
++++ b/include/curl/curl.h
+@@ -3159,7 +3159,6 @@ typedef struct curl_version_info_data curl_version_info_data;
+ #define CURL_VERSION_HSTS         (1<<28) /* HSTS is supported */
+ #define CURL_VERSION_GSASL        (1<<29) /* libgsasl is supported */
+ #define CURL_VERSION_THREADSAFE   (1<<30) /* libcurl API is thread-safe */
+-#define CURL_VERSION_ECH          (1<<31) /* ECH support */
+ 
+ /*
+  * NAME curl_version_info()
+diff --git a/lib/version.c b/lib/version.c
+index ebbdf5c..f957f08 100644
+--- a/lib/version.c
++++ b/lib/version.c
+@@ -452,9 +452,6 @@ static const struct feat features_table[] = {
+ #ifdef HAVE_GSSAPI
+   FEATURE("GSS-API",     NULL,                CURL_VERSION_GSSAPI),
+ #endif
+-#ifndef CURL_DISABLE_ECH
+-  FEATURE("ECH",         NULL,                CURL_VERSION_ECH),
+-#endif
+ #ifndef CURL_DISABLE_HSTS
+   FEATURE("HSTS",        NULL,                CURL_VERSION_HSTS),
+ #endif

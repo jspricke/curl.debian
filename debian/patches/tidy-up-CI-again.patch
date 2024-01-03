@@ -1,0 +1,141 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Sat, 30 Sep 2023 14:15:32 +0100
+Subject: tidy up CI again
+
+---
+ docs/ECH.md                            |  2 +-
+ docs/libcurl/opts/CURLOPT_ECH.3        | 21 ++++++---------------
+ docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3 |  6 +++---
+ docs/libcurl/opts/Makefile.inc         |  3 +--
+ docs/libcurl/symbols-in-versions       |  5 +----
+ packages/OS400/ccsidcurl.c             |  2 +-
+ 6 files changed, 13 insertions(+), 26 deletions(-)
+
+diff --git a/docs/ECH.md b/docs/ECH.md
+index 302a10c..f172204 100644
+--- a/docs/ECH.md
++++ b/docs/ECH.md
+@@ -82,7 +82,7 @@ We currently support the following new curl command line arguments/options:
+ - ``--ech <config>`` - the ``config`` value can be one of:
+     - ``false`` says to not attempt ECH
+     - ``true`` says to attempt ECH, if possible
+-    - ``grease`` if attempting ECH is not possible, then send a GREASE'd ECH extension
++    - ``grease`` if attempting ECH is not possible, then send a GREASE ECH extension
+     - ``hard`` hard-fail the connection if ECH cannot be attempted
+     - a base64 encoded ECHConfigList, rather than one accessed from the DNS
+ - ``--echpublic`` over-ride the ``public_name`` from an ECHConfigList 
+diff --git a/docs/libcurl/opts/CURLOPT_ECH.3 b/docs/libcurl/opts/CURLOPT_ECH.3
+index 27c0822..8ece30c 100644
+--- a/docs/libcurl/opts/CURLOPT_ECH.3
++++ b/docs/libcurl/opts/CURLOPT_ECH.3
+@@ -32,27 +32,18 @@ CURLOPT_ECH \- control configuration for Encrypted Client Hello
+ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_ECH, char *config);
+ .fi
+ .SH DESCRIPTION
+-Pass a string that holds either a configuration keyword or a base64
+-encoded ECHConfigList.
+-
+-The keywords supported are:
+-
++Pass a string that holds either a configuration keyword or a base64 encoded
++ECHConfigList.  Otherwise, the config value will be interpreted as a base64
++encoded ECHConfigList as shown in the example below.  In all cases, if ECH is
++attempted, it may fail for various reasons.  The keywords supported are:
+ .IP false
+ Turns off ECH.
+ .IP grease
+ Instructs client to emit a GREASE'd ECH extension.
+ .IP true
+-Instructs client to attempt ECH, if possible, but to not fail
+-if attempting ECH is not possible.
++Instructs client to attempt ECH, if possible, but to not fail if attempting ECH is not possible.
+ .IP hard
+-Instructs client to attempt ECH and fail if if attempting ECH
+-is not possible.
+-
+-Otherwise, the config value will be interpreted as a base64 
+-encoded ECHConfigList as shown in the example below.
+-
+-In all cases, if ECH is attempted, it may fail for various reasons.
+-
++Instructs client to attempt ECH and fail if if attempting ECH is not possible.
+ .SH DEFAULT
+ There is no default value, meaning ECH is disabled if no
+ configuration is supplied.
+diff --git a/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3 b/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
+index dbf6485..4b57438 100644
+--- a/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
++++ b/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
+@@ -24,12 +24,12 @@
+ .\"
+ .TH CURLOPT_ECH_PUBLIC 3 "26 Sep 2023" libcurl libcurl
+ .SH NAME
+-CURLOPT_ECH_STATUS \- override an ECH public_name
++CURLOPT_ECH_PUBLIC \- override an ECH public_name
+ .SH SYNOPSIS
+ .nf
+ #include <curl/curl.h>
+ 
+-CURLcode curl_easy_setopt(CURL *handle, CURLOPT_ECH_CONFIG, char *public_name);
++CURLcode curl_easy_setopt(CURL *handle, CURLOPT_ECH_PUBLIC, char *public_name);
+ .fi
+ .SH DESCRIPTION
+ Pass a string that provides an public_name.
+@@ -58,4 +58,4 @@ Added in 8.4.0
+ Returns CURLE_OK on success or CURLE_OUT_OF_MEMORY if there was insufficient
+ heap space.
+ .SH "SEE ALSO"
+-.BR CURLOPT_ECH_STATUS (3)
++.BR CURLOPT_ECH (3)
+diff --git a/docs/libcurl/opts/Makefile.inc b/docs/libcurl/opts/Makefile.inc
+index d210b94..10ea4af 100644
+--- a/docs/libcurl/opts/Makefile.inc
++++ b/docs/libcurl/opts/Makefile.inc
+@@ -164,9 +164,8 @@ man_MANS =                                      \
+   CURLOPT_DOH_SSL_VERIFYPEER.3                  \
+   CURLOPT_DOH_SSL_VERIFYSTATUS.3                \
+   CURLOPT_DOH_URL.3                             \
+-  CURLOPT_ECH_CONFIG.3                          \
++  CURLOPT_ECH.3                                 \
+   CURLOPT_ECH_PUBLIC.3                          \
+-  CURLOPT_ECH_STATUS.3                          \
+   CURLOPT_EGDSOCKET.3                           \
+   CURLOPT_ERRORBUFFER.3                         \
+   CURLOPT_EXPECT_100_TIMEOUT_MS.3               \
+diff --git a/docs/libcurl/symbols-in-versions b/docs/libcurl/symbols-in-versions
+index 8fc3700..ebebbf9 100644
+--- a/docs/libcurl/symbols-in-versions
++++ b/docs/libcurl/symbols-in-versions
+@@ -339,8 +339,6 @@ CURLE_URL_MALFORMAT_USER        7.1           7.17.0
+ CURLE_USE_SSL_FAILED            7.17.0
+ CURLE_WEIRD_SERVER_REPLY        7.51.0
+ CURLE_WRITE_ERROR               7.1
+-CURLECH_ENABLE                  8.4.0
+-CURLECH_HARD                    8.4.0
+ CURLFILETYPE_DEVICE_BLOCK       7.21.0
+ CURLFILETYPE_DEVICE_CHAR        7.21.0
+ CURLFILETYPE_DIRECTORY          7.21.0
+@@ -616,9 +614,8 @@ CURLOPT_DOH_SSL_VERIFYHOST      7.76.0
+ CURLOPT_DOH_SSL_VERIFYPEER      7.76.0
+ CURLOPT_DOH_SSL_VERIFYSTATUS    7.76.0
+ CURLOPT_DOH_URL                 7.62.0
+-CURLOPT_ECH_CONFIG              8.4.0
++CURLOPT_ECH                     8.4.0
+ CURLOPT_ECH_PUBLIC              8.4.0
+-CURLOPT_ECH_STATUS              8.4.0
+ CURLOPT_EGDSOCKET               7.7           7.84.0
+ CURLOPT_ENCODING                7.10          7.21.6
+ CURLOPT_ERRORBUFFER             7.1
+diff --git a/packages/OS400/ccsidcurl.c b/packages/OS400/ccsidcurl.c
+index eb48886..04e6493 100644
+--- a/packages/OS400/ccsidcurl.c
++++ b/packages/OS400/ccsidcurl.c
+@@ -1098,7 +1098,7 @@ curl_easy_setopt_ccsid(CURL *easy, CURLoption tag, ...)
+   case CURLOPT_DNS_SERVERS:
+   case CURLOPT_DOH_URL:
+ #ifdef USE_ECH
+-  case CURLOPT_ECH_CONFIG:
++  case CURLOPT_ECH:
+   case CURLOPT_ECH_PUBLIC:
+ #endif
+   case CURLOPT_EGDSOCKET:

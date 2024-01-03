@@ -1,0 +1,303 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Sat, 23 Sep 2023 02:20:08 +0100
+Subject: added a couple more positive tests
+
+---
+ docs/ECH.md        | 17 ++++++++++---
+ lib/vtls/openssl.c | 15 ++++++++----
+ lib/vtls/wolfssl.c | 10 +++++---
+ tests/ech_tests.sh | 71 ++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 4 files changed, 99 insertions(+), 14 deletions(-)
+
+diff --git a/docs/ECH.md b/docs/ECH.md
+index 587d033..bbd9ca9 100644
+--- a/docs/ECH.md
++++ b/docs/ECH.md
+@@ -203,13 +203,12 @@ the relevant HTTPS RR value data in the ``Curl_dns_entry`` structure.
+ That is later accessed when the TLS session is being established, if ECH is
+ enabled (from ``lib/vtls/openssl.c`` as described above).
+ 
+-A couple of things that need fixing, but that can probably be ignored for the
++Things that need fixing, but that can probably be ignored for the
+ moment:
+ 
+ - We could easily add code to make use of an ``alpn=`` value found in an HTTPS
+   RR, passing that on to OpenSSL for use as the "inner" ALPN value, but have
+ yet to do that.
+-- Still need to properly free ``Curl_https_rrinfo`` structures in all cases.
+ 
+ Current limitations (more interesting than the above):
+ 
+@@ -236,6 +235,12 @@ recently.)
+   for applications using libcurl, as opposed to use of curl as a command line
+ tool.
+ 
++- We have not yet implemented tests as part of the usual curl test harness.
++  For now, we only have an [``ech_tests.sh``](./tests/ech_test.sh) script that
++attempts ECH with various test servers. While that is a useful test and does
++find issues (e.g. with the wolfSSL build), it's nowhere near comphrensive and
++we're not (as yet) sure what'd be the right level of coverage.
++
+ ## WolfSSL build
+ 
+ Mailing list discussion indicates that WolfSSL also supports ECH and can be
+@@ -284,7 +289,7 @@ To run against a localhost ``s_server`` for testing:
+ In another window:
+ 
+             $ cd $HOME/code/curl-wo/
+-            $ $ ./src/curl -vvv --insecure  --connect-to foo.example.com:8443:localhost:8443  https://foo.example.com:8443 --echconfig AD7+DQA6uwAgACBix2B78sX+EQhEbxMspDOc8Z3xVS5aQpYP0Cxpc2AWPAAEAAEAAQALZXhhbXBsZS5jb20AAA==
++            $ ./src/curl -vvv --insecure  --connect-to foo.example.com:8443:localhost:8443  https://foo.example.com:8443 --echconfig AD7+DQA6uwAgACBix2B78sX+EQhEbxMspDOc8Z3xVS5aQpYP0Cxpc2AWPAAEAAEAAQALZXhhbXBsZS5jb20AAA==
+ 
+ ### Changes to support WolfSSL
+ 
+@@ -304,6 +309,10 @@ Then there are some functional code changes:
+ - added code to ``lib/vtls/wolfssl.c`` mirroring what's done in the
+   OpenSSL equivalent above.
+ 
++There's also a current
++[bug/issue](https://github.com/wolfSSL/wolfssl/issues/6802) that wolfSSL's
++client support for ECH seems to not correctly support HelloRetryRequest.
++
+ ## Supporting ECH without DoH
+ 
+ All of the above only applies if DoH is being used.  There should be a use-case
+@@ -340,7 +349,7 @@ As of now we have not:
+ - added support for GREASEing ECH - our fork of the OpenSSL library has APIs
+   for that, but, on the basis that any benefits from GREASE will be realised
+   if much more commonly used clients (i.e. browsers) GREASE, it seems fine
+-  that curl not bother adding that
++  that curl not bother adding support for GREASEing ECH for now
+ - added support for ``retry_config`` handling in the application - for a
+   command line tool, one can just use ``dig`` (or ``kdig``) to get the HTTPS
+   RR and pass the ECHConfigList from that on the command line, if needed
+diff --git a/lib/vtls/openssl.c b/lib/vtls/openssl.c
+index 5dde913..e02d5f7 100644
+--- a/lib/vtls/openssl.c
++++ b/lib/vtls/openssl.c
+@@ -3803,7 +3803,7 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+     unsigned char *ech_config = NULL;
+     size_t ech_config_len = 0;
+     char *outername = data->set.str[STRING_ECH_PUBLIC];
+-    int rv;
++    int rv, trying_ech_now = 0;
+ 
+     ech_config = (unsigned char *) data->set.str[STRING_ECH_CONFIG];
+     if(ech_config) {
+@@ -3815,13 +3815,15 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+         if(data->set.tls_enable_ech_hard)
+           return CURLE_SSL_CONNECT_ERROR;
+       }
++      else
++        trying_ech_now = 1;
+     }
+     else {
+       struct Curl_dns_entry *dns = NULL;
+ 
+       dns = Curl_fetch_addr(data, connssl->hostname, connssl->port);
+       if(!dns) {
+-        infof(data, "ECH: requested but no ECHConfig available (1)");
++        infof(data, "ECH: requested but no DNS info available");
+         if(data->set.tls_enable_ech_hard)
+           return CURLE_SSL_CONNECT_ERROR;
+       }
+@@ -3840,11 +3842,12 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+               return CURLE_SSL_CONNECT_ERROR;
+           }
+           else {
++            trying_ech_now = 1;
+             infof(data, "ECH: imported ECHConfigList of length %ld", elen);
+           }
+         }
+         else {
+-          infof(data, "ECH: requested but no ECHConfig available (2)");
++          infof(data, "ECH: requested but no ECHConfig available");
+           if(data->set.tls_enable_ech_hard)
+             return CURLE_SSL_CONNECT_ERROR;
+         }
+@@ -3852,7 +3855,7 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+       }
+     }
+ 
+-    if(outername) {
++    if(trying_ech_now && outername) {
+       infof(data, "ECH: inner: '%s', outer: '%s'",
+             hostname, outername);
+       rv = SSL_ech_set_server_names(backend->handle,
+@@ -3866,10 +3869,12 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+         return CURLE_SSL_CONNECT_ERROR;
+       }
+     }
+-    if(SSL_set_min_proto_version(backend->handle, TLS1_3_VERSION) != 1) {
++    if(trying_ech_now
++       && SSL_set_min_proto_version(backend->handle, TLS1_3_VERSION) != 1) {
+       infof(data, "ECH: Can't force TLSv1.3 [ERROR]");
+       return CURLE_SSL_CONNECT_ERROR;
+     }
++
+   }
+ #endif  /* USE_ECH */
+ 
+diff --git a/lib/vtls/wolfssl.c b/lib/vtls/wolfssl.c
+index c888c29..9985134 100644
+--- a/lib/vtls/wolfssl.c
++++ b/lib/vtls/wolfssl.c
+@@ -712,6 +712,7 @@ wolfssl_connect_step1(struct Curl_cfilter *cf, struct Curl_easy *data)
+ #ifdef USE_ECH
+   if(data->set.tls_enable_ech
+      || data->set.tls_enable_ech_hard) {
++    int trying_ech_now = 0;
+ 
+     if(data->set.str[STRING_ECH_PUBLIC]) {
+       infof(data, "ECH: outername not (yet) supported with WolfSSL");
+@@ -731,6 +732,7 @@ wolfssl_connect_step1(struct Curl_cfilter *cf, struct Curl_easy *data)
+           return CURLE_SSL_CONNECT_ERROR;
+       }
+       else {
++       trying_ech_now = 1;
+        infof(data, "ECH: ECHConfig set from command line: %s", b64val);
+       }
+     }
+@@ -739,7 +741,7 @@ wolfssl_connect_step1(struct Curl_cfilter *cf, struct Curl_easy *data)
+ 
+       dns = Curl_fetch_addr(data, connssl->hostname, connssl->port);
+       if(!dns) {
+-        infof(data, "ECH: requested but no ECHConfig available (1)");
++        infof(data, "ECH: requested but no DNS info available");
+         if(data->set.tls_enable_ech_hard)
+           return CURLE_SSL_CONNECT_ERROR;
+       }
+@@ -759,11 +761,12 @@ wolfssl_connect_step1(struct Curl_cfilter *cf, struct Curl_easy *data)
+               return CURLE_SSL_CONNECT_ERROR;
+           }
+           else {
++            trying_ech_now = 1;
+             infof(data, "ECH: imported ECHConfigList of length %ld", elen);
+           }
+         }
+         else {
+-          infof(data, "ECH: requested but no ECHConfig available (2)");
++          infof(data, "ECH: requested but no ECHConfig available");
+           if(data->set.tls_enable_ech_hard)
+             return CURLE_SSL_CONNECT_ERROR;
+         }
+@@ -771,7 +774,8 @@ wolfssl_connect_step1(struct Curl_cfilter *cf, struct Curl_easy *data)
+       }
+     }
+ 
+-    if(SSL_set_min_proto_version(backend->handle, TLS1_3_VERSION) != 1) {
++    if(trying_ech_now
++       && SSL_set_min_proto_version(backend->handle, TLS1_3_VERSION) != 1) {
+       infof(data, "ECH: Can't force TLSv1.3 [ERROR]");
+       return CURLE_SSL_CONNECT_ERROR;
+     }
+diff --git a/tests/ech_tests.sh b/tests/ech_tests.sh
+index 8dd640b..52f99ad 100755
+--- a/tests/ech_tests.sh
++++ b/tests/ech_tests.sh
+@@ -36,6 +36,7 @@ declare -A ech_targets=(
+ # but for which an HTTPS RR is published.
+ # TODO: add a test for these
+ declare -A httpsrr_targets=(
++    [ietf.org]=""
+     [rte.ie]=""
+ )
+ 
+@@ -44,6 +45,7 @@ declare -A httpsrr_targets=(
+ # TODO: add a test for these
+ declare -A neither_targets=(
+     [tcd.ie]=""
++    [jell.ie]=""
+ )
+ 
+ #
+@@ -231,6 +233,7 @@ then
+ fi
+ 
+ allgood="yes"
++
+ for targ in "${!ech_targets[@]}"
+ do
+     host=$(hostport2host $targ)
+@@ -242,9 +245,9 @@ do
+     fi
+     path=${ech_targets[$targ]}
+     turl="https://$host:$port/$path"
+-    echo "Basic check for $turl"
++    echo "ECH check for $turl"
+     echo "" >>$logfile
+-    echo "Basic check for $turl" >>$logfile
++    echo "ECH check for $turl" >>$logfile
+     timeout $tout $CURL -vvv --ech-hard $turl >>$logfile 2>&1
+     eres=$?
+     if [[ "$eres" == "124" ]] 
+@@ -263,6 +266,70 @@ do
+     echo "" >>$logfile
+ done
+ 
++for targ in "${!httpsrr_targets[@]}"
++do
++    host=$(hostport2host $targ)
++    port=$(hostport2port $targ)
++    if [[ "$port" != "443" && "$have_portsblocked" == "yes" ]]
++    then
++        echo "Skipping $targ as ports != 443 seem blocked"
++        continue
++    fi
++    path=${httpsrr_targets[$targ]}
++    turl="https://$host:$port/$path"
++    echo "HTTPS RR but no ECHConfig check for $turl"
++    echo "" >>$logfile
++    echo "HTTPS RR but no ECHConfig check for $turl" >>$logfile
++    timeout $tout $CURL -vvv --ech $turl >>$logfile 2>&1
++    eres=$?
++    if [[ "$eres" == "124" ]] 
++    then
++        allgood="no"
++        echo "Timeout for $turl" >>$logfile
++        echo -e "\tTimeout for $turl" >>$logfile
++        echo "Timeout running curl for $host:$port/$path" >>$logfile
++    fi
++    if [[ "$eres" != "0" ]] 
++    then
++        allgood="no"
++        echo "Error ($eres) for $turl" >>$logfile
++        echo -e "\tError ($eres) for $turl"
++    fi
++    echo "" >>$logfile
++done
++
++for targ in "${!neither_targets[@]}"
++do
++    host=$(hostport2host $targ)
++    port=$(hostport2port $targ)
++    if [[ "$port" != "443" && "$have_portsblocked" == "yes" ]]
++    then
++        echo "Skipping $targ as ports != 443 seem blocked"
++        continue
++    fi
++    path=${neither_targets[$targ]}
++    turl="https://$host:$port/$path"
++    echo "Neither HTTPS nor ECHConfig check for $turl"
++    echo "" >>$logfile
++    echo "Neither HTTPS nor ECHConfig check for $turl" >>$logfile
++    timeout $tout $CURL -vvv --ech $turl >>$logfile 2>&1
++    eres=$?
++    if [[ "$eres" == "124" ]] 
++    then
++        allgood="no"
++        echo "Timeout for $turl" >>$logfile
++        echo -e "\tTimeout for $turl" >>$logfile
++        echo "Timeout running curl for $host:$port/$path" >>$logfile
++    fi
++    if [[ "$eres" != "0" ]] 
++    then
++        allgood="no"
++        echo "Error ($eres) for $turl" >>$logfile
++        echo -e "\tError ($eres) for $turl"
++    fi
++    echo "" >>$logfile
++done
++
+ END=$(whenisitagain)
+ echo "Finished $0 at $END"  >>$logfile
+ echo "-----" >>$logfile

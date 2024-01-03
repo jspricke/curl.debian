@@ -1,0 +1,108 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Wed, 20 Sep 2023 02:29:41 +0100
+Subject: typos
+
+---
+ docs/ECH.md | 30 ++++++++++++++++--------------
+ 1 file changed, 16 insertions(+), 14 deletions(-)
+
+diff --git a/docs/ECH.md b/docs/ECH.md
+index d26b8d0..587d033 100644
+--- a/docs/ECH.md
++++ b/docs/ECH.md
+@@ -3,7 +3,7 @@
+ 
+ We've added support for ECH to a recent curl build. That can use HTTPS RRs
+ published in the DNS, if curl is using DoH, or else can accept the relevant
+-ECHConfig values from the command line. That works with either OpenSSL or
++ECHConfigList values from the command line. That works with either OpenSSL or
+ WolfSSL as it's TLS provider, depending on how you build curl.
+ 
+ This has not been tested. DO NOT USE!
+@@ -72,7 +72,7 @@ We currently support the following new curl comand line arguments/options:
+   ECH if we don't find a relevant ECHConfigList
+ - ``--ech-hard``: tells client to attempt ECH as above or fail if making the
+   attempt is not possible
+-- ``--echconfig``: supplies an ECHConfig from command line that will be used in
++- ``--echconfig``: supplies an ECHConfigList from command line that will be used in
+   preference to a value found in the answer to a DNS query for an HTTPS RR
+ - ``--echpublic``: over-rides the ``public_name`` from the ECHConfig with a
+   name from the command line
+@@ -82,15 +82,15 @@ ClientHello with a "real" ECH extension, but that does not mean that the
+ relevant server will succeed in decrypting, as things can fail for other
+ reasons.
+ 
+-## Supplying an ECHConfig on the command line
++## Supplying an ECHConfigList on the command line
+ 
+-To supply the ECHConfig on the command line, you might need a bit of
++To supply the ECHConfigList on the command line, you might need a bit of
+ cut'n'paste, e.g.:
+ 
+             $ dig +short https defo.ie
+             1 . ipv4hint=213.108.108.101 ech=AED+DQA8PAAgACD8WhlS7VwEt5bf3lekhHvXrQBGDrZh03n/LsNtAodbUAAEAAEAAQANY292ZXIuZGVmby5pZQAA ipv6hint=2a00:c6c0:0:116:5::10
+ 
+-Then paste the base64 encoded ECHConfig onto the curl command line:
++Then paste the base64 encoded ECHConfigList onto the curl command line:
+ 
+             $ LD_LIBRARY_PATH=$HOME/code/openssl ./src/curl --ech --echconfig AED+DQA8PAAgACD8WhlS7VwEt5bf3lekhHvXrQBGDrZh03n/LsNtAodbUAAEAAEAAQANY292ZXIuZGVmby5pZQAA https://defo.ie/ech-check.php
+             ...
+@@ -99,7 +99,7 @@ Then paste the base64 encoded ECHConfig onto the curl command line:
+ 
+ The output snippet above is within the HTML for the web page.
+ 
+-If you paste in the wrong ECHConfig (it changes hourly for ``defo.ie``) you'll
++If you paste in the wrong ECHConfigList (it changes hourly for ``defo.ie``) you'll
+ get an error like this:
+ 
+             $ LD_LIBRARY_PATH=$HOME/code/openssl ./src/curl -vvv --ech --echconfig AED+DQA8yAAgACDRMQo+qYNsNRNj+vfuQfFIkrrUFmM4vogucxKj/4nzYgAEAAEAAQANY292ZXIuZGVmby5pZQAA https://defo.ie/ech-check.php
+@@ -108,7 +108,7 @@ get an error like this:
+             ...
+ 
+ There is a reason to keep this command line option - for use before publishing
+-the ECHConfig in the DNS (e.g. see
++the ECHConfigList in the DNS (e.g. see
+ [draft-ietf-tls-wkech](https://datatracker.ietf.org/doc/draft-ietf-tls-wkech/)).
+ 
+ ## Default settings
+@@ -183,7 +183,7 @@ The main functional change, as you'd expect, is in ``lib/vtls/openssl.c``
+ where an ECHConfig, if available from command line or DNS cache, is fed into
+ the OpenSSL library via the new APIs implemented in our OpenSSL fork for that
+ purpose.  This code also implements the opportunistic (``--ech``) or hard-fail
+-(``--ech-hard``) logic. (There's about 100 new LOC involved there.)
++(``--ech-hard``) logic.
+ 
+ Other than that, the main additions are in ``lib/doh.c``
+ ([here](https://github.com/sftcd/curl/blob/ECH-experimental/lib/doh.c#L418))
+@@ -254,9 +254,11 @@ and we seem to need that for the curl configure command to work out.  The
+ ``--enable-opensslextra`` turns out (after much faffing about;-) to be
+ important or else we get build problems with curl below.
+ 
+-Probably, a basic WolfSSL install would work fine but we made a fork just in
+-case we wanted to change something, e.g. see [this
+-issue](https://github.com/wolfSSL/wolfssl/issues/6774).
++Probably, a basic WolfSSL install would work but we made a fork in
++case we wanted to change something, e.g. see
++[this issue](https://github.com/wolfSSL/wolfssl/issues/6774) or
++[this bug](https://github.com/wolfSSL/wolfssl/issues/6791) - the latter
++does currently require a change.
+ 
+ Let's use that to build curl...
+ 
+@@ -336,13 +338,13 @@ this for now.
+ As of now we have not:
+ 
+ - added support for GREASEing ECH - our fork of the OpenSSL library has APIs
+-  for that, but, on the basis that any beefits from GREASE will be realised
++  for that, but, on the basis that any benefits from GREASE will be realised
+   if much more commonly used clients (i.e. browsers) GREASE, it seems fine
+   that curl not bother adding that
+ - added support for ``retry_config`` handling in the application - for a
+   command line tool, one can just use ``dig`` (or ``kdig``) to get the HTTPS
+-  RR and pass that on the command line, if needed
++  RR and pass the ECHConfigList from that on the command line, if needed
+ 
+-Also, though our OpenSSL fork has APIs for both GREASE nor ``retry_configs``,
++Also, though our OpenSSL fork has APIs for both GREASE and ``retry_configs``,
+ it seems WolfSSL has neither.
+ 

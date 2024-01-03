@@ -1,0 +1,165 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Thu, 7 Sep 2023 16:39:38 +0100
+Subject: code tweaks for clean compile; doesn't work correctly as of now
+
+---
+ include/curl/curl.h |  6 +++---
+ lib/ech.c           |  9 ++++-----
+ lib/version.c       |  4 ++--
+ lib/vtls/openssl.c  | 47 +++++++++++++++++++++++++----------------------
+ 4 files changed, 34 insertions(+), 32 deletions(-)
+
+diff --git a/include/curl/curl.h b/include/curl/curl.h
+index d214b9a..ce4704c 100644
+--- a/include/curl/curl.h
++++ b/include/curl/curl.h
+@@ -3067,7 +3067,7 @@ struct curl_version_info_data {
+   const char *version;      /* LIBCURL_VERSION */
+   unsigned int version_num; /* LIBCURL_VERSION_NUM */
+   const char *host;         /* OS/host/cpu/machine when configured */
+-  int features;             /* bitmask, see defines below */
++  long features;             /* bitmask, see defines below */
+   const char *ssl_version;  /* human readable string */
+   long ssl_version_num;     /* not used anymore, always 0 */
+   const char *libz_version; /* human readable string */
+@@ -3159,9 +3159,9 @@ typedef struct curl_version_info_data curl_version_info_data;
+ #define CURL_VERSION_HSTS         (1<<28) /* HSTS is supported */
+ #define CURL_VERSION_GSASL        (1<<29) /* libgsasl is supported */
+ #define CURL_VERSION_THREADSAFE   (1<<30) /* libcurl API is thread-safe */
+-#define CURL_VERSION_ECH          (1<<31) /* ECH support */
++#define CURL_VERSION_ECH          ((long)1<<31) /* ECH support */
+ 
+- /*
++/*
+  * NAME curl_version_info()
+  *
+  * DESCRIPTION
+diff --git a/lib/ech.c b/lib/ech.c
+index 3eab416..341b5bf 100644
+--- a/lib/ech.c
++++ b/lib/ech.c
+@@ -65,16 +65,15 @@ bool Curl_ech_ready(struct Curl_easy *data)
+   if(data->set.tls_enable_ech) {
+     /* ECH enabled: look for what will be needed */
+     if(!data->set.str[STRING_ECH_CONFIG]) {
+-      infof(data, "WARNING: missing value for STRING_ECH_CONFIG\n");
++      infof(data, "WARNING: missing value for STRING_ECH_CONFIG");
+       ready = FALSE;
+     }
+     else {
+-      infof(data, "ECH: found STRING_ECH_CONFIG:\n");
+-      infof(data, " %s\n", data->set.str[STRING_ECH_CONFIG]);
++      infof(data, "ECH: ECHConfig %s", data->set.str[STRING_ECH_CONFIG]);
+       if(data->set.str[STRING_ECH_PUBLIC]) {
+         /* Optional STRING_ECH_PUBLIC: report if set */
+-        infof(data, "ECH: found STRING_ECH_PUBLIC:\n");
+-        infof(data, " %s\n", data->set.str[STRING_ECH_PUBLIC]);
++        infof(data, "ECH: CLI public-name :  %s",
++              data->set.str[STRING_ECH_PUBLIC]);
+       }
+     }
+ 
+diff --git a/lib/version.c b/lib/version.c
+index 11e25c5..cd73724 100644
+--- a/lib/version.c
++++ b/lib/version.c
+@@ -430,7 +430,7 @@ static int https_proxy_present(curl_version_info_data *info)
+ struct feat {
+   const char *name;
+   int        (*present)(curl_version_info_data *info);
+-  int        bitmask;
++  long       bitmask;
+ };
+ 
+ static const struct feat features_table[] = {
+@@ -572,7 +572,7 @@ curl_version_info_data *curl_version_info(CURLversion stamp)
+ {
+   size_t n;
+   const struct feat *p;
+-  int features = 0;
++  long features = 0;
+ 
+ #if defined(USE_SSH)
+   static char ssh_buffer[80];
+diff --git a/lib/vtls/openssl.c b/lib/vtls/openssl.c
+index 7b51461..01cdf04 100644
+--- a/lib/vtls/openssl.c
++++ b/lib/vtls/openssl.c
+@@ -3814,52 +3814,55 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+       return CURLE_SSL_CONNECT_ERROR;
+ 
+     if(outername)
+-      infof(data,
+-            "ECH: will use hostname '%s' as ECH inner name\n"
+-            "  ECH: will use string '%s' as ECH outer name\n",
+-            hostname,
+-            outername);
++      infof(data, "ECH: inner: '%s', outer: '%s'",
++            hostname, outername);
+     else
+-      infof(data,
+-            "ECH: will use hostname '%s' as ECH inner name\n"
+-            "       and configured ECH.public_name as ECH outer name\n",
+-            hostname);
++      infof(data, "ECH: inner: '%s', outer: NONE",
++            hostname, outername);
+     rv = SSL_ech_set_server_names(backend->handle,
+                              hostname, /* ech_inner_name (again) */
+                              outername, /* ech_outer_name */
+                              0 /* do send outer */
+                              );
+-    infof(data, "ECH: rv %d from SSL_set_ech_server_names()\n", rv);
++    infof(data, "ECH: rv %d from SSL_set_ech_server_names()", rv);
+ 
+     rv = ossl_ech_find_echconfigs(&nechs,
+                              &cfgs, &cfglens,
+-                             ech_config, strlen(ech_config));
++                             (unsigned char *) ech_config,
++                             strlen(ech_config));
+     if(rv != 1) {
+-      infof(data, "ECH: rv %d from ossL_ech_find_echconfigs() [ERROR]\n", rv);
++      infof(data, "ECH: rv %d from ossL_ech_find_echconfigs() [ERROR]", rv);
+       return CURLE_SSL_CONNECT_ERROR;
+     }
+     if(nechs == 0) {
+-      infof(data, "ECH: nechs %d from ossl_ech_find_echcoinfigs() [ERROR]\n", rv);
++      infof(data, "ECH: nechs %d from ossl_ech_find_echcoinfigs() [ERROR]",
++            rv);
+       return CURLE_SSL_CONNECT_ERROR;
+     }
+ 
+-    for (i = 0; i!= nechs; i++) {
++    for(i = 0; i!= nechs; i++) {
+ 
+         rv = SSL_ech_set1_echconfig(backend->handle, cfgs[i], cfglens[i]);
+         if(rv != 1) {
+-            infof(data, "ECH: rv %d from SSL_ech_set1_echconfig() (%d-th config)[ERROR]\n", rv, i);
+-            return CURLE_SSL_CONNECT_ERROR;
+-        } else {
+-            infof(data, "ECH: SSL_ech_set1_echconfig() worked for %d-th config\n", i);
++          infof(data, "ECH: SSL_ech_set1_echconfig() returned %d for "
++                "(%d-th config) [ERROR]", rv, i);
++          /* free stuff */
++          OPENSSL_free(cfglens);
++          for(i = 0; i != nechs; i++)
++            OPENSSL_free(cfgs[i]);
++          OPENSSL_free(cfgs);
++          return CURLE_SSL_CONNECT_ERROR;
++        }
++        else {
++          infof(data,
++                "ECH: %d-th config fine for SSL_ech_set1_echconfig()", i);
+         }
+     }
+     /* free stuff */
+     OPENSSL_free(cfglens);
+-    for (i = 0; i != nechs; i++)
+-        OPENSSL_free(cfgs[i]);
++    for(i = 0; i != nechs; i++)
++      OPENSSL_free(cfgs[i]);
+     OPENSSL_free(cfgs);
+-
+-
+   }
+ #endif  /* USE_ECH */
+ 

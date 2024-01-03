@@ -1,0 +1,102 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Sun, 10 Sep 2023 21:10:22 +0100
+Subject: tidy up
+
+---
+ lib/doh.c          | 11 ++++++++---
+ lib/ech.c          |  6 +++---
+ lib/vtls/openssl.c |  8 ++++----
+ 3 files changed, 15 insertions(+), 10 deletions(-)
+
+diff --git a/lib/doh.c b/lib/doh.c
+index 3e0c73a..4ca2033 100644
+--- a/lib/doh.c
++++ b/lib/doh.c
+@@ -837,20 +837,25 @@ static void showdoh(struct Curl_easy *data,
+ #ifdef USE_HTTPSRR
+   for(i = 0; i < d->numhttps_rrs; i++) {
+     size_t j;
+-    char buffer[1024];
++    char buffer[2048];
+     char *ptr;
+     size_t len;
+     msnprintf(buffer, 1024, "DoH HTTPS: ");
+     ptr = &buffer[11];
+     len = d->https_rrs[i].len;
+-    for(j = 0; j < len; j += 2) {
++    if(len > (1024 - 12)) {
++      infof(data, "bufer too long %d", len);
++      return;
++    }
++    for(j = 0; j < len; j ++) {
+       *ptr++ = BIN2HEXDIGIT(d->https_rrs[i].val[j] / 16);
+       *ptr++ = BIN2HEXDIGIT(d->https_rrs[i].val[j] % 16);
+-      if((ptr-buffer)>1023) {
++      if((ptr - buffer) > 2047) {
+         infof(data, "bufer too long %d", (ptr-buffer));
+         return;
+       }
+     }
++    *ptr = '\0';
+     infof(data, "%s", buffer);
+   }
+ #endif
+diff --git a/lib/ech.c b/lib/ech.c
+index c41c926..7d65dd3 100644
+--- a/lib/ech.c
++++ b/lib/ech.c
+@@ -68,10 +68,10 @@ bool Curl_ech_ready(struct Curl_easy *data,
+ 
+   if(data->set.tls_enable_ech) {
+     if(data->set.str[STRING_ECH_CONFIG]) {
+-      infof(data, "Curl_ech_ready set via Command line");
++      infof(data, "ECH: ECHConfig set via Command line");
+       if(data->set.str[STRING_ECH_PUBLIC]) {
+         /* Optional STRING_ECH_PUBLIC: report if set */
+-        infof(data, "Curl_ech_ready public-name via Command line:  %s",
++        infof(data, "ECH: public-name via Command line:  %s",
+               data->set.str[STRING_ECH_PUBLIC]);
+       }
+       ready = TRUE;
+@@ -81,7 +81,7 @@ bool Curl_ech_ready(struct Curl_easy *data,
+ 
+       dns = Curl_fetch_addr(data, connssl->hostname, connssl->port);
+       if(dns && dns->https_rr_val) {
+-        infof(data, "Curl_ech_ready ECH configured from DoH HTTPS RR");
++        infof(data, "ECH: ECHConfig rom DoH HTTPS RR");
+         ready = TRUE;
+       }
+     }
+diff --git a/lib/vtls/openssl.c b/lib/vtls/openssl.c
+index bcd3891..fcb30ac 100644
+--- a/lib/vtls/openssl.c
++++ b/lib/vtls/openssl.c
+@@ -3812,7 +3812,7 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+ 
+     ech_config = (unsigned char *) data->set.str[STRING_ECH_CONFIG];
+     if(ech_config) {
+-      infof(data, "ECH configured from command line");
++      infof(data, "ECH: ECHConfig from command line");
+       ech_config_len = strlen(data->set.str[STRING_ECH_CONFIG]);
+     }
+     else {
+@@ -3820,16 +3820,16 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+ 
+       dns = Curl_fetch_addr(data, connssl->hostname, connssl->port);
+       if(!dns) {
+-        infof(data, "ECH requested but no ECHConfig available (1)");
++        infof(data, "ECH: requested but no ECHConfig available (1)");
+         return CURLE_SSL_CONNECT_ERROR;
+       }
+       ech_config = dns->https_rr_val;
+       ech_config_len = dns->https_rr_len;
+       if(ech_config) {
+-        infof(data, "ECH configured from DoH HTTPS RR");
++        infof(data, "ECH: ECHConfig from DoH HTTPS RR");
+       }
+       else {
+-        infof(data, "ECH requested but no ECHConfig available (2)");
++        infof(data, "ECH: requested but no ECHConfig available (2)");
+         return CURLE_SSL_CONNECT_ERROR;
+       }
+     }

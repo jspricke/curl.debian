@@ -1,0 +1,102 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Fri, 15 Sep 2023 23:57:36 +0100
+Subject: refix curl+OpenSSL+ECH
+
+---
+ lib/vtls/openssl.c | 68 ++++++++++++------------------------------------------
+ 1 file changed, 15 insertions(+), 53 deletions(-)
+
+diff --git a/lib/vtls/openssl.c b/lib/vtls/openssl.c
+index a0ac6d5..fb927ce 100644
+--- a/lib/vtls/openssl.c
++++ b/lib/vtls/openssl.c
+@@ -3825,10 +3825,21 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+           return CURLE_SSL_CONNECT_ERROR;
+       }
+       else {
+-        ech_config = dns->https_rr_val;
+-        ech_config_len = dns->https_rr_len;
+-        if(ech_config) {
++        struct Curl_https_rrinfo *rinfo = NULL;
++
++        rinfo = dns->hinfo;
++        if(rinfo && rinfo->echconfiglist) {
++          unsigned char *ecl = rinfo->echconfiglist;
++          size_t elen = rinfo->echconfiglist_len;
++
+           infof(data, "ECH: ECHConfig from DoH HTTPS RR");
++          if (SSL_ech_set1_echconfig(backend->handle, ecl, elen) != 1) {
++            infof(data, "ECH: SSL_ECH_set1_echconfig failed");
++            if(data->set.tls_enable_ech_hard)
++              return CURLE_SSL_CONNECT_ERROR;
++          } else {
++            infof(data, "ECH: imported ECHConfigList of length %ld", elen);
++          }
+         }
+         else {
+           infof(data, "ECH: requested but no ECHConfig available (2)");
+@@ -3838,11 +3849,7 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+       }
+     }
+ 
+-    value_error = !Curl_ech_ready(data, connssl);
+-    if(value_error && data->set.tls_enable_ech_hard)
+-      return CURLE_SSL_CONNECT_ERROR;
+-
+-    if(!value_error && outername) {
++    if(outername) {
+       infof(data, "ECH: inner: '%s', outer: '%s'",
+             hostname, outername);
+       rv = SSL_ech_set_server_names(backend->handle,
+@@ -3856,51 +3863,6 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+         return CURLE_SSL_CONNECT_ERROR;
+       }
+     }
+-
+-    if(!value_error) {
+-      rv = ossl_ech_find_echconfigs(&nechs, &cfgs, &cfglens,
+-                                   ech_config, ech_config_len);
+-      if(rv != 1) {
+-        infof(data, "ECH: rv %d from ossL_ech_find_echconfigs() [ERROR]", rv);
+-        return CURLE_SSL_CONNECT_ERROR;
+-      }
+-      if(nechs == 0 && data->set.tls_enable_ech_hard) {
+-        infof(data, "ECH: No ECHConfigs found! [ERROR]",
+-              nechs);
+-        return CURLE_SSL_CONNECT_ERROR;
+-      }
+-
+-      for(i = 0; i!= nechs; i++) {
+-
+-        rv = SSL_ech_set1_echconfig(backend->handle, cfgs[i], cfglens[i]);
+-        if(rv != 1) {
+-          infof(data, "ECH: SSL_ech_set1_echconfig() returned %d for "
+-                "(%d-th config) [ERROR]", rv, i);
+-          /* free stuff */
+-          OPENSSL_free(cfglens);
+-          for(i = 0; i != nechs; i++)
+-            OPENSSL_free(cfgs[i]);
+-          OPENSSL_free(cfgs);
+-          return CURLE_SSL_CONNECT_ERROR;
+-        }
+-        else {
+-          infof(data,
+-                "ECH: %d-th config fine for SSL_ech_set1_echconfig()", i);
+-        }
+-      }
+-      if(nechs>0) {
+-        result = ossl_set_ssl_version_min_max(cf, backend->ctx);
+-        if(SSL_set_min_proto_version(backend->handle, TLS1_3_VERSION) != 1) {
+-          infof(data, "ECH: Can't force TLSv1.3 [ERROR]");
+-          return CURLE_SSL_CONNECT_ERROR;
+-        }
+-      }
+-      /* free stuff */
+-      OPENSSL_free(cfglens);
+-      for(i = 0; i != nechs; i++)
+-        OPENSSL_free(cfgs[i]);
+-      OPENSSL_free(cfgs);
+-    }
+   }
+ #endif  /* USE_ECH */
+ 

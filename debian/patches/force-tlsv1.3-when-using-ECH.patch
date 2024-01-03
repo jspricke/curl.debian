@@ -1,0 +1,24 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Sun, 10 Sep 2023 21:29:43 +0100
+Subject: force tlsv1.3 when using ECH
+
+---
+ lib/vtls/openssl.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/lib/vtls/openssl.c b/lib/vtls/openssl.c
+index fcb30ac..eb3b254 100644
+--- a/lib/vtls/openssl.c
++++ b/lib/vtls/openssl.c
+@@ -3884,6 +3884,11 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+                 "ECH: %d-th config fine for SSL_ech_set1_echconfig()", i);
+         }
+     }
++    result = ossl_set_ssl_version_min_max(cf, backend->ctx);
++    if(SSL_set_min_proto_version(backend->handle, TLS1_3_VERSION) != 1) {
++      infof(data, "ECH: Can't force TLSv1.3 [ERROR]");
++      return CURLE_SSL_CONNECT_ERROR;
++    }
+     /* free stuff */
+     OPENSSL_free(cfglens);
+     for(i = 0; i != nechs; i++)

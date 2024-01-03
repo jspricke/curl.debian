@@ -1,0 +1,217 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Wed, 20 Sep 2023 00:23:07 +0100
+Subject: simplify config handling a bit
+
+---
+ docs/ECH.md         | 11 +++++----
+ lib/vtls/wolfssl.c  |  5 ++--
+ src/tool_cfgable.c  |  3 ++-
+ src/tool_cfgable.h  | 11 ++-------
+ src/tool_getparam.c | 69 ++++++++++++++++++++++-------------------------------
+ src/tool_operate.c  |  8 +++----
+ 6 files changed, 45 insertions(+), 62 deletions(-)
+
+diff --git a/docs/ECH.md b/docs/ECH.md
+index 38286b9..426826c 100644
+--- a/docs/ECH.md
++++ b/docs/ECH.md
+@@ -66,9 +66,12 @@ to have the basic thing functioning now.
+ We currently support the following new curl comand line arguments/options:
+ 
+ - ``--ech``: tells client to attempt ECH if possible (opportunistic) based on
+-  an HTTPS RR value found in the DNS, accessed using DoH
+-- ``--ech-hard``: tells client to attempt ECH as above or fail if that's not
+-  possible
++  an HTTPS RR value found in the DNS, accessed using DoH, note that once ECH
++  has been attempted, then if ECH fails, the connetion will fail, so we're
++  opportunistic only in the sense of being willing to connect without trying
++  ECH if we don't find a relevant ECHConfigList 
++- ``--ech-hard``: tells client to attempt ECH as above or fail if making the
++  attempt is not possible
+ - ``--echconfig``: supplies an ECHConfig from command line that will be used in
+   preference to a value found in the answer to a DNS query for an HTTPS RR
+ - ``--echpublic``: over-rides the ``public_name`` from the ECHConfig with a
+@@ -262,7 +265,7 @@ Let's use that to build curl...
+             $ cd curl
+             $ git checkout ECH-experimental
+             $ autoregen -fi
+-            $ ./configure --with-wolfssl=$HOME/code/wolfssl/inst --enable-ech
++            $ ./configure --with-wolfssl=$HOME/code/wolfssl/inst --enable-ech --enable-httpsrr
+             $ make
+             ...
+ 
+diff --git a/lib/vtls/wolfssl.c b/lib/vtls/wolfssl.c
+index e54f74b..c888c29 100644
+--- a/lib/vtls/wolfssl.c
++++ b/lib/vtls/wolfssl.c
+@@ -715,7 +715,8 @@ wolfssl_connect_step1(struct Curl_cfilter *cf, struct Curl_easy *data)
+ 
+     if(data->set.str[STRING_ECH_PUBLIC]) {
+       infof(data, "ECH: outername not (yet) supported with WolfSSL");
+-      return CURLE_SSL_CONNECT_ERROR;
++      if(data->set.tls_enable_ech_hard)
++        return CURLE_SSL_CONNECT_ERROR;
+     }
+ 
+     if(data->set.str[STRING_ECH_CONFIG]) {
+@@ -751,7 +752,7 @@ wolfssl_connect_step1(struct Curl_cfilter *cf, struct Curl_easy *data)
+           size_t elen = rinfo->echconfiglist_len;
+ 
+           infof(data, "ECH: ECHConfig from DoH HTTPS RR");
+-          if(wolfSSL_SetEchConfigs(backend->handle, ecl, elen) !=
++          if(wolfSSL_SetEchConfigs(backend->handle, ecl, (word32) elen) !=
+                 WOLFSSL_SUCCESS) {
+             infof(data, "ECH: wolfSSL_SetEchConfigs failed");
+             if(data->set.tls_enable_ech_hard)
+diff --git a/src/tool_cfgable.c b/src/tool_cfgable.c
+index 354b0c0..de5a9cf 100644
+--- a/src/tool_cfgable.c
++++ b/src/tool_cfgable.c
+@@ -180,7 +180,8 @@ static void free_config_fields(struct OperationConfig *config)
+   config->ech_config = NULL;
+   Curl_safefree(config->ech_public);
+   config->ech_public = NULL;
+-  config->ech_status.word = 0;
++  config->ech_selected = FALSE;
++  config->ech_hard_selected = FALSE;
+ #endif
+ }
+ 
+diff --git a/src/tool_cfgable.h b/src/tool_cfgable.h
+index 59bd6d9..4565faf 100644
+--- a/src/tool_cfgable.h
++++ b/src/tool_cfgable.h
+@@ -299,15 +299,8 @@ struct OperationConfig {
+   bool rm_partial;                /* on error, remove partially written output
+                                      files */
+ #ifdef USE_ECH
+-  union {
+-    unsigned long word;
+-    struct {
+-      unsigned int disabled : 1;  /* Set by --no-ech option */
+-      unsigned int selected : 1;  /* Set by any other ECH-related option */
+-      unsigned int hard_disabled : 1;  /* Set by --no-ech-hard option */
+-      unsigned int hard_selected : 1;  /* Set by --ech-hard option */
+-    } flags;
+-  } ech_status;
++  bool ech_selected;              /* set by --ech option */
++  bool ech_hard_selected;         /* set by --ech-hard option */
+   char *ech_config;               /* Set by --echconfig option */
+   char *ech_public;               /* Set by --echpublic option */
+ #endif
+diff --git a/src/tool_getparam.c b/src/tool_getparam.c
+index e8e7b12..adaeb1d 100644
+--- a/src/tool_getparam.c
++++ b/src/tool_getparam.c
+@@ -2135,61 +2135,48 @@ ParameterError getparameter(const char *flag, /* f or -long-flag */
+ #ifdef USE_ECH
+       case 'K':
+         /* --ech */
+-        if(!config->ech_status.word) {
+-          /* No ECH option was parsed yet */
+-          config->ech_status.flags.selected = toggle;
+-          config->ech_status.flags.disabled = !toggle;
+-        }
++        config->ech_selected = toggle;
+         break;
+ 
+       case 'U':
+         /* --ech-hard */
+-        if(!config->ech_status.word) {
+-          /* No ECH option was parsed yet */
+-          config->ech_status.flags.hard_selected = toggle;
+-          config->ech_status.flags.hard_disabled = !toggle;
+-        }
++        config->ech_hard_selected = toggle;
+         break;
+ 
+ 
+       case 'L':
+         /* --echconfig */
+         /* Allow string data or "@"-escaped filename */
+-        if(!config->ech_status.flags.disabled) {
+-
+-          config->ech_status.flags.selected = TRUE; /* clamp flag up */
++        config->ech_selected = TRUE; /* clamp flag up */
++        if('@' != *nextarg) {
++          /* Simple case: just a string */
++          GetStr(&config->ech_config, nextarg);
++        }
++        else {
++          /* Indirect case: @filename or @- for stdin */
++          FILE *file;
++          nextarg++;        /* skip over '@' */
+ 
+-          if('@' != *nextarg) {
+-            /* Simple case: just a string */
+-            GetStr(&config->ech_config, nextarg);
++          if(!strcmp("-", nextarg)) {
++            file = stdin;
+           }
+-
+           else {
+-            /* Indirect case: @filename or @- for stdin */
+-            FILE *file;
+-            nextarg++;        /* skip over '@' */
+-
+-            if(!strcmp("-", nextarg)) {
+-              file = stdin;
+-            }
+-            else {
+-              file = fopen(nextarg, FOPEN_READTEXT);
+-            }
+-            if(!file) {
+-              warnf(global,
+-                    "Couldn't read file \"%s\" "
+-                    "specified for \"--echconfig\" option",
+-                    nextarg);
+-              return PARAM_BAD_USE; /*  */
+-            }
++            file = fopen(nextarg, FOPEN_READTEXT);
++          }
++          if(!file) {
++            warnf(global,
++                  "Couldn't read file \"%s\" "
++                  "specified for \"--echconfig\" option",
++                  nextarg);
++            return PARAM_BAD_USE; /*  */
++          }
+ 
+-            err = file2string(&config->ech_config, file);
+-            if(file != stdin)
+-              fclose(file);
+-            if(err)
+-              return err;
+-          } /* file done */
+-        }
++          err = file2string(&config->ech_config, file);
++          if(file != stdin)
++            fclose(file);
++          if(err)
++            return err;
++        } /* file done */
+         break;
+ 
+       case 'M':
+diff --git a/src/tool_operate.c b/src/tool_operate.c
+index 675ae80..7c6d00e 100644
+--- a/src/tool_operate.c
++++ b/src/tool_operate.c
+@@ -2201,14 +2201,12 @@ static CURLcode single_transfer(struct GlobalConfig *global,
+ 
+ #ifdef USE_ECH
+         /* only if enabled in configure */
+-        if(config->ech_status.flags.selected
+-           || config->ech_status.flags.hard_selected) {
++        if(config->ech_selected || config->ech_hard_selected) {
+           long flagword = CURLECH_ENABLE;
+ 
+-
+-          if(config->ech_status.flags.selected)
++          if(config->ech_selected)
+             my_setopt(curl, CURLOPT_ECH_STATUS, flagword);
+-          if(config->ech_status.flags.hard_selected)
++          if(config->ech_hard_selected)
+             my_setopt(curl, CURLOPT_ECH_HARD_STATUS, flagword);
+ 
+           /* ECH options were already checked, so load-data is set */

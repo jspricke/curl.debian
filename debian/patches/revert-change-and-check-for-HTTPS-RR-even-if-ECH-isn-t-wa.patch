@@ -1,0 +1,44 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Tue, 26 Sep 2023 20:46:19 +0100
+Subject: revert change and check for HTTPS RR even if ECH isn't wanted
+
+---
+ lib/doh.c | 25 +++++++++++--------------
+ 1 file changed, 11 insertions(+), 14 deletions(-)
+
+diff --git a/lib/doh.c b/lib/doh.c
+index 3ef3614..665a369 100644
+--- a/lib/doh.c
++++ b/lib/doh.c
+@@ -450,20 +450,17 @@ struct Curl_addrinfo *Curl_doh(struct Curl_easy *data,
+ #endif
+ 
+ #ifdef USE_HTTPSRR
+-  if(data->set.tls_enable_ech
+-     || data->set.tls_enable_ech_hard) {
+-    if(port == 443)
+-      qname = strdup(hostname);
+-    else
+-      qname = aprintf("_%d._https.%s", port, hostname);
+-    result = dohprobe(data, &dohp->probe[DOH_PROBE_SLOT_HTTPS],
+-                      DNS_TYPE_HTTPS, qname, data->set.str[STRING_DOH],
+-                      data->multi, dohp->headers);
+-    free(qname);
+-    if(result)
+-    goto error;
+-    dohp->pending++;
+-  }
++  if(port == 443)
++    qname = strdup(hostname);
++  else
++    qname = aprintf("_%d._https.%s", port, hostname);
++  result = dohprobe(data, &dohp->probe[DOH_PROBE_SLOT_HTTPS],
++                    DNS_TYPE_HTTPS, qname, data->set.str[STRING_DOH],
++                    data->multi, dohp->headers);
++  free(qname);
++  if(result)
++  goto error;
++  dohp->pending++;
+ #endif
+   *waitp = TRUE; /* this never returns synchronously */
+   return NULL;

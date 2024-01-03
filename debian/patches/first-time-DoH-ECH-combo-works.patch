@@ -1,0 +1,451 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Sun, 10 Sep 2023 16:54:49 +0100
+Subject: first time DoH+ECH combo works
+
+---
+ configure.ac       |   1 +
+ lib/doh.c          | 126 +++++++++++++++++++++++++++++++++++++++++++++++++++--
+ lib/doh.h          |  19 ++++++++
+ lib/ech.c          |  32 +++++++++-----
+ lib/ech.h          |   4 +-
+ lib/hostip.h       |   4 ++
+ lib/urldata.h      |   3 ++
+ lib/vtls/openssl.c |  36 ++++++++++++---
+ 8 files changed, 203 insertions(+), 22 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index ae07014..7761af5 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -4397,6 +4397,7 @@ if test "x$want_ech" != "xno"; then
+   dnl now deal with whatever we found
+   if test "x$ECH_ENABLED" = "x1"; then
+     AC_DEFINE(USE_ECH, 1, [if ECH support is available])
++    AC_DEFINE(USE_HTTPSRR, 1, [if ECH support is available])
+     AC_MSG_RESULT($ECH_SUPPORT)
+     experimental="$experimental ECH"
+   else
+diff --git a/lib/doh.c b/lib/doh.c
+index 1d928e9..3e0c73a 100644
+--- a/lib/doh.c
++++ b/lib/doh.c
+@@ -45,6 +45,10 @@
+ 
+ #define DNS_CLASS_IN 0x01
+ 
++#ifdef USE_HTTPSRR
++#define BIN2HEXDIGIT(x) (x < 10 ? (char)(x + '0') : (char)(x - 10 + 'A'))
++#endif
++
+ #ifndef CURL_DISABLE_VERBOSE_STRINGS
+ static const char * const errors[]={
+   "",
+@@ -374,6 +378,9 @@ struct Curl_addrinfo *Curl_doh(struct Curl_easy *data,
+   int slot;
+   struct dohdata *dohp;
+   struct connectdata *conn = data->conn;
++#ifdef USE_HTTPSRR
++  char *qname = NULL;
++#endif
+   *waitp = FALSE;
+   (void)hostname;
+   (void)port;
+@@ -413,6 +420,36 @@ struct Curl_addrinfo *Curl_doh(struct Curl_easy *data,
+       goto error;
+     dohp->pending++;
+   }
++#endif
++
++#ifdef USE_HTTPSRR
++# ifdef USE_ECH
++  if(data->set.tls_enable_ech) {
++    /* make a request for an HTTPS RR */
++
++    if(port == 443) {
++      qname = strdup(hostname);
++    }
++    else {
++      /* the 16 is the most we get with a 5-digit port */
++      size_t qnamelen = strlen(hostname) + 16;
++
++      /* TODO: find the proper memory handler */
++      qname = (char *)malloc(qnamelen);
++      if(!qname)
++        goto error;
++      curl_msnprintf(qname, qnamelen, "_%d._https.%s",
++                       port, hostname);
++    }
++    result = dohprobe(data, &dohp->probe[DOH_PROBE_SLOT_HTTPS],
++                      DNS_TYPE_HTTPS, qname, data->set.str[STRING_DOH],
++                      data->multi, dohp->headers);
++    free(qname);
++    if(result)
++      goto error;
++    dohp->pending++;
++  }
++# endif
+ #endif
+   *waitp = TRUE; /* this never returns synchronously */
+   return NULL;
+@@ -495,6 +532,26 @@ static DOHcode store_aaaa(const unsigned char *doh,
+   return DOH_OK;
+ }
+ 
++#ifdef USE_HTTPSRR
++static DOHcode store_https(const unsigned char *doh,
++                           int index,
++                           struct dohentry *d,
++                           size_t len)
++{
++  /* silently ignore RRs over the limit */
++  if(d->numhttps_rrs < DOH_MAX_HTTPS) {
++    struct dohhttps_rr *h = &d->https_rrs[d->numhttps_rrs];
++    h->val = malloc(len);
++    if(!h->val)
++      return DOH_OUT_OF_MEM;
++    memcpy(h->val, &doh[index], len);
++    h->len = len;
++    d->numhttps_rrs++;
++  }
++  return DOH_OK;
++}
++#endif
++
+ static DOHcode store_cname(const unsigned char *doh,
+                            size_t dohlen,
+                            unsigned int index,
+@@ -575,6 +632,13 @@ static DOHcode rdata(const unsigned char *doh,
+     if(rc)
+       return rc;
+     break;
++#ifdef USE_HTTPSRR
++  case DNS_TYPE_HTTPS:
++    rc = store_https(doh, index, d, rdlength);
++    if(rc)
++      return rc;
++    break;
++#endif
+   case DNS_TYPE_CNAME:
+     rc = store_cname(doh, dohlen, index, d);
+     if(rc)
+@@ -770,6 +834,26 @@ static void showdoh(struct Curl_easy *data,
+       infof(data, "%s", buffer);
+     }
+   }
++#ifdef USE_HTTPSRR
++  for(i = 0; i < d->numhttps_rrs; i++) {
++    size_t j;
++    char buffer[1024];
++    char *ptr;
++    size_t len;
++    msnprintf(buffer, 1024, "DoH HTTPS: ");
++    ptr = &buffer[11];
++    len = d->https_rrs[i].len;
++    for(j = 0; j < len; j += 2) {
++      *ptr++ = BIN2HEXDIGIT(d->https_rrs[i].val[j] / 16);
++      *ptr++ = BIN2HEXDIGIT(d->https_rrs[i].val[j] % 16);
++      if((ptr-buffer)>1023) {
++        infof(data, "bufer too long %d", (ptr-buffer));
++        return;
++      }
++    }
++    infof(data, "%s", buffer);
++  }
++#endif
+   for(i = 0; i < d->numcname; i++) {
+     infof(data, "CNAME: %s", Curl_dyn_ptr(&d->cname[i]));
+   }
+@@ -889,7 +973,20 @@ static CURLcode doh2ai(const struct dohentry *de, const char *hostname,
+ #ifndef CURL_DISABLE_VERBOSE_STRINGS
+ static const char *type2name(DNStype dnstype)
+ {
++#ifndef USE_HTTPSRR
+   return (dnstype == DNS_TYPE_A)?"A":"AAAA";
++#else
++  switch(dnstype) {
++    case DNS_TYPE_A:
++      return "A";
++    case DNS_TYPE_AAAA:
++      return "AAAA";
++    case DNS_TYPE_HTTPS:
++      return "HTTPS";
++    default:
++       return "unknown";
++  }
++#endif
+ }
+ #endif
+ 
+@@ -899,6 +996,11 @@ UNITTEST void de_cleanup(struct dohentry *d)
+   for(i = 0; i < d->numcname; i++) {
+     Curl_dyn_free(&d->cname[i]);
+   }
++#ifdef USE_HTTPSRR
++  /* TODO: find proper memory handler */
++  for(i = 0; i < d->numhttps_rrs; i++)
++    free(d->https_rrs[i].val);
++#endif
+ }
+ 
+ CURLcode Curl_doh_is_resolved(struct Curl_easy *data,
+@@ -918,9 +1020,15 @@ CURLcode Curl_doh_is_resolved(struct Curl_easy *data,
+       CURLE_COULDNT_RESOLVE_HOST;
+   }
+   else if(!dohp->pending) {
++#ifndef USE_HTTPSRR
+     DOHcode rc[DOH_PROBE_SLOTS] = {
+       DOH_OK, DOH_OK
+     };
++#else
++    DOHcode rc[DOH_PROBE_SLOTS] = {
++      DOH_OK, DOH_OK, DOH_OK
++    };
++#endif
+     struct dohentry de;
+     int slot;
+     /* remove DoH handles from multi handle and close them */
+@@ -935,9 +1043,9 @@ CURLcode Curl_doh_is_resolved(struct Curl_easy *data,
+       if(!p->dnstype)
+         continue;
+       rc[slot] = doh_decode(Curl_dyn_uptr(&p->serverdoh),
+-                            Curl_dyn_len(&p->serverdoh),
+-                            p->dnstype,
+-                            &de);
++                              Curl_dyn_len(&p->serverdoh),
++                              p->dnstype,
++                              &de);
+       Curl_dyn_free(&p->serverdoh);
+ #ifndef CURL_DISABLE_VERBOSE_STRINGS
+       if(rc[slot]) {
+@@ -983,6 +1091,18 @@ CURLcode Curl_doh_is_resolved(struct Curl_easy *data,
+     } /* address processing done */
+ 
+     /* Now process any build-specific attributes retrieved from DNS */
++#ifdef USE_HTTPSRR
++    if(de.numhttps_rrs > 0 && result == CURLE_OK && *dnsp) {
++      /* TODO: just use first for now */
++      infof(data, "Some HTTPS RRs to process");
++      (*dnsp)->https_rr_val = malloc(de.https_rrs->len);
++      if(!(*dnsp)->https_rr_val)
++        return CURLE_OUT_OF_MEMORY;
++      memcpy((*dnsp)->https_rr_val, de.https_rrs->val,
++             de.https_rrs->len);
++      (*dnsp)->https_rr_len = de.https_rrs->len;
++    }
++#endif
+ 
+     /* All done */
+     de_cleanup(&de);
+diff --git a/lib/doh.h b/lib/doh.h
+index 7d7b694..79012f7 100644
+--- a/lib/doh.h
++++ b/lib/doh.h
+@@ -51,7 +51,12 @@ typedef enum {
+   DNS_TYPE_NS = 2,
+   DNS_TYPE_CNAME = 5,
+   DNS_TYPE_AAAA = 28,
++#ifdef USE_HTTPSRR
++  DNS_TYPE_DNAME = 39,           /* RFC6672 */
++  DNS_TYPE_HTTPS = 65
++#else
+   DNS_TYPE_DNAME = 39           /* RFC6672 */
++#endif
+ } DNStype;
+ 
+ /* one of these for each DoH request */
+@@ -88,6 +93,9 @@ int Curl_doh_getsock(struct connectdata *conn, curl_socket_t *socks);
+ 
+ #define DOH_MAX_ADDR 24
+ #define DOH_MAX_CNAME 4
++#ifdef USE_HTTPSRR
++#define DOH_MAX_HTTPS 4
++#endif
+ 
+ struct dohaddr {
+   int type;
+@@ -97,12 +105,23 @@ struct dohaddr {
+   } ip;
+ };
+ 
++#ifdef USE_HTTPSRR
++struct dohhttps_rr {
++  size_t len;
++  unsigned char *val;
++};
++#endif
++
+ struct dohentry {
+   struct dynbuf cname[DOH_MAX_CNAME];
+   struct dohaddr addr[DOH_MAX_ADDR];
+   int numaddr;
+   unsigned int ttl;
+   int numcname;
++#ifdef USE_HTTPSRR
++  struct dohhttps_rr https_rrs[DOH_MAX_HTTPS];
++  int numhttps_rrs;
++#endif
+ };
+ 
+ 
+diff --git a/lib/ech.c b/lib/ech.c
+index 341b5bf..c41c926 100644
+--- a/lib/ech.c
++++ b/lib/ech.c
+@@ -54,31 +54,39 @@
+  * @param data is the Curl_easy handle to inspect
+  * @return TRUE if complete, FALSE otherwise
+  *
+- * TODO: consider whether ECH parameter data needs to be per-connection
++ * If ECH is desired and we don't have an ECHConfig from the
++ * command line or acquired via DoH, we'll fail for now but
++ * could later add a DNS lookup.
+  */
+-bool Curl_ech_ready(struct Curl_easy *data)
++bool Curl_ech_ready(struct Curl_easy *data,
++                    struct ssl_connect_data *connssl)
+ {
+-  bool ready = TRUE;
++  bool ready = FALSE;
++
+   if(!data)
+     return FALSE;               /* NULL handle: surely not ready! */
+ 
+   if(data->set.tls_enable_ech) {
+-    /* ECH enabled: look for what will be needed */
+-    if(!data->set.str[STRING_ECH_CONFIG]) {
+-      infof(data, "WARNING: missing value for STRING_ECH_CONFIG");
+-      ready = FALSE;
+-    }
+-    else {
+-      infof(data, "ECH: ECHConfig %s", data->set.str[STRING_ECH_CONFIG]);
++    if(data->set.str[STRING_ECH_CONFIG]) {
++      infof(data, "Curl_ech_ready set via Command line");
+       if(data->set.str[STRING_ECH_PUBLIC]) {
+         /* Optional STRING_ECH_PUBLIC: report if set */
+-        infof(data, "ECH: CLI public-name :  %s",
++        infof(data, "Curl_ech_ready public-name via Command line:  %s",
+               data->set.str[STRING_ECH_PUBLIC]);
+       }
++      ready = TRUE;
+     }
++    else {
++      struct Curl_dns_entry *dns = NULL;
+ 
+-    /* TODO: review completeness of inspection above */
++      dns = Curl_fetch_addr(data, connssl->hostname, connssl->port);
++      if(dns && dns->https_rr_val) {
++        infof(data, "Curl_ech_ready ECH configured from DoH HTTPS RR");
++        ready = TRUE;
++      }
++    }
+   }
++  /* TODO: maybe add an opportunistic mode */
+ 
+   /* Nothing missing, or ECH not required */
+   return ready;
+diff --git a/lib/ech.h b/lib/ech.h
+index 4343f4b..45cb439 100644
+--- a/lib/ech.h
++++ b/lib/ech.h
+@@ -26,8 +26,10 @@
+ 
+ #ifdef USE_ECH
+ # include <curl/curl.h>
++# include <vtls/vtls_int.h>
+ 
+-bool Curl_ech_ready(struct Curl_easy *data);
++bool Curl_ech_ready(struct Curl_easy *data,
++                    struct ssl_connect_data *connssl);
+ 
+ #else  /* ECH not in use */
+ #endif  /* USE_ECH */
+diff --git a/lib/hostip.h b/lib/hostip.h
+index fb53a57..d97be13 100644
+--- a/lib/hostip.h
++++ b/lib/hostip.h
+@@ -60,6 +60,10 @@ struct Curl_hash *Curl_global_host_cache_init(void);
+ 
+ struct Curl_dns_entry {
+   struct Curl_addrinfo *addr;
++#ifdef USE_HTTPSRR
++  unsigned char *https_rr_val;
++  size_t https_rr_len;
++#endif
+   /* timestamp == 0 -- permanent CURLOPT_RESOLVE entry (doesn't time out) */
+   time_t timestamp;
+   /* use-counter, use Curl_resolv_unlock to release reference */
+diff --git a/lib/urldata.h b/lib/urldata.h
+index 5e89918..9c37f13 100644
+--- a/lib/urldata.h
++++ b/lib/urldata.h
+@@ -636,6 +636,9 @@ enum doh_slots {
+   DOH_PROBE_SLOT_IPADDR_V6 = 1, /* 'V6' likewise */
+ 
+   /* Space here for (possibly build-specific) additional slot definitions */
++#ifdef USE_HTTPSRR
++  DOH_PROBE_SLOT_HTTPS = 2,     /* for HTTPS RR */
++#endif
+ 
+   /* for example */
+   /* #ifdef WANT_DOH_FOOBAR_TXT */
+diff --git a/lib/vtls/openssl.c b/lib/vtls/openssl.c
+index c130deb..bcd3891 100644
+--- a/lib/vtls/openssl.c
++++ b/lib/vtls/openssl.c
+@@ -3800,7 +3800,8 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+ 
+ #ifdef USE_ECH
+   if(data->set.tls_enable_ech) {
+-    char *ech_config = data->set.str[STRING_ECH_CONFIG];
++    unsigned char *ech_config = NULL;
++    size_t ech_config_len = 0;
+     char *outername = data->set.str[STRING_ECH_PUBLIC];
+     unsigned char **cfgs = NULL;
+     size_t *cfglens = NULL;
+@@ -3809,7 +3810,31 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+     int nechs;
+     int rv, i;
+ 
+-    value_error = !Curl_ech_ready(data);
++    ech_config = (unsigned char *) data->set.str[STRING_ECH_CONFIG];
++    if(ech_config) {
++      infof(data, "ECH configured from command line");
++      ech_config_len = strlen(data->set.str[STRING_ECH_CONFIG]);
++    }
++    else {
++      struct Curl_dns_entry *dns = NULL;
++
++      dns = Curl_fetch_addr(data, connssl->hostname, connssl->port);
++      if(!dns) {
++        infof(data, "ECH requested but no ECHConfig available (1)");
++        return CURLE_SSL_CONNECT_ERROR;
++      }
++      ech_config = dns->https_rr_val;
++      ech_config_len = dns->https_rr_len;
++      if(ech_config) {
++        infof(data, "ECH configured from DoH HTTPS RR");
++      }
++      else {
++        infof(data, "ECH requested but no ECHConfig available (2)");
++        return CURLE_SSL_CONNECT_ERROR;
++      }
++    }
++
++    value_error = !Curl_ech_ready(data, connssl);
+     if(value_error)
+       return CURLE_SSL_CONNECT_ERROR;
+ 
+@@ -3828,10 +3853,9 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+       }
+     }
+ 
+-    rv = ossl_ech_find_echconfigs(&nechs,
+-                             &cfgs, &cfglens,
+-                             (unsigned char *) ech_config,
+-                             strlen(ech_config));
++
++    rv = ossl_ech_find_echconfigs(&nechs, &cfgs, &cfglens,
++                                  ech_config, ech_config_len);
+     if(rv != 1) {
+       infof(data, "ECH: rv %d from ossL_ech_find_echconfigs() [ERROR]", rv);
+       return CURLE_SSL_CONNECT_ERROR;

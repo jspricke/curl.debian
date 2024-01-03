@@ -1,0 +1,234 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Tue, 26 Sep 2023 22:05:14 +0100
+Subject: more making CI happy (we hope)
+
+---
+ configure.ac                           |  4 ---
+ docs/ECH.md                            | 56 +++++++++++++++++++---------------
+ docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3 |  3 +-
+ lib/easyoptions.c                      |  5 ++-
+ packages/OS400/ccsidcurl.c             |  4 +++
+ tests/ech_tests.sh                     | 24 +++++++++++++++
+ 6 files changed, 66 insertions(+), 30 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index fc9e441..2fa59fc 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -4635,10 +4635,6 @@ else
+   AC_MSG_RESULT([no])
+ fi
+ 
+-if test "x$ECH_ENABLED" = "x1"; then
+-  SUPPORT_FEATURES="$SUPPORT_FEATURES ECH"
+-fi
+-
+ if test ${ac_cv_sizeof_curl_off_t} -gt 4; then
+   if test ${ac_cv_sizeof_off_t} -gt 4 -o \
+      "$curl_win32_file_api" = "win32_large_files"; then
+diff --git a/docs/ECH.md b/docs/ECH.md
+index 038b8d5..294d0b8 100644
+--- a/docs/ECH.md
++++ b/docs/ECH.md
+@@ -63,16 +63,22 @@ retrieval of HTTPS RRs in that situation. To use ECH and DoH together:
+ 
+ The output snippet above is within the HTML for the web page, when things work.
+ 
+-The above works for https://defo.ie/ech-check.php,
+-https://draft-13.esni.defo.ie:8413/stats,
+-https://crypto.cloudflare.com/cdn-cgi/trace and https://tls-ech.dev so we seem
+-to have the basic thing functioning now.
+-
+-We currently support the following new curl comand line arguments/options:
++The above works for
++[https://defo.ie/ech-check.php](https://defo.ie/ech-check.php), 
++[https://draft-13.esni.defo.ie:8413/stats](https://draft-13.esni.defo.ie:8413/stats),
++[https://draft-13.esni.defo.ie:8414/stats](https://draft-13.esni.defo.ie:8414/stats),
++[https://crypto.cloudflare.com/cdn-cgi/trace](https://crypto.cloudflare.com/cdn-cgi/trace),
++and
++[https://tls-ech.dev](https://tls-ech.dev)
++so we seem to have the basic thing functioning now. That list has 4 different 
++server technologies, implemented by 3 different parties, and includes a case
++(the port 8414 server) where HelloRetryRequest (HRR) is forced.
++
++We currently support the following new curl command line arguments/options:
+ 
+ - ``--ech``: tells client to attempt ECH if possible (opportunistic) based on
+   an HTTPS RR value found in the DNS, accessed using DoH, note that once ECH
+-  has been attempted, then if ECH fails, the connetion will fail, so we're
++  has been attempted, then if ECH fails, the connection will fail, so we're
+   opportunistic only in the sense of being willing to connect without trying
+   ECH if we don't find a relevant ECHConfigList
+ - ``--ech-hard``: tells client to attempt ECH as above or fail if making the
+@@ -90,7 +96,7 @@ reasons.
+ ## Supplying an ECHConfigList on the command line
+ 
+ To supply the ECHConfigList on the command line, you might need a bit of
+-cut'n'paste, e.g.:
++cut-and-paste, e.g.:
+ 
+ ```bash
+     dig +short https defo.ie
+@@ -138,8 +144,8 @@ Note that when you use the system's curl command (rather than our ECH-enabled
+ build), it's liable to warn that ``ech`` is an unknown option. If that's an
+ issue (e.g. if some script re-directs stdout and stderr somewhere) then adding
+ the ``silent=TRUE`` line above seems to be a good enough fix. (Though of
+-course, yet another script could depend on non-silent behaviour, so you'll have
+-to figure out what you prefer youself.)
++course, yet another script could depend on non-silent behavior, so you'll have
++to figure out what you prefer yourself.)
+ 
+ And if you want to always use our OpenSSL build you can set ``LD_LIBRARY_PATH``
+ in the environment:
+@@ -253,10 +259,10 @@ recently.)
+ tool.
+ 
+ - We have not yet implemented tests as part of the usual curl test harness.
+-  For now, we only have an [``ech_tests.sh``](./tests/ech_test.sh) script that
++  For now, we only have an [``ech_tests.sh``](../tests/ech_test.sh) script that
+ attempts ECH with various test servers. While that is a useful test and does
+-find issues (e.g. with the wolfSSL build), it's nowhere near comphrensive and
+-we're not (as yet) sure what'd be the right level of coverage.
++find issues (e.g. with the wolfSSL build), it's nowhere near comprehensive and
++we're not (as yet) sure what would be the right level of coverage.
+ 
+ ## WolfSSL build
+ 
+@@ -296,9 +302,10 @@ Let's use that to build curl...
+     make
+ ```
+ 
+-Right now, this works almost the same as the OpenSSL variant, but not
+-with tls-ech.dev, (see [same issue](https://github.com/wolfSSL/wolfssl/issues/6774),
+-and for some reason ``--insecure`` is needed.
++Right now, this works almost the same as the OpenSSL variant, but not with
++[https://tls-ech.dev](https://tls-ech.dev), (see [same
++issue](https://github.com/wolfSSL/wolfssl/issues/6774), and for some reason
++``--insecure`` is needed.
+ 
+ To run against a localhost ``s_server`` for testing:
+ 
+@@ -320,12 +327,13 @@ In another window:
+ There are what seem like oddball differences:
+ 
+ - The DoH URL in``$HOME/.curlrc`` can use "1.1.1.1" for OpenSSL but has to be
+-  "one.one.one.one" for WolfSSL. The latter works for both, so ok, we'll change
++  "one.one.one.one" for WolfSSL. The latter works for both, so OK, we'll change
+   to that.
+ - There seems to be some difference in CA databases too - the WolfSSL version
+-  doesn't like defo.ie, wheraas the system and OpenSSL ones do. We can ignore
+-  that for our purposes though via ``--insecure`` but would need to fix for a
+-  PPA setup. (Browsers do like defo.ie's certificate though.)
++  doesn't like defo.ie, whereas the system and OpenSSL ones do. We can ignore
++  that for our purposes via ``--insecure``/``-k`` but would need to fix for a
++  real setup. (Browsers do like the certificates from
++  [https://defo.ie](https://defo.ie) though.)
+ 
+ Then there are some functional code changes:
+ 
+@@ -358,9 +366,9 @@ extensibility inherent in the HTTPS/SVCB specification is a good match for the
+ supported RRtype. We're also not sure how many downstream curl deployments
+ actually make use of the ``c-ares`` library, which would affect the utility of
+ such changes. Another option might be to consider using some other generic DNS
+-library (such as the getdnsapi) that does support HTTPS RRs, but it's unclear
+-if such a library could or would be used by all or almost all curl builds and
+-downstream releases of curl.
++library that does support HTTPS RRs, but it's unclear if such a library could
++or would be used by all or almost all curl builds and downstream releases of
++curl.
+ 
+ Our current conclusion is that doing the above is likely best left until we
+ have some experience with the "using DoH" stuff, so we're going to punt on
+@@ -371,7 +379,7 @@ this for now.
+ As of now we have not:
+ 
+ - added support for GREASEing ECH - our fork of the OpenSSL library has APIs
+-  for that, but, on the basis that any benefits from GREASE will be realised
++  for that, but, on the basis that any benefits from GREASE will be realized
+   if much more commonly used clients (i.e. browsers) GREASE, it seems fine
+   that curl not bother adding support for GREASEing ECH for now
+ - added support for ``retry_config`` handling in the application - for a
+diff --git a/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3 b/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
+index 83b11b5..3fd1483 100644
+--- a/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
++++ b/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
+@@ -40,7 +40,8 @@ override any value retrieved from the DNS.
+ .SH DEFAULT
+ NULL - there is no default public_name. If this option is not set, and ECH
+ is to be attempted, libcurl uses DoH and attempts to find an ECHConfigList
+-in an HTTPS RR, and will use the public_name found therin.
++in an HTTPS RR, and will use the public_name found there.
++
+ .SH PROTOCOLS
+ HTTP, and requires TLSv1.3.
+ .SH EXAMPLE
+diff --git a/lib/easyoptions.c b/lib/easyoptions.c
+index e69c658..13a654e 100644
+--- a/lib/easyoptions.c
++++ b/lib/easyoptions.c
+@@ -86,6 +86,9 @@ struct curl_easyoption Curl_easyopts[] = {
+   {"DOH_SSL_VERIFYPEER", CURLOPT_DOH_SSL_VERIFYPEER, CURLOT_LONG, 0},
+   {"DOH_SSL_VERIFYSTATUS", CURLOPT_DOH_SSL_VERIFYSTATUS, CURLOT_LONG, 0},
+   {"DOH_URL", CURLOPT_DOH_URL, CURLOT_STRING, 0},
++  {"ECH_CONFIG", CURLOPT_ECH_CONFIG, CURLOT_STRING, 0},
++  {"ECH_PUBLIC", CURLOPT_ECH_PUBLIC, CURLOT_STRING, 0},
++  {"ECH_STATUS", CURLOPT_ECH_STATUS, CURLOT_LONG, 0},
+   {"EGDSOCKET", CURLOPT_EGDSOCKET, CURLOT_STRING, 0},
+   {"ENCODING", CURLOPT_ACCEPT_ENCODING, CURLOT_STRING, CURLOT_FLAG_ALIAS},
+   {"ERRORBUFFER", CURLOPT_ERRORBUFFER, CURLOT_OBJECT, 0},
+@@ -373,6 +376,6 @@ struct curl_easyoption Curl_easyopts[] = {
+  */
+ int Curl_easyopts_check(void)
+ {
+-  return ((CURLOPT_LASTENTRY%10000) != (323 + 1));
++  return ((CURLOPT_LASTENTRY%10000) != (326 + 1));
+ }
+ #endif
+diff --git a/packages/OS400/ccsidcurl.c b/packages/OS400/ccsidcurl.c
+index 48f1f5f..eb48886 100644
+--- a/packages/OS400/ccsidcurl.c
++++ b/packages/OS400/ccsidcurl.c
+@@ -1097,6 +1097,10 @@ curl_easy_setopt_ccsid(CURL *easy, CURLoption tag, ...)
+   case CURLOPT_DNS_LOCAL_IP6:
+   case CURLOPT_DNS_SERVERS:
+   case CURLOPT_DOH_URL:
++#ifdef USE_ECH
++  case CURLOPT_ECH_CONFIG:
++  case CURLOPT_ECH_PUBLIC:
++#endif
+   case CURLOPT_EGDSOCKET:
+   case CURLOPT_FTPPORT:
+   case CURLOPT_FTP_ACCOUNT:
+diff --git a/tests/ech_tests.sh b/tests/ech_tests.sh
+index 52f99ad..2264dbb 100755
+--- a/tests/ech_tests.sh
++++ b/tests/ech_tests.sh
+@@ -1,4 +1,28 @@
+ #!/bin/bash
++#***************************************************************************
++#                                  _   _ ____  _
++#  Project                     ___| | | |  _ \| |
++#                             / __| | | | |_) | |
++#                            | (__| |_| |  _ <| |___
++#                             \___|\___/|_| \_\_____|
++#
++# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
++#
++# This software is licensed as described in the file COPYING, which
++# you should have received as part of this distribution. The terms
++# are also available at https://curl.se/docs/copyright.html.
++#
++# You may opt to use, copy, modify, merge, publish, distribute and/or sell
++# copies of the Software, and permit persons to whom the Software is
++# furnished to do so, under the terms of the COPYING file.
++#
++# This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
++# KIND, either express or implied.
++#
++# SPDX-License-Identifier: curl
++#
++###########################################################################
++#
+ 
+ # Run some tests against servers we know to support ECH (CF, defo.ie, etc.).
+ # as well as some we know don't do ECH but have an HTTPS RR, and finally some

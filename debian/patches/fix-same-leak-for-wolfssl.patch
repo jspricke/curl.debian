@@ -1,0 +1,20 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Mon, 18 Sep 2023 02:31:47 +0100
+Subject: fix same leak for wolfssl
+
+---
+ lib/vtls/wolfssl.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/lib/vtls/wolfssl.c b/lib/vtls/wolfssl.c
+index 07c93e2..e54f74b 100644
+--- a/lib/vtls/wolfssl.c
++++ b/lib/vtls/wolfssl.c
+@@ -766,6 +766,7 @@ wolfssl_connect_step1(struct Curl_cfilter *cf, struct Curl_easy *data)
+           if(data->set.tls_enable_ech_hard)
+             return CURLE_SSL_CONNECT_ERROR;
+         }
++        Curl_resolv_unlock(data, dns);
+       }
+     }
+ 

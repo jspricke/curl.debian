@@ -1,0 +1,718 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Sun, 1 Oct 2023 20:10:32 +0100
+Subject: another iteration of command line changes
+
+---
+ docs/ECH.md                            | 10 ++---
+ docs/cmdline-opts/Makefile.inc         |  1 -
+ docs/cmdline-opts/ech.d                |  7 ++-
+ docs/cmdline-opts/echpublic.d          | 17 --------
+ docs/libcurl/curl_easy_setopt.3        |  3 --
+ docs/libcurl/opts/CURLOPT_ECH.3        | 23 ++++++----
+ docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3 | 61 --------------------------
+ docs/libcurl/opts/Makefile.inc         |  1 -
+ docs/libcurl/symbols-in-versions       |  1 -
+ docs/options-in-versions               |  1 -
+ include/curl/curl.h                    |  5 +--
+ include/curl/typecheck-gcc.h           |  1 -
+ lib/easyoptions.c                      |  3 +-
+ lib/setopt.c                           | 41 +++++++++++-------
+ lib/urldata.h                          |  4 +-
+ lib/vtls/openssl.c                     |  5 +--
+ packages/OS400/ccsidcurl.c             |  1 -
+ src/tool_cfgable.c                     |  2 +
+ src/tool_cfgable.h                     |  5 ++-
+ src/tool_getparam.c                    | 75 +++++++++++++++++---------------
+ src/tool_listhelp.c                    |  3 --
+ src/tool_operate.c                     |  4 +-
+ tests/ech_tests.sh                     | 78 +++++++++++++++++++---------------
+ 23 files changed, 148 insertions(+), 204 deletions(-)
+ delete mode 100644 docs/cmdline-opts/echpublic.d
+ delete mode 100644 docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
+
+diff --git a/docs/ECH.md b/docs/ECH.md
+index f172204..0947dd2 100644
+--- a/docs/ECH.md
++++ b/docs/ECH.md
+@@ -84,8 +84,8 @@ We currently support the following new curl command line arguments/options:
+     - ``true`` says to attempt ECH, if possible
+     - ``grease`` if attempting ECH is not possible, then send a GREASE ECH extension
+     - ``hard`` hard-fail the connection if ECH cannot be attempted
+-    - a base64 encoded ECHConfigList, rather than one accessed from the DNS
+-- ``--echpublic`` over-ride the ``public_name`` from an ECHConfigList 
++    - ``ecl:<b64value>`` a base64 encoded ECHConfigList, rather than one accessed from the DNS
++    - ``pn:<name>`` over-ride the ``public_name`` from an ECHConfigList 
+ 
+ Note that in the above "attempt ECH" means the client emitting a TLS
+ ClientHello with a "real" ECH extension, but that does not mean that the
+@@ -338,7 +338,7 @@ Then there are some functional code changes:
+ - tweak to ``configure.ac`` to check if WolfSSL has ECH or not
+ - added code to ``lib/vtls/wolfssl.c`` mirroring what's done in the
+   OpenSSL equivalent above.
+-- WolfSSL doesn't support GREASE or the ``--echpublic`` command line
++- WolfSSL doesn't support ``--ech grease`` or the ``--ech pn:`` command line
+   argument.
+ 
+ There's also a current
+@@ -347,8 +347,8 @@ client support for ECH seems to not correctly support HelloRetryRequest.
+ 
+ ## boringssl build
+ 
+-The boringssl APIs do not support providing an ECHConfigList from the
+-command line, or the ``--echpublic`` command line option as of now.
++The boringssl APIs do not support the ``--ech ecl:`` or the ``--ech pn:``
++command line options as of now.
+ 
+ BoringSSL is also supported by curl and also supports ECH, so to build
+ one of those:
+diff --git a/docs/cmdline-opts/Makefile.inc b/docs/cmdline-opts/Makefile.inc
+index efc35dd..0e5b3e1 100644
+--- a/docs/cmdline-opts/Makefile.inc
++++ b/docs/cmdline-opts/Makefile.inc
+@@ -265,7 +265,6 @@ DPAGES = \
+   tlsv1.3.d \
+   tlsv1.d \
+   ech.d \
+-  echpublic.d \
+   tr-encoding.d \
+   trace-ascii.d \
+   trace-config.d \
+diff --git a/docs/cmdline-opts/ech.d b/docs/cmdline-opts/ech.d
+index 552ea58..aedc1d5 100644
+--- a/docs/cmdline-opts/ech.d
++++ b/docs/cmdline-opts/ech.d
+@@ -6,7 +6,7 @@ Help: TLS Encrypted Client Hello (ECH)
+ Added: x.xx.x
+ Category: tls ECH
+ Example: --ech <config> $URL
+-See-also: echpublic doh-url
++See-also: doh-url
+ Multi: single
+ ---
+ Configure Encrypted Client Hello (ECH) for use with the TLS session.
+@@ -21,7 +21,10 @@ Possible values for <config> are:
+ 
+ - "hard": attempt ECH and fail if that's not possible
+ 
+-- a base64 encoded ECHConfigList that will be used for ECH
++- "ecl:<b64val>": a base64 encoded ECHConfigList that will be used for ECH
++
++- "pn:<name": a name to use to over-ride the public_name field of an
++   ECHConfigList
+ 
+ ECH only works with TLS 1.3 and also requires using
+ DoH or else providing an ECHConfigList on the command line.
+diff --git a/docs/cmdline-opts/echpublic.d b/docs/cmdline-opts/echpublic.d
+deleted file mode 100644
+index 0382cd4..0000000
+--- a/docs/cmdline-opts/echpublic.d
++++ /dev/null
+@@ -1,17 +0,0 @@
+-c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+-SPDX-License-Identifier: curl
+-Long: echpublic
+-Arg: <name>
+-Help: TLS Encrypted Client Hello (ECH)
+-Added: x.xx.x
+-Category: tls ECH
+-Example: --ech-public $PUBLIC_NAME $URL
+-See-also: ech doh-url
+-Multi: single
+----
+-When doing Encrypted Client Hello (ECH), over-ride the public_name
+-from the relevant ECHConfigList in the outer ClientHello server name
+-indication extension.
+-
+-This option only works with TLS 1.3. This option also requires using
+-DoH or else providing an ECHConfigList on the command line.
+diff --git a/docs/libcurl/curl_easy_setopt.3 b/docs/libcurl/curl_easy_setopt.3
+index c8cc10a..c5d86e6 100644
+--- a/docs/libcurl/curl_easy_setopt.3
++++ b/docs/libcurl/curl_easy_setopt.3
+@@ -724,9 +724,6 @@ int main(void)
+ .SH ENCRYPTED CLIENT HELLO OPTIONS
+ .IP CURLOPT_ECH
+ Set the configuration for ECH. See \fICURLOPT_ECH(3)\fP
+-.IP CURLOPT_ECH_PUBLIC
+-Override the public_name field of the ECHConfigList to be used.
+-See \fICURLOPT_ECH_PUBLIC(3)\fP
+ .SH AVAILABILITY
+ Always
+ .SH RETURN VALUE
+diff --git a/docs/libcurl/opts/CURLOPT_ECH.3 b/docs/libcurl/opts/CURLOPT_ECH.3
+index 8ece30c..3b180b0 100644
+--- a/docs/libcurl/opts/CURLOPT_ECH.3
++++ b/docs/libcurl/opts/CURLOPT_ECH.3
+@@ -32,10 +32,9 @@ CURLOPT_ECH \- control configuration for Encrypted Client Hello
+ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_ECH, char *config);
+ .fi
+ .SH DESCRIPTION
+-Pass a string that holds either a configuration keyword or a base64 encoded
+-ECHConfigList.  Otherwise, the config value will be interpreted as a base64
+-encoded ECHConfigList as shown in the example below.  In all cases, if ECH is
+-attempted, it may fail for various reasons.  The keywords supported are:
++Pass a string that specifies configuration details for ECH.
++In all cases, if ECH is attempted, it may fail for various reasons.
++The keywords supported are:
+ .IP false
+ Turns off ECH.
+ .IP grease
+@@ -44,16 +43,24 @@ Instructs client to emit a GREASE'd ECH extension.
+ Instructs client to attempt ECH, if possible, but to not fail if attempting ECH is not possible.
+ .IP hard
+ Instructs client to attempt ECH and fail if if attempting ECH is not possible.
++.IP ecl:<base64-value>
++If the string starts with "ecl:" then the remainder of the string should be a base64-encoded
++ECHConfigList that will be used for ECH rather than attempting to download such a value from
++the DNS.
++.IP pn:<name>
++If the string starts with "pn:" then the remainder of the string should be a DNS/host name
++that will be used to over-ride the public_name field of the ECHConfigList that will be used
++for ECH.
+ .SH DEFAULT
+ There is no default value, meaning ECH is disabled if no
+ configuration is supplied.
+ .SH PROTOCOLS
+-HTTP, and requires TLS1.
++TLS, and requires TLS1.3.
+ .SH EXAMPLE
+ .nf
+-CURL *curl = curl_easy_init(d;
++CURL *curl = curl_easy_init();
+ 
+-const char *config ="AED+DQA87wAgACB/RuzUCsW3uBbSFI7mzD63TUXpI8sGDTnFTbFCDpa+CAAEAAEAAQANY292ZXIuZGVmby5pZQAA";
++const char *config ="ecl:AED+DQA87wAgACB/RuzUCsW3uBbSFI7mzD63TUXpI8sGDTnFTbFCDpa+CAAEAAEAAQANY292ZXIuZGVmby5pZQAA";
+ if(curl) {
+   curl_easy_setopt(curl, CURLOPT_ECH, config);
+   curl_easy_perform(curl);
+@@ -64,4 +71,4 @@ Added in 8.4.0
+ .SH RETURN VALUE
+ Returns CURLE_OK on success or CURLE_OUT_OF_MEMORY if there was insufficient heap space.
+ .SH "SEE ALSO"
+-.BR CURLOPT_ECH_PUBLIC (3)
++.BR CURLOPT_DOH_URL (3)
+diff --git a/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3 b/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
+deleted file mode 100644
+index 4b57438..0000000
+--- a/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
++++ /dev/null
+@@ -1,61 +0,0 @@
+-.\" **************************************************************************
+-.\" *                                  _   _ ____  _
+-.\" *  Project                     ___| | | |  _ \| |
+-.\" *                             / __| | | | |_) | |
+-.\" *                            | (__| |_| |  _ <| |___
+-.\" *                             \___|\___/|_| \_\_____|
+-.\" *
+-.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+-.\" *
+-.\" * This software is licensed as described in the file COPYING, which
+-.\" * you should have received as part of this distribution. The terms
+-.\" * are also available at https://curl.se/docs/copyright.html.
+-.\" *
+-.\" * You may opt to use, copy, modify, merge, publish, distribute and/or sell
+-.\" * copies of the Software, and permit persons to whom the Software is
+-.\" * furnished to do so, under the terms of the COPYING file.
+-.\" *
+-.\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
+-.\" * KIND, either express or implied.
+-.\" *
+-.\" * SPDX-License-Identifier: curl
+-.\" *
+-.\" **************************************************************************
+-.\"
+-.TH CURLOPT_ECH_PUBLIC 3 "26 Sep 2023" libcurl libcurl
+-.SH NAME
+-CURLOPT_ECH_PUBLIC \- override an ECH public_name
+-.SH SYNOPSIS
+-.nf
+-#include <curl/curl.h>
+-
+-CURLcode curl_easy_setopt(CURL *handle, CURLOPT_ECH_PUBLIC, char *public_name);
+-.fi
+-.SH DESCRIPTION
+-Pass a string that provides an public_name.
+-
+-If ECH is attempted, this value will be used and will
+-override any value retrieved from the DNS.
+-
+-This option only works in builds using OpenSSL.
+-.SH DEFAULT
+-NULL - there is no default public_name. If this option is not set, and ECH
+-is to be attempted, libcurl uses DoH and attempts to find an ECHConfigList
+-in an HTTPS RR, and will use the public_name found there.
+-.SH PROTOCOLS
+-HTTP, and requires TLSv1.3.
+-.SH EXAMPLE
+-.nf
+-CURL *curl = curl_easy_init();
+-if(curl) {
+-  curl_easy_setopt(curl, CURLOPT_ECH_PUBLIC, "example.com");
+-  curl_easy_perform(curl);
+-}
+-.fi
+-.SH AVAILABILITY
+-Added in 8.4.0
+-.SH RETURN VALUE
+-Returns CURLE_OK on success or CURLE_OUT_OF_MEMORY if there was insufficient
+-heap space.
+-.SH "SEE ALSO"
+-.BR CURLOPT_ECH (3)
+diff --git a/docs/libcurl/opts/Makefile.inc b/docs/libcurl/opts/Makefile.inc
+index 10ea4af..cb6c7dc 100644
+--- a/docs/libcurl/opts/Makefile.inc
++++ b/docs/libcurl/opts/Makefile.inc
+@@ -165,7 +165,6 @@ man_MANS =                                      \
+   CURLOPT_DOH_SSL_VERIFYSTATUS.3                \
+   CURLOPT_DOH_URL.3                             \
+   CURLOPT_ECH.3                                 \
+-  CURLOPT_ECH_PUBLIC.3                          \
+   CURLOPT_EGDSOCKET.3                           \
+   CURLOPT_ERRORBUFFER.3                         \
+   CURLOPT_EXPECT_100_TIMEOUT_MS.3               \
+diff --git a/docs/libcurl/symbols-in-versions b/docs/libcurl/symbols-in-versions
+index ebebbf9..8790b18 100644
+--- a/docs/libcurl/symbols-in-versions
++++ b/docs/libcurl/symbols-in-versions
+@@ -615,7 +615,6 @@ CURLOPT_DOH_SSL_VERIFYPEER      7.76.0
+ CURLOPT_DOH_SSL_VERIFYSTATUS    7.76.0
+ CURLOPT_DOH_URL                 7.62.0
+ CURLOPT_ECH                     8.4.0
+-CURLOPT_ECH_PUBLIC              8.4.0
+ CURLOPT_EGDSOCKET               7.7           7.84.0
+ CURLOPT_ENCODING                7.10          7.21.6
+ CURLOPT_ERRORBUFFER             7.1
+diff --git a/docs/options-in-versions b/docs/options-in-versions
+index d611183..f5e7bc9 100644
+--- a/docs/options-in-versions
++++ b/docs/options-in-versions
+@@ -56,7 +56,6 @@
+ --doh-url                            7.62.0
+ --dump-header (-D)                   5.7
+ --ech                                8.4.0
+---echpublic                          8.4.0
+ --egd-file                           7.7
+ --engine                             7.9.3
+ --etag-compare                       7.68.0
+diff --git a/include/curl/curl.h b/include/curl/curl.h
+index a8f7141..6dbdf1e 100644
+--- a/include/curl/curl.h
++++ b/include/curl/curl.h
+@@ -2201,12 +2201,9 @@ typedef enum {
+   /* set a specific client IP for HAProxy PROXY protocol header? */
+   CURLOPT(CURLOPT_HAPROXY_CLIENT_IP, CURLOPTTYPE_STRINGPOINT, 323),
+ 
+-  /* ECH status: 1L to enable, 0L otherwise */
++  /* set ECH configuration  */
+   CURLOPT(CURLOPT_ECH, CURLOPTTYPE_STRINGPOINT, 324),
+ 
+-  /* ECH public name for outer SNI in ECH */
+-  CURLOPT(CURLOPT_ECH_PUBLIC, CURLOPTTYPE_STRINGPOINT, 326),
+-
+   CURLOPT_LASTENTRY /* the last unused */
+ } CURLoption;
+ 
+diff --git a/include/curl/typecheck-gcc.h b/include/curl/typecheck-gcc.h
+index 5dc5c9f..873a49e 100644
+--- a/include/curl/typecheck-gcc.h
++++ b/include/curl/typecheck-gcc.h
+@@ -276,7 +276,6 @@ CURLWARNING(_curl_easy_getinfo_err_curl_off_t,
+    (option) == CURLOPT_DNS_SERVERS ||                                         \
+    (option) == CURLOPT_DOH_URL ||                                             \
+    (option) == CURLOPT_ECH        ||                                          \
+-   (option) == CURLOPT_ECH_PUBLIC ||                                          \
+    (option) == CURLOPT_EGDSOCKET ||                                           \
+    (option) == CURLOPT_FTP_ACCOUNT ||                                         \
+    (option) == CURLOPT_FTP_ALTERNATIVE_TO_USER ||                             \
+diff --git a/lib/easyoptions.c b/lib/easyoptions.c
+index 959d96c..dae6a04 100644
+--- a/lib/easyoptions.c
++++ b/lib/easyoptions.c
+@@ -87,7 +87,6 @@ struct curl_easyoption Curl_easyopts[] = {
+   {"DOH_SSL_VERIFYSTATUS", CURLOPT_DOH_SSL_VERIFYSTATUS, CURLOT_LONG, 0},
+   {"DOH_URL", CURLOPT_DOH_URL, CURLOT_STRING, 0},
+   {"ECH", CURLOPT_ECH, CURLOT_STRING, 0},
+-  {"ECH_PUBLIC", CURLOPT_ECH_PUBLIC, CURLOT_STRING, 0},
+   {"EGDSOCKET", CURLOPT_EGDSOCKET, CURLOT_STRING, 0},
+   {"ENCODING", CURLOPT_ACCEPT_ENCODING, CURLOT_STRING, CURLOT_FLAG_ALIAS},
+   {"ERRORBUFFER", CURLOPT_ERRORBUFFER, CURLOT_OBJECT, 0},
+@@ -375,6 +374,6 @@ struct curl_easyoption Curl_easyopts[] = {
+  */
+ int Curl_easyopts_check(void)
+ {
+-  return ((CURLOPT_LASTENTRY%10000) != (326 + 1));
++  return ((CURLOPT_LASTENTRY%10000) != (324 + 1));
+ }
+ #endif
+diff --git a/lib/setopt.c b/lib/setopt.c
+index 8c0148c..cb98b9c 100644
+--- a/lib/setopt.c
++++ b/lib/setopt.c
+@@ -3130,31 +3130,42 @@ CURLcode Curl_vsetopt(struct Curl_easy *data, CURLoption option, va_list param)
+   }
+ #endif
+ #ifdef USE_ECH
+-  case CURLOPT_ECH:
++  case CURLOPT_ECH: {
++    size_t plen = 0;
++
+     argptr = va_arg(param, char *);
+-    if(!argptr)
+-      data->set.tls_ech = CURLECH_ENABLE;
+-    else if(strcasecompare(argptr, "FALSE"))
++    if(!argptr) {
++      data->set.tls_ech = CURLECH_DISABLE;
++      result = CURLE_BAD_FUNCTION_ARGUMENT;
++      return result;
++    }
++    plen = strlen(argptr);
++    if(plen > CURL_MAX_INPUT_LENGTH) {
++      data->set.tls_ech = CURLECH_DISABLE;
++      result = CURLE_BAD_FUNCTION_ARGUMENT;
++      return result;
++    }
++    if(plen == 5 && strcasecompare(argptr, "FALSE"))
+       data->set.tls_ech = CURLECH_DISABLE;
+-    else if(strcasecompare(argptr, "GREASE"))
++    else if(plen == 6 && strcasecompare(argptr, "GREASE"))
+       data->set.tls_ech = CURLECH_GREASE;
+-    else if(strcasecompare(argptr, "TRUE"))
++    else if(plen == 4 && strcasecompare(argptr, "TRUE"))
+       data->set.tls_ech = CURLECH_ENABLE;
+-    else if(strcasecompare(argptr, "HARD"))
++    else if(plen == 4 && strcasecompare(argptr, "HARD"))
+       data->set.tls_ech = CURLECH_HARD;
+-    else {
+-      result = Curl_setstropt(&data->set.str[STRING_ECH_CONFIG], argptr);
++    else if(plen > 5 && strncasecompare(argptr, "ECL:", 4)) {
++      result = Curl_setstropt(&data->set.str[STRING_ECH_CONFIG], argptr + 4);
+       if(result)
+         return result;
+       data->set.tls_ech = CURLECH_CLA_CFG;
+     }
++    else if(plen > 4 && strncasecompare(argptr, "PN:", 3)) {
++      result = Curl_setstropt(&data->set.str[STRING_ECH_PUBLIC], argptr + 3);
++      if(result)
++        return result;
++    }
+     break;
+-  case CURLOPT_ECH_PUBLIC:
+-    argptr = va_arg(param, char *);
+-    result = Curl_setstropt(&data->set.str[STRING_ECH_PUBLIC], argptr);
+-    if(result)
+-      return result;
+-    break;
++  }
+ #endif
+   case CURLOPT_QUICK_EXIT:
+     data->set.quick_exit = (0 != va_arg(param, long)) ? 1L:0L;
+diff --git a/lib/urldata.h b/lib/urldata.h
+index 23e66ec..8d8a1d7 100644
+--- a/lib/urldata.h
++++ b/lib/urldata.h
+@@ -1640,9 +1640,7 @@ enum dupstring {
+   STRING_SSL_EC_CURVES,
+   STRING_AWS_SIGV4, /* Parameters for V4 signature */
+   STRING_HAPROXY_CLIENT_IP,     /* CURLOPT_HAPROXY_CLIENT_IP */
+-  STRING_ECH_CONFIG,            /* CURLOPT_ECH_CONFIG
+-                                 * TODO: packages/OS400/chkstring.c
+-                                 */
++  STRING_ECH_CONFIG,            /* CURLOPT_ECH_CONFIG */
+   STRING_ECH_PUBLIC,            /* CURLOPT_ECH_PUBLIC */
+ 
+   /* -- end of null-terminated strings -- */
+diff --git a/lib/vtls/openssl.c b/lib/vtls/openssl.c
+index 8b3c72b..7b86005 100644
+--- a/lib/vtls/openssl.c
++++ b/lib/vtls/openssl.c
+@@ -3892,20 +3892,19 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+       rv = SSL_ech_set_server_names(backend->handle,
+                              hostname, /* ech_inner_name (again) */
+                              outername, /* ech_outer_name */
+-                             1 /* do send outer */
++                             0 /* do send outer */
+                              );
+-      infof(data, "ECH: rv %d from SSL_set_ech_server_names()", rv);
+       if(rv != 1) {
+         infof(data, "ECH: rv failed to set server name(s) %d [ERROR]", rv);
+         return CURLE_SSL_CONNECT_ERROR;
+       }
+     }
++# endif  /* not BORING */
+     if(trying_ech_now
+        && SSL_set_min_proto_version(backend->handle, TLS1_3_VERSION) != 1) {
+       infof(data, "ECH: Can't force TLSv1.3 [ERROR]");
+       return CURLE_SSL_CONNECT_ERROR;
+     }
+-# endif  /* not BORING */
+ 
+   }
+ #endif  /* USE_ECH */
+diff --git a/packages/OS400/ccsidcurl.c b/packages/OS400/ccsidcurl.c
+index 04e6493..b9a17bc 100644
+--- a/packages/OS400/ccsidcurl.c
++++ b/packages/OS400/ccsidcurl.c
+@@ -1099,7 +1099,6 @@ curl_easy_setopt_ccsid(CURL *easy, CURLoption tag, ...)
+   case CURLOPT_DOH_URL:
+ #ifdef USE_ECH
+   case CURLOPT_ECH:
+-  case CURLOPT_ECH_PUBLIC:
+ #endif
+   case CURLOPT_EGDSOCKET:
+   case CURLOPT_FTPPORT:
+diff --git a/src/tool_cfgable.c b/src/tool_cfgable.c
+index 67055aa..3a49299 100644
+--- a/src/tool_cfgable.c
++++ b/src/tool_cfgable.c
+@@ -178,6 +178,8 @@ static void free_config_fields(struct OperationConfig *config)
+ #ifdef USE_ECH
+   Curl_safefree(config->ech);
+   config->ech = NULL;
++  Curl_safefree(config->ech_config);
++  config->ech_config = NULL;
+   Curl_safefree(config->ech_public);
+   config->ech_public = NULL;
+ #endif
+diff --git a/src/tool_cfgable.h b/src/tool_cfgable.h
+index a767fbb..23b9e4a 100644
+--- a/src/tool_cfgable.h
++++ b/src/tool_cfgable.h
+@@ -299,8 +299,9 @@ struct OperationConfig {
+   bool rm_partial;                /* on error, remove partially written output
+                                      files */
+ #ifdef USE_ECH
+-  char *ech;                      /* Config set by --ech option */
+-  char *ech_public;               /* Set by --echpublic option */
++  char *ech;                      /* Config set by --ech keywords */
++  char *ech_config;               /* Config set by "--ech esl:" option */
++  char *ech_public;               /* Config set by "--ech pn:" option */
+ #endif
+ 
+ };
+diff --git a/src/tool_getparam.c b/src/tool_getparam.c
+index 46cf5ce..1e2520a 100644
+--- a/src/tool_getparam.c
++++ b/src/tool_getparam.c
+@@ -297,10 +297,7 @@ static const struct LongShort aliases[]= {
+   {"ED", "etag-compare",             ARG_FILENAME},
+   {"EE", "curves",                   ARG_STRING},
+ #ifdef USE_ECH
+-         /* "EK" is as good a choice of starting point
+-          * for ECH-related short names as any. */
+   {"EK", "ech",                      ARG_STRING},
+-  {"EM", "echpublic",                ARG_STRING},
+ #endif
+   {"f",  "fail",                     ARG_BOOL},
+   {"fa", "fail-early",               ARG_BOOL},
+@@ -2132,42 +2129,50 @@ ParameterError getparameter(const char *flag, /* f or -long-flag */
+ 
+ #ifdef USE_ECH
+       case 'K':
+-        if('@' != *nextarg) {
+-          /* Simple case: just a string */
+-          GetStr(&config->ech, nextarg);
+-        }
+-        else {
+-          /* Indirect case: @filename or @- for stdin */
+-          FILE *file;
+-          nextarg++;        /* skip over '@' */
+-
+-          if(!strcmp("-", nextarg)) {
+-            file = stdin;
++        if(strlen(nextarg) > 4 && strncasecompare("pn:", nextarg, 3)) {
++          /* a public_name */
++          GetStr(&config->ech_public, nextarg);
++        }
++        else if(strlen(nextarg) > 5 && strncasecompare("ecl:", nextarg, 4)) {
++          /* an ECHConfigList */
++          if('@' != *(nextarg + 4)) {
++            GetStr(&config->ech_config, nextarg);
+           }
+           else {
+-            file = fopen(nextarg, FOPEN_READTEXT);
+-          }
+-          if(!file) {
+-            warnf(global,
+-                  "Couldn't read file \"%s\" "
+-                  "specified for \"--echconfig\" option",
+-                  nextarg);
+-            return PARAM_BAD_USE; /*  */
+-          }
++            /* Indirect case: @filename or @- for stdin */
++            char *tmpcfg = NULL;
++            FILE *file;
+ 
+-          err = file2string(&config->ech, file);
+-          if(file != stdin)
+-            fclose(file);
+-          if(err)
+-            return err;
++            nextarg++;        /* skip over '@' */
++            if(!strcmp("-", nextarg)) {
++              file = stdin;
++            }
++            else {
++              file = fopen(nextarg, FOPEN_READTEXT);
++            }
++            if(!file) {
++              warnf(global,
++                    "Couldn't read file \"%s\" "
++                    "specified for \"--ech ecl:\" option",
++                    nextarg);
++              return PARAM_BAD_USE; /*  */
++            }
++            err = file2string(&tmpcfg, file);
++            if(file != stdin)
++              fclose(file);
++            if(err)
++              return err;
++            config->ech_config = aprintf("ecl:%s",tmpcfg);
++            if(!config->ech_config)
++              return PARAM_NO_MEM;
++            free(tmpcfg);
+         } /* file done */
+-        break;
+-
+-      case 'M':
+-        /* --echpublic */
+-        /* String data to over-ride (or fill for missing) ECH.public_name */
+-        GetStr(&config->ech_public, nextarg);
+-        break;
++      }
++      else {
++        /* Simple case: just a string, with a keyword */
++        GetStr(&config->ech, nextarg);
++      }
++      break;
+ #endif
+ 
+       default: /* unknown flag */
+diff --git a/src/tool_listhelp.c b/src/tool_listhelp.c
+index d646e45..a042465 100644
+--- a/src/tool_listhelp.c
++++ b/src/tool_listhelp.c
+@@ -172,9 +172,6 @@ const struct helptxt helptext[] = {
+   {"    --ech <config>",
+    "Encrypted Client Hello controls",
+   CURLHELP_TLS},
+-  {"    --echpublic <host>",
+-   "Over-ride the public_name from an ECHConfig",
+-  CURLHELP_TLS},
+ #endif
+ 
+   {"    --egd-file <file>",
+diff --git a/src/tool_operate.c b/src/tool_operate.c
+index 84081fa..df377ef 100644
+--- a/src/tool_operate.c
++++ b/src/tool_operate.c
+@@ -2204,7 +2204,9 @@ static CURLcode single_transfer(struct GlobalConfig *global,
+         if(config->ech) /* only if set (optional) */
+           my_setopt_str(curl, CURLOPT_ECH, config->ech);
+         if(config->ech_public) /* only if set (optional) */
+-          my_setopt_str(curl, CURLOPT_ECH_PUBLIC, config->ech_public);
++          my_setopt_str(curl, CURLOPT_ECH, config->ech_public);
++        if(config->ech_config) /* only if set (optional) */
++          my_setopt_str(curl, CURLOPT_ECH, config->ech_config);
+ #endif
+ 
+         /* initialize retry vars for loop below */
+diff --git a/tests/ech_tests.sh b/tests/ech_tests.sh
+index b79bb43..aa03b63 100755
+--- a/tests/ech_tests.sh
++++ b/tests/ech_tests.sh
+@@ -136,6 +136,35 @@ function hostport2port()
+     echo $port
+ }
+ 
++function cli_test()
++{
++    winorlose=$1
++    echparms="${@:2}"
++
++    turl="https://defo.ie/ech-check.php"
++    TMPF=`mktemp`
++    cmd="timeout $tout $CURL $echparms $turl >$TMPF 2>&1"
++    echo "doCLItest: $cmd " >> $logfile
++    timeout $tout $CURL $echparms $turl >$TMPF 2>&1
++    eres=$?
++    if [[ "$eres" == "124" ]] 
++    then
++        echo "doCLItest: Timeout running $cmd"
++        cat $TMPF >>$logfile
++        echo "doCLItest: Timeout running $cmd" >>$logfile
++    fi
++    success=`grep SSL_ECH_STATUS $TMPF | grep -c success`
++    if [[ "$success" == "$winorlose" ]]
++    then
++        echo "ok for $echparms"
++    else
++        echo "doCLItest: Falure running $cmd"
++        cat $TMPF >>$logfile
++        echo "doCLItest: Falure running $cmd" >>$logfile
++    fi
++    rm -f $TMPF
++}
++
+ # start of main script
+ 
+ # start by assuming we have nothing we need...
+@@ -375,6 +404,21 @@ do
+     echo "" >>$logfile
+ done
+ 
++# Check various command line options, if we're good so far
++if [[ "$allgood" == "yes" ]]
++then
++    # use this test URL as it'll tell us if things worked
++    cli_test 1 --ech true
++    cli_test 0 --ech false
++    cli_test 1 --ech false --ech true
++    cli_test 1 --ech false --ech true --ech pn:foobar
++    cli_test 1 --ech false --ech pn:foobar --ech true 
++    echconfiglist=`dig +short https defo.ie | sed -e 's/^.*ech=//' | sed -e 's/ .*//'`
++    cli_test 1 --ech ecl:$echconfiglist
++    cli_test 0 --ech ecl:
++fi
++
++
+ END=$(whenisitagain)
+ echo "Finished $0 at $END"  >>$logfile
+ echo "-----" >>$logfile
+@@ -410,37 +454,3 @@ fi
+ echo "ECH badness at $NOW" >>$LTOP/bad_runs
+ exit 2
+ 
+-# non port 443 stuff below for handy re-use
+-        if [[ "$port" != "$DEFPORT" ]]
+-        then
+-            qname="_$port._https.$host"
+-        fi
+-        echo "Checking $host:$port/$path and $wkurl" >>$logfile
+-        # get wkurl
+-        if [[ "$host" != "crypto.cloudflare.com" && "$host" != "tls-ech.dev" ]]
+-        then
+-            timeout $tout curl -o $host.$port.json -s $wkurl
+-            cres=$?
+-            if [[ "$cres" == "124" ]] 
+-            then
+-                allgood="no"
+-                echo "Timeout getting $wkurl" >>$logfile
+-            fi
+-        else
+-            echo "{ \"No .well-known for $host \"}" >$host.$port.json
+-        fi
+-        # grab DNS
+-        $digcmd $qname >$host.$port.dig 2>&1
+-        # try ECH 
+-        timeout $tout $echcli -H $host -p $port $pathstr -d >$host.$port.echcli.log
+-        eres=$?
+-        if [[ "$eres" == "124" ]] 
+-        then
+-            allgood="no"
+-            echo "Timeout running curl for $host:$port/$path" >>$logfile
+-        fi
+-        if [[ "$eres" != "0" ]] 
+-        then
+-            allgood="no"
+-            echo "Error ($eres) from curl for $host:$port/$path" >>$logfile
+-        fi

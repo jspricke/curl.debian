@@ -1,0 +1,70 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Wed, 18 Oct 2023 19:40:03 +0100
+Subject: added pn override test
+
+---
+ tests/ech_tests.sh | 44 ++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
+
+diff --git a/tests/ech_tests.sh b/tests/ech_tests.sh
+index 45344a2..4e8b328 100755
+--- a/tests/ech_tests.sh
++++ b/tests/ech_tests.sh
+@@ -308,6 +308,7 @@ fi
+ 
+ allgood="yes"
+ 
++# basic ECH good/bad
+ for targ in "${!ech_targets[@]}"
+ do
+     if [[ "$using_wolf" == "yes" && "$targ" == "draft-13.esni.defo.ie:8414" ]]
+@@ -350,6 +351,49 @@ do
+     echo "" >>$logfile
+ done
+ 
++# check if public_name override works
++for targ in "${!ech_targets[@]}"
++do
++    if [[ "$using_wolf" == "yes" && "$targ" == "draft-13.esni.defo.ie:8414" ]]
++    then
++        echo "Skipping $targ 'till wolf does HRR+ECH"
++        continue
++    fi
++    if [[ "$using_wolf" == "yes" && "$targ" == "tls-ech.dev" ]]
++    then
++        echo "Skipping $targ 'till wolf does HRR+ECH"
++        continue
++    fi
++    host=$(hostport2host $targ)
++    port=$(hostport2port $targ)
++    if [[ "$port" != "443" && "$have_portsblocked" == "yes" ]]
++    then
++        echo "Skipping $targ as ports != 443 seem blocked"
++        continue
++    fi
++    path=${ech_targets[$targ]}
++    turl="https://$host:$port/$path"
++    echo "PN override check for $turl"
++    echo "" >>$logfile
++    echo "PN override check for $turl" >>$logfile
++    timeout $tout $CURL --ech pn:override--ech hard $turl >>$logfile 2>&1
++    eres=$?
++    if [[ "$eres" == "124" ]] 
++    then
++        allgood="no"
++        echo "Timeout for $turl" >>$logfile
++        echo -e "\tTimeout for $turl" >>$logfile
++        echo "Timeout running curl for $host:$port/$path" >>$logfile
++    fi
++    if [[ "$eres" != "0" ]] 
++    then
++        allgood="no"
++        echo "PN override Error ($eres) for $turl" >>$logfile
++        echo -e "\tPN override Error ($eres) for $turl"
++    fi
++    echo "" >>$logfile
++done
++
+ for targ in "${!httpsrr_targets[@]}"
+ do
+     host=$(hostport2host $targ)

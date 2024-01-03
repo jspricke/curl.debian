@@ -1,0 +1,21 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Wed, 11 Oct 2023 21:44:05 +0100
+Subject: refix openssl build
+
+---
+ lib/vtls/openssl.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/vtls/openssl.c b/lib/vtls/openssl.c
+index df9514c..e336c2a 100644
+--- a/lib/vtls/openssl.c
++++ b/lib/vtls/openssl.c
+@@ -3916,7 +3916,7 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+                                     hostname, outername,
+                                     0 /* do send outer */);
+       if(result != 1) {
+-        infof(data, "ECH: rv failed to set server name(s) %d [ERROR]", rv);
++        infof(data, "ECH: rv failed to set server name(s) %d [ERROR]", result);
+         return CURLE_SSL_CONNECT_ERROR;
+       }
+     }

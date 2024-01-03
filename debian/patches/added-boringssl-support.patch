@@ -1,0 +1,235 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Thu, 28 Sep 2023 01:50:44 +0100
+Subject: added boringssl support
+
+---
+ configure.ac                           | 15 +++++++------
+ docs/ECH.md                            | 39 ++++++++++++++++++++++++++++++++--
+ docs/libcurl/opts/CURLOPT_ECH_CONFIG.3 |  5 +++--
+ docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3 |  4 +++-
+ lib/vtls/openssl.c                     | 26 ++++++++++++++++++++++-
+ 5 files changed, 77 insertions(+), 12 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index 2fa59fc..81a462a 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -4397,19 +4397,22 @@ if test "x$want_ech" != "xno"; then
+   ECH_ENABLED=0
+   ECH_SUPPORT=''
+ 
+-  dnl OpenSSL with a chosen ECH function should be enough
+-  dnl so more exhaustive checking seems unnecessary for now
++  dnl check for OpenSSL
+   if test "x$OPENSSL_ENABLED" = "x1"; then
+     AC_CHECK_FUNCS(SSL_ech_set1_echconfig,
+       ECH_SUPPORT="ECH support available via OpenSSL with SSL_ech_set1_echconfig"
+       ECH_ENABLED=1)
+-
+-  elif test "x$WOLFSSL_ENABLED" = "x1"; then
++  fi
++  dnl check for boringssl equivalent
++  if test "x$OPENSSL_ENABLED" = "x1"; then
++    AC_CHECK_FUNCS(SSL_set1_ech_config_list,
++      ECH_SUPPORT="ECH support available via boringssl with SSL_set1_ech_ech_config_list"
++      ECH_ENABLED=1)
++  fi
++  if test "x$WOLFSSL_ENABLED" = "x1"; then
+     AC_CHECK_FUNCS(wolfSSL_CTX_GenerateEchConfig,
+       ECH_SUPPORT="ECH support available via WolfSSL with wolfSSL_CTX_GenerateEchConfig"
+       ECH_ENABLED=1)
+-
+-  dnl add 'elif' chain here for additional implementations
+   fi
+ 
+   dnl now deal with whatever we found
+diff --git a/docs/ECH.md b/docs/ECH.md
+index b13348c..48e5d6c 100644
+--- a/docs/ECH.md
++++ b/docs/ECH.md
+@@ -3,8 +3,8 @@
+ 
+ We've added support for ECH to a recent curl build. That can use HTTPS RRs
+ published in the DNS, if curl is using DoH, or else can accept the relevant
+-ECHConfigList values from the command line. That works with either OpenSSL or
+-WolfSSL as it's TLS provider, depending on how you build curl.
++ECHConfigList values from the command line. That works with OpenSSL,
++WolfSSL or boringssl as it's TLS provider, depending on how you build curl.
+ 
+ This has not been tested. DO NOT USE.
+ 
+@@ -347,6 +347,41 @@ There's also a current
+ [bug/issue](https://github.com/wolfSSL/wolfssl/issues/6802) that the wolfSSL
+ client support for ECH seems to not correctly support HelloRetryRequest.
+ 
++## boringssl build
++
++The boringssl APIs do not support the ``--echconfig`` or ``--echpublic``
++command line options as of now.
++
++BoringSSL is also supported by curl and also supports ECH, so to build
++one of those:
++
++```bash
++    cd $HOME/code
++    git clone https://boringssl.googlesource.com/boringssl
++    cd boringssl
++    cmake -DCMAKE_INSTALL_PREFIX:PATH=$HOME/code/boringssl/inst -DBUILD_SHARED_LIBS=1
++    make
++    ...
++    make install
++```
++
++Then: 
++
++```bash
++    cd $HOME/code
++    git clone https://github.com/sftcd/curl
++    cd curl
++    git checkout ECH-experimental
++    automake -fi
++    ./configure --with-ssl=$HOME/code/boringssl/inst --enable-ech --enable-httpsrr
++    ...lots of output...
++    WARNING: ech ECH HTTPSRR enabled but marked EXPERIMENTAL. Use with caution!
++    make
++```
++
++To use that you need ``LD_LIBRARY_PATH=$HOME/code/boringssl/inst/lib`` set in
++the environment, but then it works.
++
+ ## Supporting ECH without DoH
+ 
+ All of the above only applies if DoH is being used. There should be a use-case
+diff --git a/docs/libcurl/opts/CURLOPT_ECH_CONFIG.3 b/docs/libcurl/opts/CURLOPT_ECH_CONFIG.3
+index efc1237..a622df8 100644
+--- a/docs/libcurl/opts/CURLOPT_ECH_CONFIG.3
++++ b/docs/libcurl/opts/CURLOPT_ECH_CONFIG.3
+@@ -36,6 +36,9 @@ Pass a string that holds a base64 encoded ECHConfigList.
+ 
+ If ECH is attempted, this value will be used and will
+ override any value retrieved from the DNS.
++
++This option only works in builds with OpenSSL or wolfSSL but not
++with boringssl.
+ .SH DEFAULT
+ NULL - there is no default config. If this option is not set, and ECH
+ is to be attempted, libcurl uses DoH and attempts to find an ECHConfigList
+@@ -55,8 +58,6 @@ if(curl) {
+ Added in 8.4.0
+ .SH RETURN VALUE
+ Returns CURLE_OK on success or CURLE_OUT_OF_MEMORY if there was insufficient heap space.
+-
+ .SH "SEE ALSO"
+-
+ .BR CURLOPT_ECH_STATUS "(3), " CURLOPT_ECH_PUBLIC "(3), "
+ 
+diff --git a/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3 b/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
+index 220b497..266d71c 100644
+--- a/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
++++ b/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
+@@ -36,6 +36,8 @@ Pass a string that provides an public_name.
+ 
+ If ECH is attempted, this value will be used and will
+ override any value retrieved from the DNS.
++
++This option only works in builds using OpenSSL.
+ .SH DEFAULT
+ NULL - there is no default public_name. If this option is not set, and ECH
+ is to be attempted, libcurl uses DoH and attempts to find an ECHConfigList
+@@ -56,4 +58,4 @@ Added in 8.4.0
+ Returns CURLE_OK on success or CURLE_OUT_OF_MEMORY if there was insufficient
+ heap space.
+ .SH "SEE ALSO"
+-.BR CURLOPT_ECH_CONFIG "(3), " CURLOPT_ECH_STATUS "(3)"
++.BR CURLOPT_ECH_CONFIG "(3), " CURLOPT_ECH_STATUS "(3), "
+diff --git a/lib/vtls/openssl.c b/lib/vtls/openssl.c
+index e02d5f7..d97809b 100644
+--- a/lib/vtls/openssl.c
++++ b/lib/vtls/openssl.c
+@@ -83,7 +83,9 @@
+ #include <openssl/evp.h>
+ 
+ #ifdef USE_ECH
+-#include <openssl/ech.h>
++# ifndef OPENSSL_IS_BORINGSSL
++#  include <openssl/ech.h>
++# endif
+ #endif /* USE_ECH */
+ 
+ #if (OPENSSL_VERSION_NUMBER >= 0x0090808fL) && !defined(OPENSSL_NO_OCSP)
+@@ -3807,6 +3809,10 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+ 
+     ech_config = (unsigned char *) data->set.str[STRING_ECH_CONFIG];
+     if(ech_config) {
++#ifdef OPENSSL_IS_BORINGSSL
++      infof(data, "ECH: boringssl doesn't support command line ECH");
++      return CURLE_SSL_CONNECT_ERROR;
++#else
+       infof(data, "ECH: ECHConfig from command line");
+       ech_config_len = strlen(data->set.str[STRING_ECH_CONFIG]);
+       if(SSL_ech_set1_echconfig(backend->handle,
+@@ -3817,6 +3823,7 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+       }
+       else
+         trying_ech_now = 1;
++#endif
+     }
+     else {
+       struct Curl_dns_entry *dns = NULL;
+@@ -3836,11 +3843,19 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+           size_t elen = rinfo->echconfiglist_len;
+ 
+           infof(data, "ECH: ECHConfig from DoH HTTPS RR");
++#ifndef OPENSSL_IS_BORINGSSL
+           if(SSL_ech_set1_echconfig(backend->handle, ecl, elen) != 1) {
+             infof(data, "ECH: SSL_ECH_set1_echconfig failed");
+             if(data->set.tls_enable_ech_hard)
+               return CURLE_SSL_CONNECT_ERROR;
+           }
++#else
++          if(SSL_set1_ech_config_list(backend->handle, ecl, elen) != 1) {
++            infof(data, "ECH: SSL_set1_ech_ech_config_list failed (boring)");
++            if(data->set.tls_enable_ech_hard)
++              return CURLE_SSL_CONNECT_ERROR;
++          }
++#endif
+           else {
+             trying_ech_now = 1;
+             infof(data, "ECH: imported ECHConfigList of length %ld", elen);
+@@ -3855,6 +3870,12 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+       }
+     }
+ 
++#ifdef OPENSSL_IS_BORINGSSL
++    if(trying_ech_now && outername) {
++      infof(data, "ECH: setting public_name not supported with boringssl");
++      return CURLE_SSL_CONNECT_ERROR;
++    }
++#else
+     if(trying_ech_now && outername) {
+       infof(data, "ECH: inner: '%s', outer: '%s'",
+             hostname, outername);
+@@ -3874,6 +3895,7 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+       infof(data, "ECH: Can't force TLSv1.3 [ERROR]");
+       return CURLE_SSL_CONNECT_ERROR;
+     }
++# endif  /* not BORING */
+ 
+   }
+ #endif  /* USE_ECH */
+@@ -4092,6 +4114,7 @@ static CURLcode ossl_connect_step2(struct Curl_cfilter *cf,
+           OBJ_nid2sn(psigtype_nid));
+ 
+ #ifdef USE_ECH
++# ifndef OPENSSL_IS_BORINGSSL
+     if(data->set.tls_enable_ech
+        || data->set.tls_enable_ech_hard) {
+       char *inner = NULL, *outer = NULL;
+@@ -4139,6 +4162,7 @@ static CURLcode ossl_connect_step2(struct Curl_cfilter *cf,
+         return CURLE_SSL_CONNECT_ERROR;
+       }
+    }
++# endif  /* BORING */
+ #endif  /* USE_ECH */
+ 
+ #ifdef HAS_ALPN

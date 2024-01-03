@@ -1,0 +1,72 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Wed, 4 Oct 2023 02:07:50 +0100
+Subject: retry-configs for boring
+
+---
+ docs/ECH.md        |  2 +-
+ lib/vtls/openssl.c | 22 +++++++++++++++++++---
+ 2 files changed, 20 insertions(+), 4 deletions(-)
+
+diff --git a/docs/ECH.md b/docs/ECH.md
+index c19a618..bde302a 100644
+--- a/docs/ECH.md
++++ b/docs/ECH.md
+@@ -344,7 +344,7 @@ Then there are some functional code changes:
+ The lack of support for ``--ech false`` is because wolfSSL has decided to
+ always at least GREASE if built to support ECH. In other words, GREASE is
+ a compile time choice for wolfSSL, but a run-time choice for OpenSSL or
+-boringssl. (Both are reasonanble.)
++boringssl. (Both are reasonable.)
+ 
+ There's also a current
+ [bug/issue](https://github.com/wolfSSL/wolfssl/issues/6802) that the wolfSSL
+diff --git a/lib/vtls/openssl.c b/lib/vtls/openssl.c
+index 1872efb..9c1a8b6 100644
+--- a/lib/vtls/openssl.c
++++ b/lib/vtls/openssl.c
+@@ -4091,6 +4091,7 @@ static CURLcode ossl_connect_step2(struct Curl_cfilter *cf,
+       }
+ #endif
+ #ifdef USE_ECH
++# ifndef OPENSSL_IS_BORINGSSL
+       else if((lib == ERR_LIB_SSL) &&
+               (reason == SSL_R_ECH_REQUIRED)) {
+         /* If we have retry configs, then trace those out */
+@@ -4098,11 +4099,24 @@ static CURLcode ossl_connect_step2(struct Curl_cfilter *cf,
+         size_t rcl = 0;
+         int rv = 1;
+ 
+-# ifndef OPENSSL_IS_BORINGSSL
+         rv = SSL_ech_get_retry_config(backend->handle, &rcs, &rcl);
+ # else
+-        rv = SSL_get0_ech_retry_configs(backend->handle, &rcs, &rcl);
++      else if((lib == ERR_LIB_SSL) &&
++              (reason == SSL_R_ECH_REJECTED)) {
++        /* If we have retry configs, then trace those out */
++        const uint8_t *rcs = NULL;
++        size_t rcl = 0;
++        int rv = 1;
++        const char *out_name = NULL;
++        size_t out_name_len = 0;
++
++        SSL_get0_ech_name_override(backend->handle, &out_name, &out_name_len);
++        if (out_name_len > 0) 
++          infof(data, "ECH: outername is %s", out_name);
++
++        SSL_get0_ech_retry_configs(backend->handle, &rcs, &rcl);
+ # endif
++
+         if(rv == 1 && rcs) {
+ # define HEXSTR_MAX 800
+           char *b64str = NULL;
+@@ -4116,7 +4130,9 @@ static CURLcode ossl_connect_step2(struct Curl_cfilter *cf,
+         }
+         else
+           infof(data, "ECH: no retry_configs (rv = %d", rv);
+-        OPENSSL_free(rcs);
++# ifndef OPENSSL_IS_BORINGSSL
++        OPENSSL_free((void *)rcs);
++# endif
+         result = CURLE_ECH_REQUIRED;
+         ossl_strerror(errdetail, error_buffer, sizeof(error_buffer));
+       }

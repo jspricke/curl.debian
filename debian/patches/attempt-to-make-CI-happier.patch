@@ -1,0 +1,623 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Tue, 26 Sep 2023 18:03:53 +0100
+Subject: attempt to make CI happier
+
+---
+ docs/ECH.md                            | 194 ++++++++++++++++++---------------
+ docs/libcurl/curl_easy_setopt.3        |   8 ++
+ docs/libcurl/opts/CURLOPT_ECH_CONFIG.3 |  62 +++++++++++
+ docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3 |  61 +++++++++++
+ docs/libcurl/opts/CURLOPT_ECH_STATUS.3 |  69 ++++++++++++
+ lib/doh.c                              |  29 +++--
+ 6 files changed, 327 insertions(+), 96 deletions(-)
+ create mode 100644 docs/libcurl/opts/CURLOPT_ECH_CONFIG.3
+ create mode 100644 docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
+ create mode 100644 docs/libcurl/opts/CURLOPT_ECH_STATUS.3
+
+diff --git a/docs/ECH.md b/docs/ECH.md
+index bbd9ca9..038b8d5 100644
+--- a/docs/ECH.md
++++ b/docs/ECH.md
+@@ -6,9 +6,9 @@ published in the DNS, if curl is using DoH, or else can accept the relevant
+ ECHConfigList values from the command line. That works with either OpenSSL or
+ WolfSSL as it's TLS provider, depending on how you build curl.
+ 
+-This has not been tested. DO NOT USE!
++This has not been tested. DO NOT USE.
+ 
+-But hopefully, this provides enough of a proof-of-concept to prompt an informed
++This should however provide enough of a proof-of-concept to prompt an informed
+ discussion about a good path forward for ECH support in curl, when using
+ OpenSSL, or other TLS libraries, as those add ECH support.
+ 
+@@ -16,29 +16,32 @@ OpenSSL, or other TLS libraries, as those add ECH support.
+ 
+ To build our ECH-enabled OpenSSL fork:
+ 
+-            $ cd $HOME/code
+-            $ git clone https://github.com/sftcd/openssl
+-            $ cd openssl
+-            $ git checkout ECH-draft-13c
+-            $ ./config
+-            ... stuff ...
+-            $ make -j8
+-            ... stuff (maybe go for coffee) ...
+-            $
++```bash
++    cd $HOME/code
++    git clone https://github.com/sftcd/openssl
++    cd openssl
++    git checkout ECH-draft-13c
++    ./config
++    ...stuff...
++    make -j8
++    ...stuff (maybe go for coffee)...
++```
+ 
+ To build our ECH-enabled curl fork, making use of the above:
+ 
+-            $ cd $HOME/code
+-            $ git clone https://github.com/sftcd/curl
+-            $ cd curl
+-            $ git checkout ECH-experimental
+-            $ autoreconf -fi
+-            $ export LD_LIBRARY_PATH=$HOME/code/openssl
+-            $ LDFLAGS="-L$HOME/code/openssl" ./configure --with-ssl=$HOME/code/openssl --enable-ech --enable-httpsrr
+-            ...lots of output...
+-              WARNING: ech ECH HTTPSRR enabled but marked EXPERIMENTAL. Use with caution!
+-            $ make
+-            ...lots more output...
++```bash
++    cd $HOME/code
++    git clone https://github.com/sftcd/curl
++    cd curl
++    git checkout ECH-experimental
++    autoreconf -fi
++    export LD_LIBRARY_PATH=$HOME/code/openssl
++    LDFLAGS="-L$HOME/code/openssl" ./configure --with-ssl=$HOME/code/openssl --enable-ech --enable-httpsrr
++    ...lots of output...
++    WARNING: ech ECH HTTPSRR enabled but marked EXPERIMENTAL. Use with caution!
++    make
++    ...lots more output...
++```
+ 
+ If you don't get that WARNING at the end of the ``configure`` command, then ECH
+ isn't enabled, so go back some steps and re-do whatever needs re-doing:-) If you
+@@ -50,11 +53,13 @@ command.
+ Curl supports using DoH for A/AAAA lookups so it was relatively easy to add
+ retrieval of HTTPS RRs in that situation. To use ECH and DoH together:
+ 
+-            $ cd $HOME/code/curl
+-            $ LD_LIBRARY_PATH=$HOME/code/openssl ./src/curl --ech --doh-url https://1.1.1.1/dns-query https://defo.ie/ech-check.php
+-            ...
+-            SSL_ECH_STATUS: success <img src="greentick-small.png" alt="good" /> <br/>
+-            ...
++```bash
++    cd $HOME/code/curl
++    LD_LIBRARY_PATH=$HOME/code/openssl ./src/curl --ech --doh-url https://1.1.1.1/dns-query https://defo.ie/ech-check.php
++    ...
++    SSL_ECH_STATUS: success <img src="greentick-small.png" alt="good" /> <br/>
++    ...
++```
+ 
+ The output snippet above is within the HTML for the web page, when things work.
+ 
+@@ -87,25 +92,31 @@ reasons.
+ To supply the ECHConfigList on the command line, you might need a bit of
+ cut'n'paste, e.g.:
+ 
+-            $ dig +short https defo.ie
+-            1 . ipv4hint=213.108.108.101 ech=AED+DQA8PAAgACD8WhlS7VwEt5bf3lekhHvXrQBGDrZh03n/LsNtAodbUAAEAAEAAQANY292ZXIuZGVmby5pZQAA ipv6hint=2a00:c6c0:0:116:5::10
++```bash
++    dig +short https defo.ie
++    1 . ipv4hint=213.108.108.101 ech=AED+DQA8PAAgACD8WhlS7VwEt5bf3lekhHvXrQBGDrZh03n/LsNtAodbUAAEAAEAAQANY292ZXIuZGVmby5pZQAA ipv6hint=2a00:c6c0:0:116:5::10
++```
+ 
+ Then paste the base64 encoded ECHConfigList onto the curl command line:
+ 
+-            $ LD_LIBRARY_PATH=$HOME/code/openssl ./src/curl --ech --echconfig AED+DQA8PAAgACD8WhlS7VwEt5bf3lekhHvXrQBGDrZh03n/LsNtAodbUAAEAAEAAQANY292ZXIuZGVmby5pZQAA https://defo.ie/ech-check.php
+-            ...
+-            SSL_ECH_STATUS: success <img src="greentick-small.png" alt="good" /> <br/>
+-            ...
++```bash
++    LD_LIBRARY_PATH=$HOME/code/openssl ./src/curl --ech --echconfig AED+DQA8PAAgACD8WhlS7VwEt5bf3lekhHvXrQBGDrZh03n/LsNtAodbUAAEAAEAAQANY292ZXIuZGVmby5pZQAA https://defo.ie/ech-check.php
++    ...
++    SSL_ECH_STATUS: success <img src="greentick-small.png" alt="good" /> <br/>
++    ...
++```
+ 
+ The output snippet above is within the HTML for the web page.
+ 
+ If you paste in the wrong ECHConfigList (it changes hourly for ``defo.ie``) you'll
+ get an error like this:
+ 
+-            $ LD_LIBRARY_PATH=$HOME/code/openssl ./src/curl -vvv --ech --echconfig AED+DQA8yAAgACDRMQo+qYNsNRNj+vfuQfFIkrrUFmM4vogucxKj/4nzYgAEAAEAAQANY292ZXIuZGVmby5pZQAA https://defo.ie/ech-check.php
+-            ...
+-            * OpenSSL/3.2.0: error:0A00054B:SSL routines::ech required
+-            ...
++```bash
++    LD_LIBRARY_PATH=$HOME/code/openssl ./src/curl -vvv --ech --echconfig AED+DQA8yAAgACDRMQo+qYNsNRNj+vfuQfFIkrrUFmM4vogucxKj/4nzYgAEAAEAAQANY292ZXIuZGVmby5pZQAA https://defo.ie/ech-check.php
++    ...
++    * OpenSSL/3.2.0: error:0A00054B:SSL routines::ech required
++    ...
++```
+ 
+ There is a reason to keep this command line option - for use before publishing
+ the ECHConfigList in the DNS (e.g. see
+@@ -116,11 +127,12 @@ the ECHConfigList in the DNS (e.g. see
+ Curl has various ways to configure default settings, e.g. in ``$HOME/.curlrc``,
+ so one can set the DoH URL and enable ECH that way:
+ 
+-            $ cat ~/.curlrc
+-            doh-url=https://one.one.one.one/dns-query
+-            silent=TRUE
+-            ech=TRUE
+-            $
++```bash
++    cat ~/.curlrc
++    doh-url=https://one.one.one.one/dns-query
++    silent=TRUE
++    ech=TRUE
++```
+ 
+ Note that when you use the system's curl command (rather than our ECH-enabled
+ build), it's liable to warn that ``ech`` is an unknown option. If that's an
+@@ -132,28 +144,33 @@ to figure out what you prefer youself.)
+ And if you want to always use our OpenSSL build you can set ``LD_LIBRARY_PATH``
+ in the environment:
+ 
+-            $ export LD_LIBRARY_PATH=$HOME/code/openssl
+-            $
++```bash
++    export LD_LIBRARY_PATH=$HOME/code/openssl
++```
+ 
+ Note that when you do that, there can be a mismatch between OpenSSL versions
+ for applications that check that. A ``git push`` for example will fail so you
+ should unset ``LD_LIBRARY_PATH`` before doing that or use a different shell.
+ 
+-            $ git push
+-            OpenSSL version mismatch. Built against 30000080, you have 30200000
+-            ...
++```bash
++    git push
++    OpenSSL version mismatch. Built against 30000080, you have 30200000
++    ...
++```
+ 
+ With all that setup as above the command line gets simpler:
+ 
+-            $ ./src/curl https://defo.ie/ech-check.php
+-            ...
+-            SSL_ECH_STATUS: success <img src="greentick-small.png" alt="good" /> <br/>
+-            ...
++```bash
++    ./src/curl https://defo.ie/ech-check.php
++    ...
++    SSL_ECH_STATUS: success <img src="greentick-small.png" alt="good" /> <br/>
++    ...
++```
+ 
+ The ``--ech`` option is opportunistic, so will try to do ECH but won't fail if
+-the client e.g. can't find any ECHConfig values.  The ``--ech-hard`` option
+-hard-fails if there is no ECHConfig found in DNS, so for now, that's not a good
+-option to set as a default.
++the client for example can't find any ECHConfig values. The ``--ech-hard``
++option hard-fails if there is no ECHConfig found in DNS, so for now, that's not
++a good option to set as a default.
+ 
+ ## Code changes for ECH support when using DoH
+ 
+@@ -182,13 +199,13 @@ The main functional change, as you'd expect, is in ``lib/vtls/openssl.c``
+ ([here](https://github.com/sftcd/curl/blob/ECH-experimental/lib/vtls/openssl.c#L3768))
+ where an ECHConfig, if available from command line or DNS cache, is fed into
+ the OpenSSL library via the new APIs implemented in our OpenSSL fork for that
+-purpose.  This code also implements the opportunistic (``--ech``) or hard-fail
++purpose. This code also implements the opportunistic (``--ech``) or hard-fail
+ (``--ech-hard``) logic.
+ 
+ Other than that, the main additions are in ``lib/doh.c``
+ ([here](https://github.com/sftcd/curl/blob/ECH-experimental/lib/doh.c#L418))
+ where we re-use ``dohprobe()`` to retrieve an HTTPS RR value for the target
+-domain.  If such a value is found, that's stored using a new ``store_https()``
++domain. If such a value is found, that's stored using a new ``store_https()``
+ function
+ ([here](https://github.com/sftcd/curl/blob/ECH-experimental/lib/doh.c#L527)) in
+ a new field in the ``dohentry`` structure.
+@@ -246,16 +263,18 @@ we're not (as yet) sure what'd be the right level of coverage.
+ Mailing list discussion indicates that WolfSSL also supports ECH and can be
+ used by curl, so here's how:
+ 
+-            $ cd $HOME/code
+-            $ git clone https://github.com/sftcd/wolfssl
+-            $ cd wolfssl
+-            $ ./autogen.sh
+-            $ ./configure --prefix=$HOME/code/wolfssl/inst --enable-ech --enable-debug --enable-opensslextra
+-            $ make
+-            $ make install
++```bash
++    cd $HOME/code
++    git clone https://github.com/sftcd/wolfssl
++    cd wolfssl
++    ./autogen.sh
++    ./configure --prefix=$HOME/code/wolfssl/inst --enable-ech --enable-debug --enable-opensslextra
++    make
++    make install
++```
+ 
+ The install prefix (``inst``) in the above causes WolfSSL to be installed there
+-and we seem to need that for the curl configure command to work out.  The
++and we seem to need that for the curl configure command to work out. The
+ ``--enable-opensslextra`` turns out (after much faffing about;-) to be
+ important or else we get build problems with curl below.
+ 
+@@ -267,14 +286,15 @@ does currently require a change.
+ 
+ Let's use that to build curl...
+ 
+-            $ cd $HOME/code
+-            $ git clone https://github.com/sftcd/curl
+-            $ cd curl
+-            $ git checkout ECH-experimental
+-            $ autoregen -fi
+-            $ ./configure --with-wolfssl=$HOME/code/wolfssl/inst --enable-ech --enable-httpsrr
+-            $ make
+-            ...
++```bash
++    cd $HOME/code
++    git clone https://github.com/sftcd/curl
++    cd curl
++    git checkout ECH-experimental
++    autoregen -fi
++    ./configure --with-wolfssl=$HOME/code/wolfssl/inst --enable-ech --enable-httpsrr
++    make
++```
+ 
+ Right now, this works almost the same as the OpenSSL variant, but not
+ with tls-ech.dev, (see [same issue](https://github.com/wolfSSL/wolfssl/issues/6774),
+@@ -282,14 +302,18 @@ and for some reason ``--insecure`` is needed.
+ 
+ To run against a localhost ``s_server`` for testing:
+ 
+-            $ cd $HOME/code/openssl/esnistuff
+-            $ ./echsrv.sh -d
+-            ...
++```bash
++    cd $HOME/code/openssl/esnistuff
++    ./echsrv.sh -d
++    ...
++```
+ 
+ In another window:
+ 
+-            $ cd $HOME/code/curl-wo/
+-            $ ./src/curl -vvv --insecure  --connect-to foo.example.com:8443:localhost:8443  https://foo.example.com:8443 --echconfig AD7+DQA6uwAgACBix2B78sX+EQhEbxMspDOc8Z3xVS5aQpYP0Cxpc2AWPAAEAAEAAQALZXhhbXBsZS5jb20AAA==
++```bash
++    cd $HOME/code/curl-wo/
++    ./src/curl -vvv --insecure  --connect-to foo.example.com:8443:localhost:8443  https://foo.example.com:8443 --echconfig AD7+DQA6uwAgACBix2B78sX+EQhEbxMspDOc8Z3xVS5aQpYP0Cxpc2AWPAAEAAEAAQALZXhhbXBsZS5jb20AAA==
++```
+ 
+ ### Changes to support WolfSSL
+ 
+@@ -301,7 +325,7 @@ There are what seem like oddball differences:
+ - There seems to be some difference in CA databases too - the WolfSSL version
+   doesn't like defo.ie, wheraas the system and OpenSSL ones do. We can ignore
+   that for our purposes though via ``--insecure`` but would need to fix for a
+-  PPA setup. (Browsers do like defo.ie's cert btw:-)
++  PPA setup. (Browsers do like defo.ie's certificate though.)
+ 
+ Then there are some functional code changes:
+ 
+@@ -315,25 +339,25 @@ client support for ECH seems to not correctly support HelloRetryRequest.
+ 
+ ## Supporting ECH without DoH
+ 
+-All of the above only applies if DoH is being used.  There should be a use-case
++All of the above only applies if DoH is being used. There should be a use-case
+ for ECH when DoH is not used by curl - if a system stub resolver supports DoT
+ or DoH, then, considering only ECH and the network threat model, it would make
+-sense for curl to support ECH without curl itself using DoH.  The author for
++sense for curl to support ECH without curl itself using DoH. The author for
+ example uses a combination of stubby+unbound as the system resolver listening
+-on localhost:53, so would fit this use-case.  That said, it's very unclear if
++on localhost:53, so would fit this use-case. That said, it's unclear if
+ this is a niche that's worth trying to address. (The author is just as happy to
+ let curl use DoH to talk to the same public recursives that stubby might use:-)
+-But assuming this is a use-case we'd like to support...
+ 
+-If DoH is not being used by curl, it's not clear at this time how to provide
++Assuming for the moment this is a use-case we'd like to support, then
++if DoH is not being used by curl, it's not clear at this time how to provide
+ support for ECH. One option would seem to be to extend the ``c-ares`` library
+ to support HTTPS RRs, but in that case it's not now clear whether such changes
+ would be attractive to the ``c-ares`` maintainers, nor whether the "tag=value"
+ extensibility inherent in the HTTPS/SVCB specification is a good match for the
+ ``c-ares`` approach of defining structures specific to decoded answers for each
+-supported RRtype.  We're also not sure how many downstream curl deployments
++supported RRtype. We're also not sure how many downstream curl deployments
+ actually make use of the ``c-ares`` library, which would affect the utility of
+-such changes.  Another option might be to consider using some other generic DNS
++such changes. Another option might be to consider using some other generic DNS
+ library (such as the getdnsapi) that does support HTTPS RRs, but it's unclear
+ if such a library could or would be used by all or almost all curl builds and
+ downstream releases of curl.
+diff --git a/docs/libcurl/curl_easy_setopt.3 b/docs/libcurl/curl_easy_setopt.3
+index c462a2d..ab749b2 100644
+--- a/docs/libcurl/curl_easy_setopt.3
++++ b/docs/libcurl/curl_easy_setopt.3
+@@ -721,6 +721,14 @@ int main(void)
+   }
+ }
+ .fi
++.SH ENCRYPTED CLIENT HELLO OPTIONS
++.IP CURLOPT_ECH_STATUS
++Set the CURLECH_ENABLE bit to attempt ECH opportunistically. See \fICURLOPT_ECH_STATUS(3)\fP
++Set the CURLECH_HARD bit to hard-fail if ECH cannot be attempted. (ECH may still fail.)
++.IP CURLOPT_ECH_CONFIG
++Supply an ECHConfigList directly, rather than attempt to use DoH to get one via an HTTPS RR.
++.IP CURLOPT_ECH_PUBLIC
++Override the public_name field of the ECHConfigList to be used.
+ .SH AVAILABILITY
+ Always
+ .SH RETURN VALUE
+diff --git a/docs/libcurl/opts/CURLOPT_ECH_CONFIG.3 b/docs/libcurl/opts/CURLOPT_ECH_CONFIG.3
+new file mode 100644
+index 0000000..ba31bb4
+--- /dev/null
++++ b/docs/libcurl/opts/CURLOPT_ECH_CONFIG.3
+@@ -0,0 +1,62 @@
++.\" **************************************************************************
++.\" *                                  _   _ ____  _
++.\" *  Project                     ___| | | |  _ \| |
++.\" *                             / __| | | | |_) | |
++.\" *                            | (__| |_| |  _ <| |___
++.\" *                             \___|\___/|_| \_\_____|
++.\" *
++.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
++.\" *
++.\" * This software is licensed as described in the file COPYING, which
++.\" * you should have received as part of this distribution. The terms
++.\" * are also available at https://curl.se/docs/copyright.html.
++.\" *
++.\" * You may opt to use, copy, modify, merge, publish, distribute and/or sell
++.\" * copies of the Software, and permit persons to whom the Software is
++.\" * furnished to do so, under the terms of the COPYING file.
++.\" *
++.\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
++.\" * KIND, either express or implied.
++.\" *
++.\" * SPDX-License-Identifier: curl
++.\" *
++.\" **************************************************************************
++.\"
++.TH CURLOPT_ECH_CONFIG 3 "26 Sep 2023" libcurl libcurl
++.SH NAME
++CURLOPT_ECH_CONFIG \- provide an ECHConfigList
++.SH SYNOPSIS
++.nf
++#include <curl/curl.h>
++
++CURLcode curl_easy_setopt(CURL *handle, CURLOPT_ECH_CONFIG, char *echconfig);
++.fi
++.SH DESCRIPTION
++Pass a string that holds a base64 encoded ECHConfigList.
++
++If ECH is attempted, this value will be used and will
++override any value retrieved from the DNS.
++
++.SH DEFAULT
++NULL - there is no default echconfig. If this option is not set, and ECH
++is to be attempted, libcurl uses DoH and attempts to find an ECHConfigList
++in an HTTPS RR.
++.SH PROTOCOLS
++HTTP, and requires TLSv1.3.
++.SH EXAMPLE
++.nf
++CURL *curl = curl_easy_init();
++const char *echconfig ="AED+DQA87wAgACB/RuzUCsW3uBbSFI7mzD63TUXpI8sGDTnFTbFCDpa+CAAEAAEAAQANY292ZXIuZGVmby5pZQAA";
++if(curl) {
++  curl_easy_setopt(curl, CURLOPT_ECH_CONFIG, echconfig);
++  curl_easy_perform(curl);
++}
++.fi
++.SH AVAILABILITY
++Added in 8.4.0
++.SH RETURN VALUE
++Returns CURLE_OK on success or CURLE_OUT_OF_MEMORY if there was insufficient
++heap space.
++
++.SH "SEE ALSO"
++.BR CURLOPT_ECH_STATUS "(3), " CURLOPT_ECH_PUBLIC "(3), "
+diff --git a/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3 b/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
+new file mode 100644
+index 0000000..83b11b5
+--- /dev/null
++++ b/docs/libcurl/opts/CURLOPT_ECH_PUBLIC.3
+@@ -0,0 +1,61 @@
++.\" **************************************************************************
++.\" *                                  _   _ ____  _
++.\" *  Project                     ___| | | |  _ \| |
++.\" *                             / __| | | | |_) | |
++.\" *                            | (__| |_| |  _ <| |___
++.\" *                             \___|\___/|_| \_\_____|
++.\" *
++.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
++.\" *
++.\" * This software is licensed as described in the file COPYING, which
++.\" * you should have received as part of this distribution. The terms
++.\" * are also available at https://curl.se/docs/copyright.html.
++.\" *
++.\" * You may opt to use, copy, modify, merge, publish, distribute and/or sell
++.\" * copies of the Software, and permit persons to whom the Software is
++.\" * furnished to do so, under the terms of the COPYING file.
++.\" *
++.\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
++.\" * KIND, either express or implied.
++.\" *
++.\" * SPDX-License-Identifier: curl
++.\" *
++.\" **************************************************************************
++.\"
++.TH CURLOPT_ECH_PUBLIC 3 "26 Sep 2023" libcurl libcurl
++.SH NAME
++CURLOPT_ECH_STATUS \- override an ECH public_name
++.SH SYNOPSIS
++.nf
++#include <curl/curl.h>
++
++CURLcode curl_easy_setopt(CURL *handle, CURLOPT_ECH_CONFIG, char *public_name);
++.fi
++.SH DESCRIPTION
++Pass a string that provides an public_name.
++
++If ECH is attempted, this value will be used and will
++override any value retrieved from the DNS.
++
++.SH DEFAULT
++NULL - there is no default public_name. If this option is not set, and ECH
++is to be attempted, libcurl uses DoH and attempts to find an ECHConfigList
++in an HTTPS RR, and will use the public_name found therin.
++.SH PROTOCOLS
++HTTP, and requires TLSv1.3.
++.SH EXAMPLE
++.nf
++CURL *curl = curl_easy_init();
++if(curl) {
++  curl_easy_setopt(curl, CURLOPT_ECH_PUBLIC, "example.com");
++  curl_easy_perform(curl);
++}
++.fi
++.SH AVAILABILITY
++Added in 8.4.0
++.SH RETURN VALUE
++Returns CURLE_OK on success or CURLE_OUT_OF_MEMORY if there was insufficient
++heap space.
++
++.SH "SEE ALSO"
++.BR CURLOPT_ECH_CONFIG "(3), " CURLOPT_ECH_STATUS "(3), "
+diff --git a/docs/libcurl/opts/CURLOPT_ECH_STATUS.3 b/docs/libcurl/opts/CURLOPT_ECH_STATUS.3
+new file mode 100644
+index 0000000..49ab830
+--- /dev/null
++++ b/docs/libcurl/opts/CURLOPT_ECH_STATUS.3
+@@ -0,0 +1,69 @@
++.\" **************************************************************************
++.\" *                                  _   _ ____  _
++.\" *  Project                     ___| | | |  _ \| |
++.\" *                             / __| | | | |_) | |
++.\" *                            | (__| |_| |  _ <| |___
++.\" *                             \___|\___/|_| \_\_____|
++.\" *
++.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
++.\" *
++.\" * This software is licensed as described in the file COPYING, which
++.\" * you should have received as part of this distribution. The terms
++.\" * are also available at https://curl.se/docs/copyright.html.
++.\" *
++.\" * You may opt to use, copy, modify, merge, publish, distribute and/or sell
++.\" * copies of the Software, and permit persons to whom the Software is
++.\" * furnished to do so, under the terms of the COPYING file.
++.\" *
++.\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
++.\" * KIND, either express or implied.
++.\" *
++.\" * SPDX-License-Identifier: curl
++.\" *
++.\" **************************************************************************
++.\"
++.TH CURLOPT_ECH_STATUS 3 "26 Sep 2023" libcurl libcurl
++.SH NAME
++CURLOPT_ECH_STATUS \- enable Encrypted Client Hello
++.SH SYNOPSIS
++.nf
++#include <curl/curl.h>
++
++CURLcode curl_easy_setopt(CURL *handle, CURLOPT_ECH_STATUS, long options);
++.fi
++.SH DESCRIPTION
++Pass a long that holds a bitmask of CURLECH_* defines. Each bit is a
++Boolean flag used to decide whether and how to attempt ECH.
++
++In either case, if ECH is attempted, it may fail for various reasons.
++
++Available bits are:
++.IP CURLECH_ENABLE
++This causes the client to attempt ECH, if possible, so is
++opportunistic, in that if the client cannot find an ECHConfigList,
++it will continue without attempting ECH.
++
++.IP CURLECH_HARD
++This instructs the client to attempt ECH and fail if it cannot
++make the attempt.
++
++.SH DEFAULT
++0, meaning disabled.
++.SH PROTOCOLS
++HTTP, and requires TLSv1.3.
++.SH EXAMPLE
++.nf
++CURL *curl = curl_easy_init();
++if(curl) {
++  curl_easy_setopt(curl, CURLOPT_ECH_STATUS, CURLECH_ENABLE);
++  curl_easy_perform(curl);
++}
++.fi
++.SH AVAILABILITY
++Added in 8.4.0
++.SH RETURN VALUE
++Returns CURLE_OK on success or CURLE_OUT_OF_MEMORY if there was insufficient
++heap space.
++
++.SH "SEE ALSO"
++.BR CURLOPT_ECH_CONFIG "(3), " CURLOPT_ECH_PUBLIC "(3), "
+diff --git a/lib/doh.c b/lib/doh.c
+index ff547c2..3ef3614 100644
+--- a/lib/doh.c
++++ b/lib/doh.c
+@@ -450,17 +450,20 @@ struct Curl_addrinfo *Curl_doh(struct Curl_easy *data,
+ #endif
+ 
+ #ifdef USE_HTTPSRR
+-  if(port == 443)
+-    qname = strdup(hostname);
+-  else
+-    qname = aprintf("_%d._https.%s", port, hostname);
+-  result = dohprobe(data, &dohp->probe[DOH_PROBE_SLOT_HTTPS],
+-                    DNS_TYPE_HTTPS, qname, data->set.str[STRING_DOH],
+-                    data->multi, dohp->headers);
+-  free(qname);
+-  if(result)
++  if(data->set.tls_enable_ech
++     || data->set.tls_enable_ech_hard) {
++    if(port == 443)
++      qname = strdup(hostname);
++    else
++      qname = aprintf("_%d._https.%s", port, hostname);
++    result = dohprobe(data, &dohp->probe[DOH_PROBE_SLOT_HTTPS],
++                      DNS_TYPE_HTTPS, qname, data->set.str[STRING_DOH],
++                      data->multi, dohp->headers);
++    free(qname);
++    if(result)
+     goto error;
+-  dohp->pending++;
++    dohp->pending++;
++  }
+ #endif
+   *waitp = TRUE; /* this never returns synchronously */
+   return NULL;
+@@ -850,10 +853,14 @@ static void showdoh(struct Curl_easy *data,
+       infof(data, "%s", buffer);
+     }
+   }
+-#if defined(USE_HTTPSRR) && defined(CURLDEBUG)
++#ifdef USE_HTTPSRR
+   for(i = 0; i < d->numhttps_rrs; i++) {
++# ifdef CURLDEBUG
+     local_print_buf(data, "DoH HTTPS: ",
+                     d->https_rrs[i].val, d->https_rrs[i].len);
++# else
++    infof(data, "DoH HTTPS RR: length %d", d->https_rrs[i].len);
++# endif
+   }
+ #endif
+   for(i = 0; i < d->numcname; i++) {

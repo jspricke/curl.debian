@@ -1,0 +1,125 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Wed, 20 Sep 2023 01:57:10 +0100
+Subject: note no GREASE/retry_configs here
+
+---
+ docs/ECH.md | 38 +++++++++++++++++++++++++++-----------
+ 1 file changed, 27 insertions(+), 11 deletions(-)
+
+diff --git a/docs/ECH.md b/docs/ECH.md
+index 426826c..d26b8d0 100644
+--- a/docs/ECH.md
++++ b/docs/ECH.md
+@@ -20,7 +20,7 @@ To build our ECH-enabled OpenSSL fork:
+             $ git clone https://github.com/sftcd/openssl
+             $ cd openssl
+             $ git checkout ECH-draft-13c
+-            $ ./config 
++            $ ./config
+             ... stuff ...
+             $ make -j8
+             ... stuff (maybe go for coffee) ...
+@@ -37,9 +37,9 @@ To build our ECH-enabled curl fork, making use of the above:
+             $ LDFLAGS="-L$HOME/code/openssl" ./configure --with-ssl=$HOME/code/openssl --enable-ech --enable-httpsrr
+             ...lots of output...
+               WARNING: ech ECH HTTPSRR enabled but marked EXPERIMENTAL. Use with caution!
+-            $ make 
++            $ make
+             ...lots more output...
+- 
++
+ If you don't get that WARNING at the end of the ``configure`` command, then ECH
+ isn't enabled, so go back some steps and re-do whatever needs re-doing:-) If you
+ want to debug curl then you should add ``--enable-debug`` to the ``configure``
+@@ -54,7 +54,7 @@ retrieval of HTTPS RRs in that situation. To use ECH and DoH together:
+             $ LD_LIBRARY_PATH=$HOME/code/openssl ./src/curl --ech --doh-url https://1.1.1.1/dns-query https://defo.ie/ech-check.php
+             ...
+             SSL_ECH_STATUS: success <img src="greentick-small.png" alt="good" /> <br/>
+-            ... 
++            ...
+ 
+ The output snippet above is within the HTML for the web page, when things work.
+ 
+@@ -69,7 +69,7 @@ We currently support the following new curl comand line arguments/options:
+   an HTTPS RR value found in the DNS, accessed using DoH, note that once ECH
+   has been attempted, then if ECH fails, the connetion will fail, so we're
+   opportunistic only in the sense of being willing to connect without trying
+-  ECH if we don't find a relevant ECHConfigList 
++  ECH if we don't find a relevant ECHConfigList
+ - ``--ech-hard``: tells client to attempt ECH as above or fail if making the
+   attempt is not possible
+ - ``--echconfig``: supplies an ECHConfig from command line that will be used in
+@@ -95,7 +95,7 @@ Then paste the base64 encoded ECHConfig onto the curl command line:
+             $ LD_LIBRARY_PATH=$HOME/code/openssl ./src/curl --ech --echconfig AED+DQA8PAAgACD8WhlS7VwEt5bf3lekhHvXrQBGDrZh03n/LsNtAodbUAAEAAEAAQANY292ZXIuZGVmby5pZQAA https://defo.ie/ech-check.php
+             ...
+             SSL_ECH_STATUS: success <img src="greentick-small.png" alt="good" /> <br/>
+-            ... 
++            ...
+ 
+ The output snippet above is within the HTML for the web page.
+ 
+@@ -148,7 +148,7 @@ With all that setup as above the command line gets simpler:
+             $ ./src/curl https://defo.ie/ech-check.php
+             ...
+             SSL_ECH_STATUS: success <img src="greentick-small.png" alt="good" /> <br/>
+-            ... 
++            ...
+ 
+ The ``--ech`` option is opportunistic, so will try to do ECH but won't fail if
+ the client e.g. can't find any ECHConfig values.  The ``--ech-hard`` option
+@@ -159,7 +159,7 @@ option to set as a default.
+ 
+ All code changes are in a new ``ECH-experimental`` branch of our fork
+ ([here](https://github.com/sftcd/curl/tree/ECH-experimental)) and are
+-``#ifdef`` protected via ``USE_ECH`` or ``USE_HTTPSRR``: 
++``#ifdef`` protected via ``USE_ECH`` or ``USE_HTTPSRR``:
+ 
+ - ``USE_HTTPSRR`` is used for HTTPS RR retrieval code that could be generically
+   used should non-ECH uses for HTTPS RRs be identified, e.g. use of ALPN values
+@@ -239,7 +239,7 @@ tool.
+ ## WolfSSL build
+ 
+ Mailing list discussion indicates that WolfSSL also supports ECH and can be
+-used by curl, so here's how: 
++used by curl, so here's how:
+ 
+             $ cd $HOME/code
+             $ git clone https://github.com/sftcd/wolfssl
+@@ -256,7 +256,7 @@ important or else we get build problems with curl below.
+ 
+ Probably, a basic WolfSSL install would work fine but we made a fork just in
+ case we wanted to change something, e.g. see [this
+-issue](https://github.com/wolfSSL/wolfssl/issues/6774). 
++issue](https://github.com/wolfSSL/wolfssl/issues/6774).
+ 
+ Let's use that to build curl...
+ 
+@@ -298,7 +298,7 @@ There are what seem like oddball differences:
+ 
+ Then there are some functional code changes:
+ 
+-- tweak to ``configure.ac`` to check if WolfSSL has ECH or not 
++- tweak to ``configure.ac`` to check if WolfSSL has ECH or not
+ - added code to ``lib/vtls/wolfssl.c`` mirroring what's done in the
+   OpenSSL equivalent above.
+ 
+@@ -330,3 +330,19 @@ downstream releases of curl.
+ Our current conclusion is that doing the above is likely best left until we
+ have some experience with the "using DoH" stuff, so we're going to punt on
+ this for now.
++
++## Also not supported so far...
++
++As of now we have not:
++
++- added support for GREASEing ECH - our fork of the OpenSSL library has APIs
++  for that, but, on the basis that any beefits from GREASE will be realised
++  if much more commonly used clients (i.e. browsers) GREASE, it seems fine
++  that curl not bother adding that
++- added support for ``retry_config`` handling in the application - for a
++  command line tool, one can just use ``dig`` (or ``kdig``) to get the HTTPS
++  RR and pass that on the command line, if needed
++
++Also, though our OpenSSL fork has APIs for both GREASE nor ``retry_configs``,
++it seems WolfSSL has neither.
++

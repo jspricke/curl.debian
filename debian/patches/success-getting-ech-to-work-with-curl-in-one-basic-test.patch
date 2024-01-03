@@ -1,0 +1,40 @@
+From: Stephen Farrell <stephen.farrell@cs.tcd.ie>
+Date: Thu, 7 Sep 2023 19:26:28 +0100
+Subject: success getting ech to work with curl in one basic test
+
+---
+ lib/vtls/openssl.c | 16 +++++++++-------
+ 1 file changed, 9 insertions(+), 7 deletions(-)
+
+diff --git a/lib/vtls/openssl.c b/lib/vtls/openssl.c
+index 01cdf04..c130deb 100644
+--- a/lib/vtls/openssl.c
++++ b/lib/vtls/openssl.c
+@@ -3813,18 +3813,20 @@ static CURLcode ossl_connect_step1(struct Curl_cfilter *cf,
+     if(value_error)
+       return CURLE_SSL_CONNECT_ERROR;
+ 
+-    if(outername)
++    if(outername) {
+       infof(data, "ECH: inner: '%s', outer: '%s'",
+             hostname, outername);
+-    else
+-      infof(data, "ECH: inner: '%s', outer: NONE",
+-            hostname, outername);
+-    rv = SSL_ech_set_server_names(backend->handle,
++      rv = SSL_ech_set_server_names(backend->handle,
+                              hostname, /* ech_inner_name (again) */
+                              outername, /* ech_outer_name */
+-                             0 /* do send outer */
++                             1 /* do send outer */
+                              );
+-    infof(data, "ECH: rv %d from SSL_set_ech_server_names()", rv);
++      infof(data, "ECH: rv %d from SSL_set_ech_server_names()", rv);
++      if(rv != 1) {
++        infof(data, "ECH: rv failed to set server name(s) %d [ERROR]", rv);
++        return CURLE_SSL_CONNECT_ERROR;
++      }
++    }
+ 
+     rv = ossl_ech_find_echconfigs(&nechs,
+                              &cfgs, &cfglens,
