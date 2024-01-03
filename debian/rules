@@ -69,6 +69,7 @@ ifeq ($(filter pkg.curl.no-openssl,$(DEB_BUILD_PROFILES)),)
 	cp ../../ltmain.sh . && \
 	dh_auto_configure ${CONFIGURE_ARGS} --with-openssl \
 		--with-ca-path=/etc/ssl/certs \
+	        --enable-ech --enable-httpsrr \
 		--with-ca-bundle=/etc/ssl/certs/ca-certificates.crt
 endif
 ifeq ($(filter pkg.curl.no-gnutls,$(DEB_BUILD_PROFILES)),)
