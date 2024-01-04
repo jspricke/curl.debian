@@ -79,6 +79,8 @@ clarify-ech-option-help-text-some-more.patch
 part-way-done-with-latest-badger-comments.patch
 2nd-batch-of-easy-badget-comments.patch
 dynbuf-approach-to-alpn-decode.patch
+Fix-compilation.patch
+Fix-test.patch
 
 # Do not add patches below.
 # Used to generate packages for the other crypto libraries.

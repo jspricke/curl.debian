@@ -258,3 +258,15 @@ Last-Update: 2018-05-23
  endif
  
  # Dependencies (may need to be overridden)
+--- a/tests/data/test1538
++++ b/tests/data/test1538
+@@ -132,8 +132,7 @@ e96: QUIC connection error
+ e97: proxy handshake error
+ e98: SSL Client Certificate required
+ e99: Unrecoverable error in select/poll
+-e100: ECH attempted but failed
+-e101: Unknown error
++e100: Unknown error
+ m-1: Please call curl_multi_perform() soon
+ m0: No error
+ m1: Invalid multi handle

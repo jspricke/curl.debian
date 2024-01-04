@@ -99,6 +99,9 @@ TESTS_FAILS_ON_IPV6_ONLY_MACHINES ?= $(addprefix ~, 300 301 303 304 306 309 310 
 
 TESTS_GENERAL_PARAMETERS += $(TESTS_FAILS_ON_IPV6_ONLY_MACHINES)
 
+# ignore ECH symbol
+TESTS_GENERAL_PARAMETERS += ~1119 ~1477
+
 override_dh_auto_test:
 ifeq ($(filter nocheck,$(DEB_BUILD_PROFILES)),)
 ifeq ($(filter pkg.curl.no-openssl,$(DEB_BUILD_PROFILES)),)
